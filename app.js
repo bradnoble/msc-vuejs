@@ -9,10 +9,11 @@ var cfenv = require("cfenv"),
     'username': process.env.username,
     'password': process.env.password,
     'url': process.env.url
-  }
+  },
+  dev = (process.env.dev && process.env.dev == 'true') ? true : false // are we in dev mode?
   ;
 
-// Initialize the library with my account
+  // Initialize the library with my account
 //var cloudant = Cloudant(account:'bradnoble', password:'cl0udant', url:'http://127.0.0.1:5984');// if you don't specify URL, assumes cloudant.com'
 var cloudant = require('cloudant')(opts);
 var db = cloudant.db.use("msc");
@@ -33,6 +34,112 @@ var passport = require('passport'),
 passport.use(users.passportStrategy());
 
 app.use(express.static(__dirname + '/public'));
+
+var ddoc = 'app',
+  id = '_design/' + ddoc,
+  views = {
+    "householdsAndPeople": {
+        "map": "function (doc) {\n    if (doc.type == \"household\"){\n      emit([doc.type, doc.name, doc._id], 1);\n    }\n    if(doc.type == \"person\"){\n      emit([doc.type, doc.household_id, doc.first], 1);\n    }\n  }"
+    },
+    "join_people_to_household": {
+        "map": "function (doc) {\n    if (doc.type == \"person\" && doc.household_id){\n      emit(doc.household_id, 1);\n    }\n  }"
+    },
+    "signups": {
+        "map": "function (doc){\n    var split = doc.arrive.split(\"T\");\n    split = split[0].split(\"-\");\n\n    // take out leading zeros from month and day here before parseInt\n    // http://stackoverflow.com/questions/8763396/javascript-parseint-with-leading-zeros\n\n    var arrive = [\n      parseInt(split[0], 10),\n      parseInt(split[1], 10),\n      parseInt(split[2], 10)\n      ];\n    if(doc.type == 'signup'){\n      emit(arrive, 1);\n    }\n  }"
+    },
+    "people": {
+        "map": "function (doc) {\n    if (doc.type == \"person\"){\n      emit(doc._id, 1);\n    }\n  }"
+    },
+    "emails": {
+        "map": "function(doc){ if(doc.type == \"person\" && doc.email){ emit([doc.first, doc.last, doc.email], 1) } }"
+    }
+  };
+
+var compareViews = function(){
+  var stringBodyViews = '', // this will hold the views that are in the db
+    stringViews = ''; // this will hold the views that are in this file
+
+  // steps
+  // 1. make sure we're in dev mode (ie, working locally)
+  // dev mode is set in the .env file as `dev=true`
+  // in production, `dev` will not exist in the env vars
+  // note: @ top of file, `dev` is set depending on what's in .env
+  if(!dev)
+    return true;
+  // 2. compare the views in this file with the views in the db
+  // 3. if they're different, update the views in the db and...
+  // 4. retry the endpoint
+
+
+    // 2. compare the views in the db with the views in this doc
+    // first get the view
+    return db.get('_design/app', {}, function(err, body) {
+      if(!err){
+
+        // in order to compare,
+        // turn both view objects to strings and then remove all whitespace
+        // body.views first
+        stringBodyViews = JSON.stringify(body.views);
+        stringBodyViews.replace(/\s/g,'');
+
+        // views second
+        stringViews = JSON.stringify(views);
+        stringViews.replace(/\s/g,'');
+
+        // if they don't match... 
+        if(stringBodyViews != stringViews){
+          console.log('views are NOT equal');
+          body.views = views;
+          // 3. update the db
+          db.insert(body, function(err, body){
+            if(!err){
+              console.log('views updated!', body);
+              return false;
+            }
+          });
+        } 
+        else {
+          console.log('views are equal');
+          return true;
+        }
+
+      }
+    });
+};
+
+app.get('/getEmails', 
+  users.auth,
+  function(req, res){
+
+    console.log(compareViews());
+/*
+    // make sure we're using the latest views in the db
+    if(compareViews()){
+      // this means we're not in dev mode and no need 
+      console.log('views are equal (expecting true):', dev);  
+
+      //db.view(designname, viewname, [params], [callback])
+      db.view('app', 'emails', {}, function(err, resp){
+        if (!err) {
+          res.send(resp);
+        } 
+        else {
+          console.log('error', err)        
+          // if(err.reason == 'missing_named_view'){
+            // if the view doesnt' exist, create it
+            // next, get the entire ddoc
+          //}
+        }
+      });
+
+    } 
+    else {
+      console.log('views are equal (expecting false):', dev);  
+      res.redirect(req.route.path);
+    }
+*/
+  }
+);
 
 app.get('/getHouseholdsAndPeople', 
   users.auth,
