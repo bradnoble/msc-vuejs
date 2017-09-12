@@ -7,7 +7,8 @@ var editHousehold = {
     return {
       item: {},
       statuses: getStatuses(),
-      genders: getGenders()
+      genders: getGenders(),
+      open: 'household'
     }
   },
   created: function() {
@@ -31,15 +32,25 @@ var editHousehold = {
             _this.addPerson();
           }
           // change legacy values to use materialize switch
-          _this.item.mail_news = (_this.item.mail_news == 'yes') ? true : false;
-          _this.item.mail_list = (_this.item.mail_list == 'yes') ? true : false;
-          _this.item.list_on_website = (_this.list_on_website == 'yes') ? true : false;
+          _this.item.mail_news = (_this.item.mail_news == 'yes' || _this.item.mail_news == true ) ? true : false;
+          _this.item.mail_list = (_this.item.mail_list == 'yes' || _this.item.mail_list == true ) ? true : false;
         }, function(error){
           _this.item = {
             name: 'sorry!'
           }
         }
       );
+    },
+    loadTab: function(idx){
+/*
+      setTimeout(function(){ 
+        // $('.collapsible').collapsible('open', idx);
+        $('.scale-transition[idx]').addClass('scale-in');
+      }, 100);            
+      // console.log($('.scale-transition[idx]'));
+      // console.log(idx, $('.collapsible-body').length)
+*/
+      this.open = idx;
     },
     addPerson: function(){
       var newPerson = getPersonObject();
@@ -50,9 +61,7 @@ var editHousehold = {
       // https://stackoverflow.com/questions/40713905/deeply-nested-data-objects-in-vuejs
       Vue.set(this.item.people, idx, newPerson)
       // open up the new person tray
-      setTimeout(function(){ 
-        $('.collapsible').collapsible('open', idx);
-      }, 100);      
+      this.open = idx;
     },
     removePerson: function(index){
       Vue.set(this.item.people[index], '_deleted', true);
@@ -74,6 +83,8 @@ var editHousehold = {
             $('#save').text(txt);
             // update the data in the view 
             _this.start();
+            // redirect to the summary tab
+            _this.open = 'summary';
           }, 1000);      
         }, function(error){
           console.log('error', error);
@@ -160,6 +171,39 @@ var list = {
   }
 }
 
+var emails = {
+  template: '#emails',
+  data: function(){
+    return {
+      items: []
+    }
+  },
+  created: function(){
+    this.loading = true;
+    this.start();
+  },
+  methods: {
+    start: function(){
+      _this = this;
+      this.$http.get('/getEmails')
+        .then(
+          function(resp){
+            var data = resp.data.rows;
+            var blob = '';
+
+            var emails = data.map(function(row){
+              return row.key[0];
+            })
+            blob = emails.join(',');
+
+            // update the view with the result
+            _this.items = blob;
+            _this.loading = false;
+          }
+        );
+    }
+  }
+};
 // 2. Define some routes
 // Each route should map to a component. The "component" can
 // either be an actual component constructor created via
@@ -167,6 +211,7 @@ var list = {
 // We'll talk about nested routes later.
 const routes = [
   { path: '/list', component: list, alias: '/' },
+  { path: '/emails', component: emails },
   { path: '/list/:id', component: editHousehold, props: true }
 ]
 
@@ -194,6 +239,7 @@ var brad = [
 
 Vue.component('household', {
   template: '<div> \
+    <b>{{ item.label_name }}</b><br /> \
     {{ item.street1 }} {{ item.street2 }}<br /> \
     {{ item.city }} {{ item.state }} {{ item.zip }}<br /> \
     {{ item.phone }} \
@@ -208,7 +254,7 @@ Vue.component('household', {
 
 Vue.component('person', {
   template: '<li> \
-    {{ item.first }} {{ item.last }} \
+    <b>{{ item.first }} {{ item.last }}</b> \
     <span v-if="item.status">({{ item.status }})</span> \
     <span v-if="item.dob"> | {{ item.dob }}</span> \
     <span v-if="item.email"> | {{ item.email }}</span> \

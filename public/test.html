@@ -1,0 +1,187 @@
+<script src="/js/vue.js"></script>
+<script src="/js/vue-resource.min.js"></script>
+
+<div id="app">
+  {{ asdf }}
+</div>
+
+<div id="app-3">
+  <p v-if="seen">Now you see me</p>
+</div>
+
+<div id="app-4">
+  <ol>
+    <li v-for="todo in todos">
+      {{ todo.t }}
+    </li>
+  </ol>
+</div>
+
+<div id="app-5">
+  <p>{{ message }}</p>
+  <button v-on:click="reverseMessage">{{ button }}</button>
+  <input v-model="button" />
+</div>
+
+<div id="app-6">
+  <p>{{ message }}</p>
+  <input v-model="message" />
+</div>
+
+<div id="app-7">
+  <ol>
+    <!--
+      Now we provide each todo-item with the todo object
+      it's representing, so that its content can be dynamic.
+      We also need to provide each component with a "key",
+      which will be explained later.
+    -->
+    <todo-item
+      v-for="item in groceryList"
+      v-bind:todo="item"
+      v-bind:key="item.id">
+    </todo-item>
+  </ol>
+  <pre v-on:click="print('asdf')">
+    {{ groceryList[0].text | capitalize }}
+  </pre>
+
+</div>
+
+<div id="example">
+  <p>Original message: "{{ message }}"</p>
+  <p>Computed reversed message: "{{ reversedMessage }}"</p>
+</div>
+<div id="cloudant">
+  <pre>
+    {{ data | json}}
+  </pre>
+</div>
+<!-- 
+  Javascript
+-->
+
+<script type="text/javascript">
+
+var data = {
+  groceryList: [
+    { id: 0, text: 'vegetables' },
+    { id: 1, text: 'Cheese' },
+    { id: 2, text: 'Whatever else humans are supposed to eat' }
+  ]
+};
+
+var vm2 = new Vue({
+  el: '#cloudant',
+  ready: function(){
+    // GET request
+    this.$http.get('/getHouseholdsAndPeople', function (data) {
+        // set data on vm
+        this.$set('data', data)
+
+    }).error(function (data, status, request) {
+        // handle error
+    })
+  },
+  data: function(){
+    return data;
+  },
+  computed: {
+    // a computed getter
+    reversedMessage: function () {
+      // `this` points to the vm instance
+      return this.message.split('').reverse().join('')
+    }
+  }
+})
+
+var vm = new Vue({
+  el: '#example',
+  data: {
+    message: data.groceryList[0].text
+  },
+  computed: {
+    // a computed getter
+    reversedMessage: function () {
+      // `this` points to the vm instance
+      return this.message.split('').reverse().join('')
+    }
+  }
+})
+
+Vue.component('todo-item', {
+  props: ['todo'],
+  template: '<li>{{ todo.text | capitalize }}</li>',
+  filters:  {
+    capitalize: function (value) {
+      if (!value) return ''
+      value = value.toString()
+      return value.charAt(0).toUpperCase() + value.slice(1)
+    }
+  }
+})
+
+var app7 = new Vue({
+  el:       '#app-7',
+  data:     data,
+  filters:  {
+    capitalize: function (value) {
+      if (!value) return ''
+      value = value.toString()
+      return value.charAt(0).toUpperCase() + value.slice(1)
+    }
+  },
+  methods: {
+    print: function(arg){
+      console.log(arg);      
+    }
+  }
+})
+
+var app6 = new Vue({
+  el: '#app-6',
+  data: {
+    message: 'Hello Vue!'
+  }
+})
+
+var app5 = new Vue({
+  el: '#app-5',
+  data: {
+    message: 'Hello Vue.js!',
+    button: 'yo!'
+  },
+  methods: {
+    reverseMessage: function () {
+      this.message = this.message.split('').reverse().join(''),
+      this.button = this.button.split('').reverse().join('')
+    }
+  }
+})
+
+  var app4 = new Vue({
+    el: '#app-4',
+    data: {
+      todos: [
+        { t: 'Learn JavaScript' },
+        { t: 'Learn Vue' },
+        { t: 'Build something awesome' }
+      ]
+    }
+  })
+
+var app3 = new Vue({
+  el: '#app-3',
+  data: {
+    seen: true
+  }
+})
+
+  var app = new Vue({
+    el: '#app',
+    data: {
+      asdf: 'yo'
+    }
+  })
+
+</script>

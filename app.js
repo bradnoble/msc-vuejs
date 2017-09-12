@@ -51,7 +51,7 @@ var ddoc = 'app',
         "map": "function (doc) {\n    if (doc.type == \"person\"){\n      emit(doc._id, 1);\n    }\n  }"
     },
     "emails": {
-        "map": "function(doc){ if(doc.type == \"person\" && doc.email){ emit([doc.first, doc.last, doc.email], 1) } }"
+        "map": "function(doc){ if(doc.type == \"person\" && doc.email){ emit([doc.email, doc.first + ' ' + doc.last], 1) } }"
     }
   };
 
@@ -73,7 +73,7 @@ var compareViews = function(){
 
     // 2. compare the views in the db with the views in this doc
     // first get the view
-    return db.get('_design/app', {}, function(err, body) {
+    db.get('_design/app', {}, function(err, body) {
       if(!err){
 
         // in order to compare,
@@ -110,34 +110,17 @@ var compareViews = function(){
 app.get('/getEmails', 
   users.auth,
   function(req, res){
-
-    console.log(compareViews());
-/*
-    // make sure we're using the latest views in the db
-    if(compareViews()){
-      // this means we're not in dev mode and no need 
-      console.log('views are equal (expecting true):', dev);  
-
-      //db.view(designname, viewname, [params], [callback])
-      db.view('app', 'emails', {}, function(err, resp){
-        if (!err) {
-          res.send(resp);
-        } 
-        else {
-          console.log('error', err)        
-          // if(err.reason == 'missing_named_view'){
-            // if the view doesnt' exist, create it
-            // next, get the entire ddoc
-          //}
-        }
-      });
-
-    } 
-    else {
-      console.log('views are equal (expecting false):', dev);  
-      res.redirect(req.route.path);
-    }
-*/
+    // get the results of the API call
+    db.view('app', 'emails', {}, function(err, resp){
+      if (!err) {
+        console.log(resp.data);
+        res.send(resp);
+      } 
+      else {
+        console.log('error', err)        
+        res.send(err);
+      }
+    });
   }
 );
 

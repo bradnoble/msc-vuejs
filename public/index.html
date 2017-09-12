@@ -1,187 +1,310 @@
-<script src="/js/vue.js"></script>
-<script src="/js/vue-resource.min.js"></script>
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="/js/vue.min.js"></script>
+    <script src="/js/vue-resource.min.js"></script>
+    <script src="/js/vue-router.js"></script>
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="/css/materialize.min.css"  media="screen,projection"/>
+    <style type="text/css">
+    </style>
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  </head>
 
-<div id="app">
-  {{ asdf }}
-</div>
+  <body>
+    <div class="container">
+      <div id="app">
+        <p>
+          <router-link to="/">Home</router-link> | 
+          <router-link to="/list">Membership List</router-link>
+          <router-link to="/emails"><i class="material-icons tiny">email</i></router-link> 
+          <a href="/getPeopleForCSV"><i class="material-icons tiny">file_download</i></a>
+        </p>
+        <router-view></router-view>
+      </div>
+    </div>
 
-<div id="app-3">
-  <p v-if="seen">Now you see me</p>
-</div>
-
-<div id="app-4">
-  <ol>
-    <li v-for="todo in todos">
-      {{ todo.t }}
-    </li>
-  </ol>
-</div>
-
-<div id="app-5">
-  <p>{{ message }}</p>
-  <button v-on:click="reverseMessage">{{ button }}</button>
-  <input v-model="button" />
-</div>
-
-<div id="app-6">
-  <p>{{ message }}</p>
-  <input v-model="message" />
-</div>
-
-<div id="app-7">
-  <ol>
-    <!--
-      Now we provide each todo-item with the todo object
-      it's representing, so that its content can be dynamic.
-      We also need to provide each component with a "key",
-      which will be explained later.
+    <!-- 
+      BEGIN TEMPLATES
     -->
-    <todo-item
-      v-for="item in groceryList"
-      v-bind:todo="item"
-      v-bind:key="item.id">
-    </todo-item>
-  </ol>
-  <pre v-on:click="print('asdf')">
-    {{ groceryList[0].text | capitalize }}
-  </pre>
 
-</div>
+    <script type="text/x-template" id="emails">
+      <div>
+        <h5>
+          Email addresses
+        </h5>
+        <p>
+          These are all the email addresses we have on file. Copy these and paste them into the address field of your favorite email application.
+        </p>
+        <textarea>{{ items }}</textarea>
+        <router-link to="/list">Back to the list</router-link>
+      </div>
+    </script>
 
-<div id="example">
-  <p>Original message: "{{ message }}"</p>
-  <p>Computed reversed message: "{{ reversedMessage }}"</p>
-</div>
-<div id="cloudant">
-  <pre>
-    {{ data | json}}
-  </pre>
-</div>
-<!-- 
-  Javascript
--->
+    <script type="text/x-template" id="list">
+      <div>
+        <div style="color: red" v-if="loading">
+          Loading...
+        </div>
+        <div v-if="!loading" class="row">
+          <div class="input-field col m12 s12">
+            <i class="material-icons prefix">search</i>
+            <input v-model="searchStr" @keyup="search()" placeholder="Search by name..." />
+          </div>            
+        </div>
+        <div>
+          <ul class="collection">
+            <li v-bind:id="item._id" v-for="item in items" v-if="!item.hide" class="collection-item">
+              <h5>{{ item.name }} <router-link :to="{ path: /list/ + item._id }" class="btn-floating btn waves-effect waves-light red right" title="Add a person to this household"><i class="material-icons">edit</i>edit</router-link>
+              </h5>
 
-<script type="text/javascript">
+              <div class="row">
+                <div class="col m3">
+                  <household v-bind:item="item"></household>
+                </div>
+                <div class="col m9">
+                  <ul>
+                    <person 
+                      v-for="person in item.people" 
+                      v-bind:key="person._id" 
+                      v-bind:item="person">
+                    </person>
+                  </ul>
+                </div>
+              </div><!--row-->
+            </li>
+          </ul>
+        </div>
+      </div>
+    </script>
 
-var data = {
-  groceryList: [
-    { id: 0, text: 'vegetables' },
-    { id: 1, text: 'Cheese' },
-    { id: 2, text: 'Whatever else humans are supposed to eat' }
-  ]
-};
+    <script type="text/x-template" id="edit-household">
+      <div>
+        <h4>Edit household</h4>
+        <div class="row">
+          <div class="col m4 s12">
+            <ul class="collection">
+              <li v-on:click="loadTab('household')" class="collection-item" :class="{'active': open=='household'}">
+                <span class="title">
+                  Mailing info
+                </span>
+                <span class="secondary-content"><i class="material-icons">chevron_right</i></span>
+              </li>
+              <li v-on:click="loadTab('summary')" class="collection-item" :class="{'active': open=='summary'}">
+                <span class="title">
+                  Summary
+                  </span>
+                <span class="secondary-content"><i class="material-icons">chevron_right</i></span>
+              </li>
+            </ul>
+            <ul class="collection">
+              <li v-for="(person, index) in item.people" v-on:click="loadTab(index)" class="collection-item avatar" :class="{'active': open==index}">
+                <i class="material-icons circle" :class="{'red': person.status == 'active' && open != index, 'white green-text': open == index}">person</i>
+                <span class="title">
+                  <span v-if="!person.first && !person.last">New person {{ person._id }}</span>
+                  {{ person.first }} {{ person.last }}
+                </span>
+                <p>
+                  {{ person.status }} 
+                </p>      
+                <span class="secondary-content"><i class="material-icons">chevron_right</i></span>
+              </li>
+            </ul>
+            <a v-on:click="addPerson()" class="btn-floating btn waves-effect waves-light red right" title="Add a person to this household">
+              <i class="material-icons">person_add</i>
+            </a>  
+            <!-- 
+            <pre>
+              {{ item | json }}
+            </pre>
+            -->
+          </div>
 
-var vm2 = new Vue({
-  el: '#cloudant',
-  ready: function(){
-    // GET request
-    this.$http.get('/getHouseholdsAndPeople', function (data) {
-        // set data on vm
-        this.$set('data', data)
+          <div class="col m7 offset-m1 s12">
+            <ul>
+              <li>
+                <div v-if="open == 'household'">
+                  <div class="row">
+                    <div class="input-field col m4 s12">
+                      <input type="text" id="household_name" v-model="item.name"  />
+                      <label for="household_name" class="active">Household name</label>
+                    </div>
+                    <div class="input-field col m8 s12">
+                      <input type="text" id="household_label_name" v-model="item.label_name"  />
+                      <label for="household_label_name" class="active">Mailing label name</label>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="input-field col m8 s12">
+                      <input type="text" id="household_street1" v-model="item.street1"  />
+                      <label for="household_street1" class="active">Street 1</label>
+                    </div>
+                    <div class="input-field col m4 s12">
+                      <input type="text" id="household_street2" v-model="item.street2"  />
+                      <label for="household_street2" class="active">Street 2</label>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="input-field col m6 s12">
+                      <input type="text" id="household_city" v-model="item.city"  />
+                      <label for="household_city" class="active">City</label>
+                    </div>
+                    <div class="input-field col m2 s12">
+                      <input type="text" id="household_state" v-model="item.state"  />
+                      <label for="household_state" class="active">State</label>
+                    </div>
+                    <div class="input-field col m4 s12">
+                      <input type="text" id="household_zip" v-model="item.zip"  />
+                      <label for="household_zip" class="active">ZIP</label>
+                    </div>
+                  </div>
+                  <div class="input-field">              
+                    <input type="text" id="household_phone" v-model="item.phone"  />
+                    <label for="household_phone" class="active">Household Phone</label>
+                  </div>
 
-    }).error(function (data, status, request) {
-        // handle error
-    })
-  },
-  data: function(){
-    return data;
-  },
-  computed: {
-    // a computed getter
-    reversedMessage: function () {
-      // `this` points to the vm instance
-      return this.message.split('').reverse().join('')
-    }
-  }
-})
+                  <div>
+                    <h5>
+                      Harcopies
+                    </h5>
+                  </div>
+                  <div class="row">              
+                    <div class="col m6 s12 switch">
+                      Mail a hardcopy of the newsletter?<br />
+                      <label>
+                        No
+                        <input type="checkbox" id="mail_news" v-model="item.mail_news">
+                        <span class="lever"></span>
+                        Yes
+                      </label>
+                    </div>
+                    <div class="col m6 s12 switch">
+                      Mail a hardcopy of the membership list?<br />
+                      <label>
+                        No
+                        <input type="checkbox" id="mail_list" v-model="item.mail_list">
+                        <span class="lever"></span>
+                        Yes
+                      </label>
+                    </div>
+                  </div>
 
-var vm = new Vue({
-  el: '#example',
-  data: {
-    message: data.groceryList[0].text
-  },
-  computed: {
-    // a computed getter
-    reversedMessage: function () {
-      // `this` points to the vm instance
-      return this.message.split('').reverse().join('')
-    }
-  }
-})
+                </div>
+              </li>
+              <li v-for="(person, index) in item.people">
+                <div v-if="open == index" class="">
+                  
+                  <div class="row">
+                    <div class="input-field col m6 s12">              
+                      <input type="text" id="person_first" v-model="person.first"  />
+                      <label for="person_first" class="active">First name</label>
+                    </div>
+                    <div class="input-field col m6 s12">              
+                      <input type="text" id="person_last" v-model="person.last"  />
+                      <label for="person_last" class="active">Last name</label>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="input-field col m12 s12">              
+                      <input type="text" id="person_email" v-model="person.email"  />
+                      <label for="person_email" class="active">Email</label>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="input-field col s6">              
+                      <input type="text" id="person_phone" v-model="person.phone"  />
+                      <label for="person_phone" class="active">Phone</label>
+                    </div>
+                    <div class="input-field col s6">              
+                      <input type="text" id="person_work_phone" v-model="person.work_phone"  />
+                      <label for="person_work_phone" class="active">Work phone</label>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col m6 s12">              
+                      <label>Membership status</label>
+                      <p v-for="(value, index) in statuses">
+                        <input 
+                          type="radio" 
+                          :name="person._id + '-' + index" 
+                          :id="person._id + '-' + index" 
+                          :value="value" 
+                          v-model="person.status" />
+                        <label v-bind:for="person._id + '-' + index">{{ value }}</label>
+                      </p>                
+                    </div>
+                    <div class="col m6 s12">              
+                      <label>Gender</label>
+                      <p v-for="(value, index) in genders">
+                        <input type="radio" 
+                          :name="person._id + '-gender-' + index" 
+                          :id="person._id + '-gender-' + index" 
+                          :value="value" 
+                          v-model="person.gender" />
+                        <label :for="person._id + '-gender-' + index">{{ value }}</label>
+                      </p>                
+                    </div>
+                  </div>
+                      <div class="input-field" v-if="person.status == 'child'">              
+                        <input type="text" id="person_dob" v-model="person.dob"  />
+                        <label for="person_dob" class="active">Date of birth</label>
+                      </div>
+                  <div class="row">
+                    <div class="input-field col s6">              
+                      <input type="text" id="person_dob" v-model="person.dob"  />
+                      <label for="person_dob" class="active">Date of birth</label>
+                    </div>
+                  </div>
+                  <div>
+                    <p>
+                      <input type="checkbox" v-bind:id="person._id" v-model="person._deleted" v-on:click="removePerson(index)" />
+                      <label v-bind:for="person._id" class="red-text text-darken-2">Remove this person</label>
+                    </p>
+                  </div>
 
-Vue.component('todo-item', {
-  props: ['todo'],
-  template: '<li>{{ todo.text | capitalize }}</li>',
-  filters:  {
-    capitalize: function (value) {
-      if (!value) return ''
-      value = value.toString()
-      return value.charAt(0).toUpperCase() + value.slice(1)
-    }
-  }
-})
+                </div>
+              </li>
+              <li v-if="open == 'summary'">
+                <household v-bind:item="item"></household>
+                <ul>
+                  <person 
+                    v-for="person in item.people" 
+                    v-bind:key="person._id" 
+                    v-bind:item="person">
+                  </person>
+                </ul>
+                <!-- 
+                <pre>
+                  {{ item | json }}
+                </pre>
+                -->
+              </li>
+            </ul>
 
-var app7 = new Vue({
-  el:       '#app-7',
-  data:     data,
-  filters:  {
-    capitalize: function (value) {
-      if (!value) return ''
-      value = value.toString()
-      return value.charAt(0).toUpperCase() + value.slice(1)
-    }
-  },
-  methods: {
-    print: function(arg){
-      console.log(arg);      
-    }
-  }
-})
+            <div class="actions">
+              <a v-on:click="saveMe()" id="save" class="waves-effect waves-light btn">Save</a>
+              <a  href="#/" class="waves-effect waves-light btn-flat">Cancel</a>
+            </div>
 
-var app6 = new Vue({
-  el: '#app-6',
-  data: {
-    message: 'Hello Vue!'
-  }
-})
 
-var app5 = new Vue({
-  el: '#app-5',
-  data: {
-    message: 'Hello Vue.js!',
-    button: 'yo!'
-  },
-  methods: {
-    reverseMessage: function () {
-      this.message = this.message.split('').reverse().join(''),
-      this.button = this.button.split('').reverse().join('')
-    }
-  }
-})
+          </div>
+        </div>
 
-  var app4 = new Vue({
-    el: '#app-4',
-    data: {
-      todos: [
-        { t: 'Learn JavaScript' },
-        { t: 'Learn Vue' },
-        { t: 'Build something awesome' }
-      ]
-    }
-  })
+      </div>
+    </script>
 
-var app3 = new Vue({
-  el: '#app-3',
-  data: {
-    seen: true
-  }
-})
+    <!--Import jQuery before materialize.js-->
 
-  var app = new Vue({
-    el: '#app',
-    data: {
-      asdf: 'yo'
-    }
-  })
+    <script type="text/javascript" src="/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="/js/materialize.min.js"></script>
 
-</script>
+    <script type="text/javascript" src="/js/factories.js"></script>
+    <script type="text/javascript" src="/js/main.js"></script>
+  </body>
+</html>
+        
+
+
