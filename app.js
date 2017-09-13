@@ -18,6 +18,8 @@ var db = cloudant.db.use("msc");
 var app = express();
 var http = require('http').Server(app);
 
+console.log('appEnv', appEnv);
+
 http.listen(appEnv.port, "0.0.0.0", function() {
   console.log("server starting on " + appEnv.url);     // print a message when the server starts listening
 });
