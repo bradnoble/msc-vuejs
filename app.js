@@ -5,11 +5,7 @@ var cfenv = require("cfenv"),
   bodyParser = require('body-parser'),
   jsonParser = bodyParser.json(),
   json2csv = require('json2csv'),
-  opts = {
-    'username': process.env.username,
-    'password': process.env.password,
-    'url': process.env.url
-  },
+  opts = (process.env.VCAP_SERVICES) ? {vcapServices: JSON.parse(process.env.VCAP_SERVICES)} : {url: process.env.url} ,
   dev = (process.env.dev && process.env.dev == 'true') ? true : false // are we in dev mode?
   ;
 
