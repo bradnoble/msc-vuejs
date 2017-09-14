@@ -6,7 +6,7 @@ var cfenv = require("cfenv"),
   jsonParser = bodyParser.json(),
   json2csv = require('json2csv'),
   opts = (process.env.VCAP_SERVICES) ? {vcapServices: JSON.parse(process.env.VCAP_SERVICES)} : {url: process.env.url},
-  // dev = (process.env.NODE_ENV) ? process.env.NODE_ENV : false // are we in dev mode?
+  dev = (process.env.NODE_ENV) ? process.env.NODE_ENV : false // are we in dev mode?
   ;
 
   // Initialize the library with my account
