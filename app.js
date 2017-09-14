@@ -5,8 +5,8 @@ var cfenv = require("cfenv"),
   bodyParser = require('body-parser'),
   jsonParser = bodyParser.json(),
   json2csv = require('json2csv'),
-  opts = (process.env.VCAP_SERVICES) ? {vcapServices: JSON.parse(process.env.VCAP_SERVICES)} : {url: process.env.url} ,
-  dev = (process.env.dev && process.env.dev == 'true') ? true : false // are we in dev mode?
+  opts = (process.env.VCAP_SERVICES) ? {vcapServices: JSON.parse(process.env.VCAP_SERVICES)} : {url: process.env.url},
+  // dev = (process.env.NODE_ENV) ? process.env.NODE_ENV : false // are we in dev mode?
   ;
 
   // Initialize the library with my account
@@ -18,7 +18,10 @@ var db = cloudant.db.use("msc");
 var app = express();
 var http = require('http').Server(app);
 
-console.log('appEnv', appEnv);
+console.log('appEnv:' + JSON.stringify(appEnv));
+console.log(process.env.USERS);
+console.log(JSON.parse(process.env.USERS));
+console.log(process.env.USERS.admin);
 
 http.listen(appEnv.port, "0.0.0.0", function() {
   console.log("server starting on " + appEnv.url);     // print a message when the server starts listening
