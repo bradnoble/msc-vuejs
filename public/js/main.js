@@ -8,11 +8,20 @@ var editHousehold = {
       item: {},
       statuses: getStatuses(),
       genders: getGenders(),
-      open: 'household'
+      open: 'summary'
     }
   },
   created: function() {
-    this.start();
+    if(this.$route.params.id == "new"){
+      var newHousehold = getNewHousehold();
+      // https://vuejs.org/2016/02/06/common-gotchas/
+      // https://stackoverflow.com/questions/40713905/deeply-nested-data-objects-in-vuejs
+      // Vue.set(this.item.people, idx, newPerson)
+      this.item = newHousehold;
+      this.open = 'household';
+    } else {
+      this.start();
+    }
   },
   mounted: function(){
     $('.collapsible').collapsible();
@@ -34,23 +43,25 @@ var editHousehold = {
           // change legacy values to use materialize switch
           _this.item.mail_news = (_this.item.mail_news == 'yes' || _this.item.mail_news == true ) ? true : false;
           _this.item.mail_list = (_this.item.mail_list == 'yes' || _this.item.mail_list == true ) ? true : false;
-        }, function(error){
+          }, function(error){
           _this.item = {
             name: 'sorry!'
           }
         }
       );
     },
+    killDOB: function(idx){
+      // console.log(idx)
+      if(this.item.people[idx].status != 'child' || this.item.people[idx].status != 'junior'){
+        this.item.people[idx].dob = '';
+      }
+    },
     loadTab: function(idx){
-/*
-      setTimeout(function(){ 
-        // $('.collapsible').collapsible('open', idx);
-        $('.scale-transition[idx]').addClass('scale-in');
-      }, 100);            
-      // console.log($('.scale-transition[idx]'));
-      // console.log(idx, $('.collapsible-body').length)
-*/
       this.open = idx;
+/*
+      this.$nextTick(function () {
+      })
+*/
     },
     addPerson: function(){
       var newPerson = getPersonObject();
@@ -175,7 +186,8 @@ var emails = {
   template: '#emails',
   data: function(){
     return {
-      items: []
+      items: [],
+      emailsSelected: 'Select emails'
     }
   },
   created: function(){
@@ -201,6 +213,10 @@ var emails = {
             _this.loading = false;
           }
         );
+    },
+    selectEmails: function(){
+      $('#emails').select();
+      this.emailsSelected = "Emails selected"
     }
   }
 };
@@ -242,7 +258,9 @@ Vue.component('household', {
     <b>{{ item.label_name }}</b><br /> \
     {{ item.street1 }} {{ item.street2 }}<br /> \
     {{ item.city }} {{ item.state }} {{ item.zip }}<br /> \
-    {{ item.phone }} \
+    {{ item.phone }}<br /> \
+    <b>Mail newsletter?</b> {{ item.mail_news }}<br /> \
+    <b>Mail list?</b> {{ item.mail_list }}<br /> \
     </div>',
   props: ['item'],
   methods: {
@@ -268,3 +286,10 @@ var vm = new Vue({
   el: '#app',
   router
 });
+
+  // Initialize collapse button
+  $(".button-collapse").sideNav({
+      closeOnClick: true, // Closes side-nav on <a> clicks, useful for Angular/Meteor    
+  });
+    // Initialize collapsible (uncomment the line below if you use the dropdown variation)
+  //$('.collapsible').collapsible();

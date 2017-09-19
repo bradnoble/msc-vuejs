@@ -43,3 +43,9 @@ var getPersonObject = function(){
   }
   return obj;
 };
+
+var getNewHousehold = function(){
+  var obj = docDefaults('household');
+  obj.people = [];
+  return obj;
+};
