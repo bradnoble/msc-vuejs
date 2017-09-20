@@ -18,7 +18,7 @@ var db = cloudant.db.use("msc");
 var app = express();
 var http = require('http').Server(app);
 
-console.log(JSON.parse(process.env.USERS));
+// console.log(JSON.parse(process.env.USERS));
 
 http.listen(appEnv.port, "0.0.0.0", function() {
   console.log("server starting on " + appEnv.url);     // print a message when the server starts listening
@@ -49,8 +49,7 @@ var ddoc = 'app',
         "map": "function (doc) {\n    if (doc.type == \"person\"){\n      emit(doc._id, 1);\n    }\n  }"
     },
     "emails": {
-        "map": "function(doc){ if(doc.type == \"person\" && doc.email){ emit([doc.email, doc.first + ' ' + doc.last], 1) } }"
-    }
+           "map": "function(doc){ if(doc.type == \"person\" && doc.email && doc.status && doc.first && doc.last){ emit(doc.status, [doc.email, doc.first + ' ' + doc.last]) } }"    }
   };
 
 var compareViews = function(){
@@ -108,10 +107,20 @@ var compareViews = function(){
 app.get('/getEmails', 
   users.auth,
   function(req, res){
+
+    var params = (req.query.statuses) ? req.query.statuses : null;
+    var opts = {};
+    if(params){
+      console.log(params);
+      console.log(params.split(','));
+      console.log('params length', params.length);
+      opts.keys = params.split(',');
+    } 
+
     // get the results of the API call
-    db.view('app', 'emails', {}, function(err, resp){
+    db.view('app', 'emails', opts, function(err, resp){
       if (!err) {
-        console.log(resp.data);
+        // console.log(resp);
         res.send(resp);
       } 
       else {
