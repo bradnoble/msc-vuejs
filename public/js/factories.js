@@ -1,6 +1,6 @@
 // each person can be one of these
 var getStatuses = function(){
-  return ['active','inactive','life','junior','child','non-member']; 
+  return ['active','inactive','life','junior','child','non-member','applicant','honorary']; 
 }
 // each person can be one of these
 var getGenders = function(){
