@@ -78,16 +78,30 @@
           <a href="/#list">Membership List</a> / Email addresses
         </h6>
         <p>
-          These are all the email addresses we have on file. Copy these and paste them into the address field of your favorite email application.
+          Here find all of the email addresses we have on file.
         </p>
 
-        <button v-on:click="selectEmails()">{{ emailsSelected }}</button>
-      <div class="row">
-        <div class="input-field col s12">
-          <textarea id="emails" class="materialize-textarea">{{ items }}</textarea>
-          <label for="emails" class="active">Emails</label>
+        <div class="row">
+          <div class="col m3">
+            <h5>Filters</h5>
+            <p>Use these to filter the list.</p>
+            <ul class="collection">
+              <a class="collection-item" v-for="status in statuses" :class="{'active': selected[status] == true }" v-on:click="toggleStatus(status)">
+                {{ status }}
+                <span class="secondary-content" v-if="selected[status]"><i class="material-icons">check_box</i></span>
+              </a>
+            </ul>
+          </div>
+          <div class="col m9">
+            <h5>Email addresses</h5>
+            <p><a v-on:click="selectEmails()">Select the email addresses below</a>, copy them, and then paste them into your favorite email application.</p>
+            <div class="input-field col s12">
+              <textarea id="emails" class="materialize-textarea">{{ items }}</textarea>
+              <label for="emails" class="active">Emails</label>
+            </div>
+          </div>
         </div>
-      </div>
+
         <router-link to="/list">Back to the list</router-link>
       </div>
     </script>

@@ -187,6 +187,9 @@ var emails = {
   data: function(){
     return {
       items: [],
+      loading: true,
+      statuses: getStatuses(),
+      selected: {},
       emailsSelected: 'Select emails'
     }
   },
@@ -197,22 +200,36 @@ var emails = {
   methods: {
     start: function(){
       _this = this;
-      this.$http.get('/getEmails')
+      var params = {},
+        keys = Object.keys(this.selected);
+      // put the keys into a string, to send as params to the API
+      params.statuses = (keys.length > 0) ? keys.join(',') : null;
+      this.$http.get('/getEmails', params)
         .then(
           function(resp){
             var data = resp.data.rows;
             var blob = '';
 
             var emails = data.map(function(row){
-              return row.key[0];
+              return row.value[0];
             })
-            blob = emails.join(',');
-
+            blob = emails.join(', ');
             // update the view with the result
             _this.items = blob;
             _this.loading = false;
           }
         );
+    },
+    toggleStatus: function(status){
+      if(!this.selected[status]){
+        this.selected[status] = true;
+      } else {
+        delete this.selected[status]
+      }
+      // replace the entire object b/c we're deleted stuff
+      // https://vuejs.org/v2/guide/reactivity.html
+      this.selected = Object.assign({}, this.selected, this.selected);
+      this.start();
     },
     selectEmails: function(){
       $('#emails').select();
@@ -220,6 +237,7 @@ var emails = {
     }
   }
 };
+
 // 2. Define some routes
 // Each route should map to a component. The "component" can
 // either be an actual component constructor created via
