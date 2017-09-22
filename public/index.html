@@ -80,7 +80,6 @@
         <p>
           Here find all of the email addresses we have on file.
         </p>
-
         <div class="row">
           <div class="col m3">
             <h5>Filters</h5>
@@ -94,23 +93,24 @@
           </div>
           <div class="col m9">
             <h5>Email addresses</h5>
-            <p><a href="#" v-on:click.prevent="selectEmails()">Select</a>, copy, and paste these addresses into your email app.</p>
-            <div class="input-field col s12">
-              <textarea id="emails" class="materialize-textarea">{{ items }}</textarea>
-              <label for="emails" class="active">Emails</label>
+            <div v-if="!loading">
+              <p><a href="#" v-on:click.prevent="selectEmails()">Select</a>, copy, and paste these addresses into your email app.</p>
+              <div class="input-field col s12">
+                <textarea id="emails" class="materialize-textarea">{{ items }}</textarea>
+                <label for="emails" class="active">Emails</label>
+              </div>
+            </div>
+            <div v-else class="progress">
+                <div class="indeterminate"></div>
             </div>
           </div>
         </div>
-
         <router-link to="/list">Back to the list</router-link>
       </div>
     </script>
 
     <script type="text/x-template" id="list">
       <div>
-        <div style="color: red" v-if="loading">
-          Loading...
-        </div>
         <div v-if="!loading">
           <ul class="collection">
             <li class="collection-item grey lighten-4 row">
@@ -140,6 +140,9 @@
               </div><!--row-->
             </li>
           </ul>
+        </div>
+        <div v-else class="progress">
+            <div class="indeterminate"></div>
         </div>
       </div>
     </script>

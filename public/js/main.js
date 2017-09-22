@@ -201,6 +201,7 @@ var emails = {
   methods: {
     start: function(){
       _this = this;
+      _this.loading = true;
       var params = {},
         keys = Object.keys(this.selected);
       // put the keys into a string, to send as params to the API
