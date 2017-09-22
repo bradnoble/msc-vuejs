@@ -59,6 +59,7 @@ var editHousehold = {
     loadTab: function(idx){
       this.open = idx;
 /*
+      https://vuejs.org/v2/guide/reactivity.html#Async-Update-Queue
       this.$nextTick(function () {
       })
 */

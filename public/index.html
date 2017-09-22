@@ -84,7 +84,7 @@
         <div class="row">
           <div class="col m3">
             <h5>Filters</h5>
-            <p>Use these to filter the list.</p>
+            <p>Filter the list by status.</p>
             <ul class="collection">
               <a class="collection-item" v-for="status in statuses" :class="{'active': selected[status] == true }" v-on:click="toggleStatus(status)">
                 {{ status }}
@@ -94,7 +94,7 @@
           </div>
           <div class="col m9">
             <h5>Email addresses</h5>
-            <p><a v-on:click="selectEmails()">Select the email addresses below</a>, copy them, and then paste them into your favorite email application.</p>
+            <p><a href="#" v-on:click.prevent="selectEmails()">Select</a>, copy, and paste these addresses into your email app.</p>
             <div class="input-field col s12">
               <textarea id="emails" class="materialize-textarea">{{ items }}</textarea>
               <label for="emails" class="active">Emails</label>
