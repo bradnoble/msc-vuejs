@@ -28,6 +28,9 @@ var editHousehold = {
   },
   computed: {},
   methods: {
+    setPageTitle: function(){
+      document.title = (this.item.name) ? this.item.name : 'Edit Household';
+    },
     start: function() {
       _this = this;
       this.$http.get('/getHousehold/', 
@@ -43,6 +46,7 @@ var editHousehold = {
           // change legacy values to use materialize switch
           _this.item.mail_news = (_this.item.mail_news == 'yes' || _this.item.mail_news == true ) ? true : false;
           _this.item.mail_list = (_this.item.mail_list == 'yes' || _this.item.mail_list == true ) ? true : false;
+          _this.setPageTitle();
           }, function(error){
           _this.item = {
             name: 'sorry!'
@@ -116,12 +120,13 @@ var list = {
   template: '#list',
   data: function(){
     return {
-      items: brad,
+      items: [],
       searchStr: '',
       loading: false
     }
   },
   created: function(){
+    document.title = 'List';
     this.loading = true;
     this.start();
   },
@@ -197,6 +202,7 @@ var emails = {
   created: function(){
     this.loading = true;
     this.start();
+    document.title = 'emails';
   },
   methods: {
     start: function(){
@@ -228,7 +234,7 @@ var emails = {
       } else {
         delete this.selected[status]
       }
-      // replace the entire object b/c we're deleted stuff
+      // replace the entire object b/c we've deleted stuff
       // https://vuejs.org/v2/guide/reactivity.html
       this.selected = Object.assign({}, this.selected, this.selected);
       this.start();
@@ -248,7 +254,8 @@ var emails = {
 const routes = [
   { path: '/list', component: list, alias: '/' },
   { path: '/emails', component: emails },
-  { path: '/list/:id', component: editHousehold, props: true }
+  { path: '/list/:id', component: editHousehold, props: true },
+  { path: '/list/turn-off/:id', component: editHousehold, props: true }
 ]
 
 // 3. Create the router instance and pass the `routes` option
@@ -256,22 +263,7 @@ const routes = [
 // keep it simple for now.
 const router = new VueRouter({
   routes // short for `routes: routes`
-})
-
-
-var brad = [
-  {
-    name: 'household name',
-    people: [
-      {
-        'first': 'first name',
-        'last': 'last name',
-        'email': '@email',
-     }
-    ]
-  }
-];
-
+});
 
 Vue.component('household', {
   template: '<div> \
@@ -307,6 +299,12 @@ var vm = new Vue({
   router
 });
 
+new Vue({
+    el: 'title',
+    data: {
+        title: 'My Title'
+    }
+})
   // Initialize collapse button
   $(".button-collapse").sideNav({
       closeOnClick: true, // Closes side-nav on <a> clicks, useful for Angular/Meteor    

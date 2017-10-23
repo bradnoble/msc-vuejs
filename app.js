@@ -2,6 +2,7 @@ var cfenv = require("cfenv"),
   appEnv = cfenv.getAppEnv(),
   dotenv = require('dotenv').config(),
   express = require('express'),
+  session = require('express-session'),
   bodyParser = require('body-parser'),
   jsonParser = bodyParser.json(),
   json2csv = require('json2csv'),
@@ -26,83 +27,49 @@ http.listen(appEnv.port, "0.0.0.0", function() {
 
 // auth
 var passport = require('passport'),
-  Strategy = require('passport-http').BasicStrategy,
+//  Strategy = require('passport-http').BasicStrategy,
+  Strategy = require('passport-local'),
   users = require('./lib/auth.js');
 
-passport.use(users.passportStrategy());
 
 app.use(express.static(__dirname + '/public'));
 
-var ddoc = 'app',
-  id = '_design/' + ddoc,
-  views = {
-    "householdsAndPeople": {
-        "map": "function (doc) {\n    if (doc.type == \"household\"){\n      emit([doc.type, doc.name, doc._id], 1);\n    }\n    if(doc.type == \"person\"){\n      emit([doc.type, doc.household_id, doc.first], 1);\n    }\n  }"
-    },
-    "join_people_to_household": {
-        "map": "function (doc) {\n    if (doc.type == \"person\" && doc.household_id){\n      emit(doc.household_id, 1);\n    }\n  }"
-    },
-    "signups": {
-        "map": "function (doc){\n    var split = doc.arrive.split(\"T\");\n    split = split[0].split(\"-\");\n\n    // take out leading zeros from month and day here before parseInt\n    // http://stackoverflow.com/questions/8763396/javascript-parseint-with-leading-zeros\n\n    var arrive = [\n      parseInt(split[0], 10),\n      parseInt(split[1], 10),\n      parseInt(split[2], 10)\n      ];\n    if(doc.type == 'signup'){\n      emit(arrive, 1);\n    }\n  }"
-    },
-    "people": {
-        "map": "function (doc) {\n    if (doc.type == \"person\"){\n      emit(doc._id, 1);\n    }\n  }"
-    },
-    "emails": {
-           "map": "function(doc){ if(doc.type == \"person\" && doc.email && doc.status && doc.first && doc.last){ emit(doc.status, [doc.email, doc.first + ' ' + doc.last]) } }"    }
-  };
+//nothing to be done - call callback
+passport.serializeUser(function(user, done) {
+  console.log('serializeUser');
+  done(null, user);
+});
 
-var compareViews = function(){
-  var stringBodyViews = '', // this will hold the views that are in the db
-    stringViews = ''; // this will hold the views that are in this file
+//nothing to be done - call callback
+passport.deserializeUser(function(obj, done) {
+  console.log('deserializeUser');
+  done(null, obj);
+});
 
-  // steps
-  // 1. make sure we're in dev mode (ie, working locally)
-  // dev mode is set in the .env file as `dev=true`
-  // in production, `dev` will not exist in the env vars
-  // note: @ top of file, `dev` is set depending on what's in .env
-  if(!dev)
-    return true;
-  // 2. compare the views in this file with the views in the db
-  // 3. if they're different, update the views in the db and...
-  // 4. retry the endpoint
-
-
-    // 2. compare the views in the db with the views in this doc
-    // first get the view
-    db.get('_design/app', {}, function(err, body) {
-      if(!err){
-
-        // in order to compare,
-        // turn both view objects to strings and then remove all whitespace
-        // body.views first
-        stringBodyViews = JSON.stringify(body.views);
-        stringBodyViews.replace(/\s/g,'');
-
-        // views second
-        stringViews = JSON.stringify(views);
-        stringViews.replace(/\s/g,'');
-
-        // if they don't match... 
-        if(stringBodyViews != stringViews){
-          console.log('views are NOT equal');
-          body.views = views;
-          // 3. update the db
-          db.insert(body, function(err, body){
-            if(!err){
-              console.log('views updated!', body);
-              return false;
-            }
-          });
-        } 
-        else {
-          console.log('views are equal');
-          return true;
-        }
-
-      }
-    });
+var sess = {
+  secret: 'keyboard cat',
+  cookie: {}
 };
+
+app.use(session(sess));
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(users.passportStrategy());
+
+
+app.get('/logout', function(req, res){
+  console.log('session', req.session);
+  console.log('user', req.user);
+  req.logout();
+  req.session.destroy(function (err) {
+    if (err) { return next(err); }
+    // The response should indicate that the user is no longer authenticated.
+    return res.send({ authenticated: req.isAuthenticated() });
+  });
+
+  // res.redirect('/');
+});
 
 app.get('/getEmails', 
   users.auth,
@@ -467,4 +434,78 @@ app.get('/allDatabases', function(req, res){
     res.send(data);
   });
 });
+
+var ddoc = 'app',
+  id = '_design/' + ddoc,
+  views = {
+    "householdsAndPeople": {
+        "map": "function (doc) {\n    if (doc.type == \"household\"){\n      emit([doc.type, doc.name, doc._id], 1);\n    }\n    if(doc.type == \"person\"){\n      emit([doc.type, doc.household_id, doc.first], 1);\n    }\n  }"
+    },
+    "join_people_to_household": {
+        "map": "function (doc) {\n    if (doc.type == \"person\" && doc.household_id){\n      emit(doc.household_id, 1);\n    }\n  }"
+    },
+    "signups": {
+        "map": "function (doc){\n    var split = doc.arrive.split(\"T\");\n    split = split[0].split(\"-\");\n\n    // take out leading zeros from month and day here before parseInt\n    // http://stackoverflow.com/questions/8763396/javascript-parseint-with-leading-zeros\n\n    var arrive = [\n      parseInt(split[0], 10),\n      parseInt(split[1], 10),\n      parseInt(split[2], 10)\n      ];\n    if(doc.type == 'signup'){\n      emit(arrive, 1);\n    }\n  }"
+    },
+    "people": {
+        "map": "function (doc) {\n    if (doc.type == \"person\"){\n      emit(doc._id, 1);\n    }\n  }"
+    },
+    "emails": {
+           "map": "function(doc){ if(doc.type == \"person\" && doc.email && doc.status && doc.first && doc.last){ emit(doc.status, [doc.email, doc.first + ' ' + doc.last]) } }"    }
+  };
+
+var compareViews = function(){
+  var stringBodyViews = '', // this will hold the views that are in the db
+    stringViews = ''; // this will hold the views that are in this file
+
+  // steps
+  // 1. make sure we're in dev mode (ie, working locally)
+  // dev mode is set in the .env file as `dev=true`
+  // in production, `dev` will not exist in the env vars
+  // note: @ top of file, `dev` is set depending on what's in .env
+  if(!dev)
+    return true;
+  // 2. compare the views in this file with the views in the db
+  // 3. if they're different, update the views in the db and...
+  // 4. retry the endpoint
+
+
+    // 2. compare the views in the db with the views in this doc
+    // first get the view
+    db.get('_design/app', {}, function(err, body) {
+      if(!err){
+
+        // in order to compare,
+        // turn both view objects to strings and then remove all whitespace
+        // body.views first
+        stringBodyViews = JSON.stringify(body.views);
+        stringBodyViews.replace(/\s/g,'');
+
+        // views second
+        stringViews = JSON.stringify(views);
+        stringViews.replace(/\s/g,'');
+
+        // if they don't match... 
+        if(stringBodyViews != stringViews){
+          console.log('views are NOT equal');
+          body.views = views;
+          // 3. update the db
+          db.insert(body, function(err, body){
+            if(!err){
+              console.log('views updated!', body);
+              return false;
+            }
+          });
+        } 
+        else {
+          console.log('views are equal');
+          return true;
+        }
+
+      }
+    });
+};
+
+
+
 */
