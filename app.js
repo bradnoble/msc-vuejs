@@ -27,22 +27,20 @@ http.listen(appEnv.port, "0.0.0.0", function() {
 
 // auth
 var passport = require('passport'),
-//  Strategy = require('passport-http').BasicStrategy,
-  Strategy = require('passport-local'),
+  Strategy = require('passport-http').BasicStrategy,
   users = require('./lib/auth.js');
-
 
 app.use(express.static(__dirname + '/public'));
 
 //nothing to be done - call callback
 passport.serializeUser(function(user, done) {
-  console.log('serializeUser');
+  // console.log('serializeUser');
   done(null, user);
 });
 
 //nothing to be done - call callback
 passport.deserializeUser(function(obj, done) {
-  console.log('deserializeUser');
+  // console.log('deserializeUser');
   done(null, obj);
 });
 
@@ -59,16 +57,16 @@ passport.use(users.passportStrategy());
 
 
 app.get('/logout', function(req, res){
-  console.log('session', req.session);
-  console.log('user', req.user);
-  req.logout();
-  req.session.destroy(function (err) {
-    if (err) { return next(err); }
-    // The response should indicate that the user is no longer authenticated.
-    return res.send({ authenticated: req.isAuthenticated() });
-  });
-
-  // res.redirect('/');
+  // console.log('session', req.session);
+  // console.log('user', req.user);
+  req.session.loggedOut = true;
+  //req.logout();
+  // req.session.destroy(function (err) {
+  //   if (err) { return next(err); }
+  //   // The response should indicate that the user is no longer authenticated.
+  //   return res.send({ authenticated: req.isAuthenticated() });
+  // });
+   res.redirect('/');
 });
 
 app.get('/getEmails', 
