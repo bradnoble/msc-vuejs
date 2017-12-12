@@ -189,7 +189,7 @@ for(var k in obj) keys.push(k);
         var people_fields = [ 'last','first','status','household_id','phone','email','work_phone','dob','gender','type'];
         var household_fields = ['name', 'label_name', 'street1', 'street2', 'city', 'state', 'zip','mail_list', 'mail_news'];
 */
-        var household_fields = ['name', 'label_name', 'street1', 'street2', 'city', 'state', 'zip','mail_list', 'mail_news'];
+        var household_fields = ['name', 'label_name', 'street1', 'street2', 'city', 'state', 'zip','phone', 'mail_list', 'mail_news'];
 
         var fields = people_fields.concat(household_fields);
 
