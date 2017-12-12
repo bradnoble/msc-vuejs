@@ -34,7 +34,8 @@ app.use(express.static(__dirname + '/public'));
 
 //nothing to be done - call callback
 passport.serializeUser(function(user, done) {
-  // console.log('serializeUser');
+  console.log('serializeUser');
+  console.log('user', user);
   done(null, user);
 });
 
@@ -46,7 +47,9 @@ passport.deserializeUser(function(obj, done) {
 
 var sess = {
   secret: 'keyboard cat',
-  cookie: {}
+  cookie: {},
+  resave: false, // https://github.com/expressjs/session#options
+  saveUninitialized: false 
 };
 
 app.use(session(sess));
