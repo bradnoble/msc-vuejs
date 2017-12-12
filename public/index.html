@@ -26,7 +26,7 @@
   </head>
 
   <body>  
-    <div id="app">
+    <div id="app" class="grey lighten-2">
       <div class="navbar-fixed row">
         <nav>
           <div class="nav-wrapper white col s12 m12">
@@ -161,20 +161,21 @@
           <a href="/#list">Membership List</a> / Edit Household
         </h6>
         <div class="row">
-          <div class="col m5 s12">
+          <div class="col m4 s12">
             <ul class="collection">
-              <a v-on:click="loadTab('summary')" class="collection-item" :class="{'active': open=='summary'}">
-                  Summary
-                <span class="secondary-content"><i class="material-icons">chevron_right</i></span>
-              </a>
               <a v-on:click="loadTab('household')" class="collection-item" :class="{'active': open=='household'}">
-                  Mailing info
+                <i class="material-icons tiny">edit</i> 
+                Mailing info
                 <span class="secondary-content"><i class="material-icons">chevron_right</i></span>
               </a>
               <a v-for="(person, index) in item.people" v-on:click="loadTab(index)" class="collection-item" :class="{'active': open==index}">
-                <i class="material-icons tiny">person</i> 
+                <i class="material-icons tiny">edit</i> 
                 <span v-if="!person.first && !person.last">{{ person._id }}</span>
                 <span v-if="person.first && person.last">{{ person.first }} {{ person.last }}</span> ({{ person.status }})
+                <span class="secondary-content"><i class="material-icons">chevron_right</i></span>
+              </a>
+              <a v-on:click="loadTab('summary')" class="collection-item" :class="{'active': open=='summary'}">
+                  Summary
                 <span class="secondary-content"><i class="material-icons">chevron_right</i></span>
               </a>
             </ul>
@@ -190,9 +191,29 @@
             -->
           </div>
 
-          <div class="col m6 offset-m1 s12">
-            <ul>
-              <li>
+          <div class="col m8 s12">
+            <div class="card">
+              <div class="card-content">
+                <div v-if="open == 'summary'">
+                  <h5>Summary</h5>
+                  <div class="row">
+                    <div class="col m6 s12">
+                      <h6>Household info</h6>
+                      <household v-bind:item="item"></household>
+                    </div>
+                    <div class="col m6 s12">
+                      <h6>People</h6>
+                      <ul>
+                        <person 
+                          v-for="person in item.people" 
+                          v-bind:key="person._id" 
+                          v-bind:item="person">
+                        </person>
+                      </ul>
+                    </div>
+                  </div>                    
+                </div>
+
                 <div v-if="open == 'household'">
                   <h5>
                     Address &amp; phone
@@ -235,7 +256,6 @@
                     <input type="text" id="household_phone" v-model="item.phone"  />
                     <label for="household_phone" class="active">Household Phone</label>
                   </div>
-
                   <div class="section">
                     <h5>
                       Harcopies
@@ -263,99 +283,88 @@
                   </div>
 
                 </div>
-              </li>
-              <li v-for="(person, index) in item.people">
-                <div v-if="open == index" class="">
-                  
-                  <div class="row">
-                    <div class="input-field col m6 s12">              
-                      <input type="text" id="person_first" v-model="person.first"  />
-                      <label for="person_first" class="active">First name</label>
+                
+                <div v-for="(person, index) in item.people" v-if="open == index" >
+                    <h5>Edit person</h5>                    
+                    <div class="row">
+                      <div class="input-field col m6 s12">              
+                        <input type="text" id="person_first" v-model="person.first"  />
+                        <label for="person_first" class="active">First name</label>
+                      </div>
+                      <div class="input-field col m6 s12">              
+                        <input type="text" id="person_last" v-model="person.last"  />
+                        <label for="person_last" class="active">Last name</label>
+                      </div>
                     </div>
-                    <div class="input-field col m6 s12">              
-                      <input type="text" id="person_last" v-model="person.last"  />
-                      <label for="person_last" class="active">Last name</label>
+                    <div class="row">
+                      <div class="input-field col m12 s12">              
+                        <input type="text" id="person_email" v-model="person.email"  />
+                        <label for="person_email" class="active">Email</label>
+                      </div>
                     </div>
-                  </div>
-                  <div class="row">
-                    <div class="input-field col m12 s12">              
-                      <input type="text" id="person_email" v-model="person.email"  />
-                      <label for="person_email" class="active">Email</label>
+                    <div class="row">
+                      <div class="input-field col s6">              
+                        <input type="text" id="person_phone" v-model="person.phone"  />
+                        <label for="person_phone" class="active">Phone</label>
+                      </div>
+                      <div class="input-field col s6">              
+                        <input type="text" id="person_work_phone" v-model="person.work_phone"  />
+                        <label for="person_work_phone" class="active">Work phone</label>
+                      </div>
                     </div>
-                  </div>
-                  <div class="row">
-                    <div class="input-field col s6">              
-                      <input type="text" id="person_phone" v-model="person.phone"  />
-                      <label for="person_phone" class="active">Phone</label>
+                    <div class="row">
+                      <div class="col m6 s12">              
+                        <label>Membership status</label>
+                        <p v-for="(value, idx) in statuses">
+                          <input 
+                            type="radio" 
+                            :name="person._id + '-' + idx" 
+                            :id="person._id + '-' + idx" 
+                            :value="value" 
+                            v-model="person.status" v-on:change="killDOB(index)" />
+                          <label v-bind:for="person._id + '-' + idx">{{ value }}</label>
+                        </p>                
+                      </div>
+                      <div class="col m6 s12">              
+                        <label>Gender</label>
+                        <p v-for="(value, index) in genders">
+                          <input type="radio" 
+                            :name="person._id + '-gender-' + index" 
+                            :id="person._id + '-gender-' + index" 
+                            :value="value" 
+                            v-model="person.gender" />
+                          <label :for="person._id + '-gender-' + index">{{ value }}</label>
+                        </p>                
+                      </div>
                     </div>
-                    <div class="input-field col s6">              
-                      <input type="text" id="person_work_phone" v-model="person.work_phone"  />
-                      <label for="person_work_phone" class="active">Work phone</label>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col m6 s12">              
-                      <label>Membership status</label>
-                      <p v-for="(value, idx) in statuses">
-                        <input 
-                          type="radio" 
-                          :name="person._id + '-' + idx" 
-                          :id="person._id + '-' + idx" 
-                          :value="value" 
-                          v-model="person.status" v-on:change="killDOB(index)" />
-                        <label v-bind:for="person._id + '-' + idx">{{ value }}</label>
-                      </p>                
-                    </div>
-                    <div class="col m6 s12">              
-                      <label>Gender</label>
-                      <p v-for="(value, index) in genders">
-                        <input type="radio" 
-                          :name="person._id + '-gender-' + index" 
-                          :id="person._id + '-gender-' + index" 
-                          :value="value" 
-                          v-model="person.gender" />
-                        <label :for="person._id + '-gender-' + index">{{ value }}</label>
-                      </p>                
-                    </div>
-                  </div>
-                  <!--
-                    <div class="input-field" v-if="person.status == 'child'">              
-                        <input type="text" id="person_dob" v-model="person.dob"  />
+                    <!--
+                      <div class="input-field" v-if="person.status == 'child'">              
+                          <input type="text" id="person_dob" v-model="person.dob"  />
+                          <label for="person_dob" class="active">Date of birth</label>
+                        </div>
+                        -->
+                    <div class="row" v-if="person.status == 'child' || person.status == 'junior'" >
+                      <div class="input-field col m12 s12">              
+                        <input type="text" id="person_dob" v-model="person.dob" />
                         <label for="person_dob" class="active">Date of birth</label>
                       </div>
-                      -->
-                  <div class="row" v-if="person.status == 'child' || person.status == 'junior'" >
-                    <div class="input-field col m12 s12">              
-                      <input type="text" id="person_dob" v-model="person.dob" />
-                      <label for="person_dob" class="active">Date of birth</label>
                     </div>
-                  </div>
-                  <div>
-                    <p>
-                      <input type="checkbox" v-bind:id="person._id" v-model="person._deleted" v-on:click="removePerson(index)" />
-                      <label v-bind:for="person._id" class="red-text text-darken-2">Remove this person</label>
-                    </p>
-                  </div>
-
+                    <div>
+                      <p>
+                        <input type="checkbox" v-bind:id="person._id" v-model="person._deleted" v-on:click="removePerson(index)" />
+                        <label v-bind:for="person._id" class="red-text text-darken-2">Remove this person</label>
+                      </p>
+                    </div>
                 </div>
-              </li>
-              <li v-if="open == 'summary'">
-                <household v-bind:item="item"></household>
-                <ul>
-                  <person 
-                    v-for="person in item.people" 
-                    v-bind:key="person._id" 
-                    v-bind:item="person">
-                  </person>
-                </ul>
-              </li>
-            </ul>
-            <div class="section">
-                <a v-on:click="saveMe()" id="save" class="waves-effect waves-light btn red col m6">Save</a>
-                <a href="#/" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</a>
-            </div>
-          </div>
-        </div>
+
+              </div><!--card-content-->
+              <div class="card-action grey lighten-4">
+                  <button v-on:click="saveMe()" id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
+                  <a href="#/" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</a>
+              </div>
+            </div><!--card-->
+          </div><!--col-->
+        </div><!--row-->
 
       </div>
     </script>
