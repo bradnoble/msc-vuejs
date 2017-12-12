@@ -157,13 +157,8 @@ app.get('/getPeopleForCSV',
           var mapped = function(data){
             return data.rows.map(function(row) {
               if(row.doc.type == 'household'){
+                row.doc.household_phone = row.doc.phone;
                 households[row.doc._id] = row.doc;
-/*
-                if(household_fields.length == 0 && row.doc.street1){
-                  household_fields = Object.keys(row.doc);
-                  console.log(household_fields);
-                }
-*/
               }
               if(row.doc.type == 'person'){
                 people[z] = row.doc;
@@ -189,7 +184,7 @@ for(var k in obj) keys.push(k);
         var people_fields = [ 'last','first','status','household_id','phone','email','work_phone','dob','gender','type'];
         var household_fields = ['name', 'label_name', 'street1', 'street2', 'city', 'state', 'zip','mail_list', 'mail_news'];
 */
-        var household_fields = ['name', 'label_name', 'street1', 'street2', 'city', 'state', 'zip','phone', 'mail_list', 'mail_news'];
+        var household_fields = ['name', 'label_name', 'street1', 'street2', 'city', 'state', 'zip', 'household_phone', 'mail_list', 'mail_news'];
 
         var fields = people_fields.concat(household_fields);
 
