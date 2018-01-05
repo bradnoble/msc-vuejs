@@ -157,6 +157,7 @@ app.get('/getPeopleForCSV',
           var mapped = function(data){
             return data.rows.map(function(row) {
               if(row.doc.type == 'household'){
+                // see 'household_phone' comment below
                 row.doc.household_phone = row.doc.phone;
                 households[row.doc._id] = row.doc;
               }
@@ -172,19 +173,12 @@ app.get('/getPeopleForCSV',
             });
           };
 
-
-
-/*
-var keys = [];
-for(var k in obj) keys.push(k);
-*/
-
         var data = mapped(resp);
-/*
-        var people_fields = [ 'last','first','status','household_id','phone','email','work_phone','dob','gender','type'];
-        var household_fields = ['name', 'label_name', 'street1', 'street2', 'city', 'state', 'zip','mail_list', 'mail_news'];
-*/
         var household_fields = ['name', 'label_name', 'street1', 'street2', 'city', 'state', 'zip', 'household_phone', 'mail_list', 'mail_news'];
+        // household_phone
+        // note that I'm using 'household_phone' here in household_fields
+        // people and households both have 'phone' fields and as such was presenting people phones as household phones
+        // at line 160 I work in 'household_phone' to replace 'phone' for households
 
         var fields = people_fields.concat(household_fields);
 
