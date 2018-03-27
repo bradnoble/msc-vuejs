@@ -116,8 +116,63 @@ var editHousehold = {
   }
 };
 
-var list = {
-  template: '#list',
+
+var adminPouch = {
+  template: '#admin',
+  data: function(){
+    return {
+      items: [],
+      loading: false
+    }
+  },
+  created: function() {
+    document.title = 'Admin';
+    this.loading = true;
+    this.$http.get('/admin')
+      .then(
+        function(resp){
+          console.log(resp.data);
+/*
+          var doc = resp.data;
+          doc._id = "_local/config";
+          db.put(doc);
+*/
+        }
+      );
+//    this.start();
+  },
+  methods: {
+    start: function(){
+      // this.items = {'hi':'yes'}
+      _this = this;
+/*
+      db.get('_local/config').then(function (doc) {
+        console.log(doc);
+        _this.items = doc;
+      });
+    */
+    },
+    destroy: function(){
+      var doc = '_local/config';
+      _this = this;
+
+      db.get(doc).then(function(doc) {
+        return db.remove(doc);
+      }).then(function (result) {
+        _this.start();
+        // handle result
+      }).catch(function (err) {
+        console.log(err);
+      });
+    }
+  }
+};
+
+
+
+
+var admin = {
+  template: '#admin',
   data: function(){
     return {
       items: [],
@@ -126,14 +181,14 @@ var list = {
     }
   },
   created: function(){
-    document.title = 'List';
+    document.title = 'Admin';
     this.loading = true;
     this.start();
   },
   methods: {
     start: function(){
       _this = this;
-      this.$http.get('/getHouseholdsAndPeople')
+      this.$http.get('/admin')
         .then(
           function(resp){
             var data = resp.data;
@@ -162,6 +217,120 @@ var list = {
       if(!str){
         this.start();
       };
+
+      console.log(str)
+
+      for(i=0; i < this.items.length; i++){
+        // each item has its own counter
+        var counter = 0;
+  
+        // if search terms have hits in the search string, increment the counter
+        for(j=0; j < array.length; j++){
+          if(this.items[i].str.toLowerCase().trim().indexOf(array[j].toLowerCase().trim()) > -1){
+            counter++
+          } 
+        }
+
+        // if these conditions are met, show the item
+        // 1. is the counter more than zero, where it started?
+        // 2. does counter equal the length of array of search terms?
+        // (on 2 -- if true, every search term has a hit)
+        if(counter > 0 && counter == array.length){
+          delete this.items[i].hide;
+        } else {
+          this.items[i].hide = true;
+        }
+      }
+    }       
+  }
+}
+
+
+var list = {
+  template: '#list',
+  data: function(){
+    return {
+      items: [],
+      searchStr: '',
+      loading: false
+    }
+  },
+  created: function(){
+    document.title = 'List';
+    this.loading = true;
+    this.start();
+  },
+  methods: {
+    start: function(){
+      _this = this;
+      this.$http.get('/list')
+        .then(
+          function(resp){
+            var data = resp.data;
+            // create a string to search against
+            for(i=0; i < data.length; i++){
+              data[i].str = '';
+              var array = [data[i].first, data[i].last, data[i].household.name, data[i].household.label_name];
+              data[i].str = array.join(' ');
+            }
+            // update the view with the result
+            _this.items = data;
+            _this.loading = false;
+          }
+        );
+    },
+    clearSearchStr: function(){
+      this.searchStr = '';
+      this.start();
+    },
+    search: function(){
+      var str = this.searchStr.trim();
+      var array = str.split(' ');
+
+      // if the user deletes the search string, reset the list
+      if(!str){
+        this.start();
+      } else if (str.length >=3){
+        // console.log(str)
+
+        for(i=0; i < this.items.length; i++){
+          // each item has its own counter
+          var counter = 0;
+    
+          // if search terms have hits in the search string, increment the counter
+          for(j=0; j < array.length; j++){
+            if(this.items[i].str.toLowerCase().trim().indexOf(array[j].toLowerCase().trim()) > -1){
+              counter++
+            } 
+          }
+  
+          // if these conditions are met, show the item
+          // 1. is the counter more than zero, where it started?
+          // 2. does counter equal the length of array of search terms?
+          // (on 2 -- if true, every search term has a hit)
+          if(counter > 0 && counter == array.length){
+            delete this.items[i].hide;
+          } else {
+            this.items[i].hide = true;
+          }
+        }
+      }
+    },
+    viewHousehold: function(household_id){
+      var container = household_id;
+      console.log(container);
+      $('.' + container).html('')
+    },
+    search_old: function(){
+      var str = this.searchStr.trim();
+      var array = str.split(' ');
+
+      // if the user deletes the search string, reset the list
+      if(!str){
+        this.start();
+      };
+
+      console.log(str)
 
       for(i=0; i < this.items.length; i++){
         // each item has its own counter
@@ -200,7 +369,6 @@ var emails = {
     }
   },
   created: function(){
-    this.loading = true;
     this.start();
     document.title = 'emails';
   },
@@ -209,7 +377,9 @@ var emails = {
       _this = this;
       _this.loading = true;
       var params = {},
+        // get keys out of the selected object
         keys = Object.keys(this.selected);
+      
       // put the keys into a string, to send as params to the API
       params.statuses = (keys.length > 0) ? keys.join(',') : null;
       this.$http.get('/getEmails', params)
@@ -225,14 +395,19 @@ var emails = {
             // update the view with the result
             _this.items = blob;
             _this.loading = false;
+            $('#emails').trigger('autoresize');
           }
         );
     },
     toggleStatus: function(status){
-      if(!this.selected[status]){
-        this.selected[status] = true;
+      if(status){
+        if(!this.selected[status]){
+          this.selected[status] = true;
+        } else {
+          delete this.selected[status]
+        }  
       } else {
-        delete this.selected[status]
+        this.selected = {};
       }
       // replace the entire object b/c we've deleted stuff
       // https://vuejs.org/v2/guide/reactivity.html
@@ -240,11 +415,65 @@ var emails = {
       this.start();
     },
     selectEmails: function(){
-      $('#emails').select();
-      this.emailsSelected = "Emails selected"
+      var copyText = $('#emails').select();
+//      this.emailsSelected = "Emails selected"
+      /* Get the text field */
+      // var copyText = document.getElementById("emails");
+
+      /* Select the text field */
+      // copyText.select();
+
+      /* Copy the text inside the text field */
+      document.execCommand("Copy");
+
+      /* Alert the copied text */
+      alert("Copied the text: " + copyText.value);
     }
   }
 };
+
+
+var viewHousehold = {
+  template: '#view-household',
+  data: function(){
+    return {
+      item: {}
+    }
+  },
+  created: function() {
+    this.start();
+  },
+  methods: {
+    setPageTitle: function(){
+      document.title = (this.item.name) ? this.item.name : 'View Household';
+    },
+    start: function() {
+      _this = this;
+      this.$http.get('/getHousehold/', 
+        {
+          id: this.$route.params.id
+        })
+        .then(function(resp){
+          // console.log('start', resp)        
+          _this.item = resp.data;
+          _this.setPageTitle();
+          }, 
+          function(error){
+          _this.item = {
+            name: 'sorry!'
+          }
+        }
+      );
+    }
+  },
+  watch: {
+    '$route' (to, from) {
+      console.log('$route', to, from)
+      this.start();
+    }
+  }
+};
+
 
 // 2. Define some routes
 // Each route should map to a component. The "component" can
@@ -252,9 +481,22 @@ var emails = {
 // `Vue.extend()`, or just a component options object.
 // We'll talk about nested routes later.
 const routes = [
-  { path: '/list', component: list, alias: '/' },
+  { 
+    path: '/list', 
+    component: list, 
+    alias: '/'
+  },
+
+  { 
+    path: '/list/:id', 
+    components: {
+      default: viewHousehold
+    }, 
+    props: true 
+  },
+  { path: '/admin', component: admin },
+  { path: '/admin/:id', component: editHousehold, props: true },
   { path: '/emails', component: emails },
-  { path: '/list/:id', component: editHousehold, props: true },
   { path: '/list/turn-off/:id', component: editHousehold, props: true }
 ]
 
@@ -265,34 +507,25 @@ const router = new VueRouter({
   routes // short for `routes: routes`
 });
 
-Vue.component('household', {
-  template: '<div> \
-    <b>{{ item.label_name }}</b><br /> \
-    {{ item.street1 }} {{ item.street2 }}<br /> \
-    {{ item.city }} {{ item.state }} {{ item.zip }}<br /> \
-    {{ item.phone }}<br /> \
-    <b>Mail newsletter?</b> {{ item.mail_news }}<br /> \
-    <b>Mail list?</b> {{ item.mail_list }}<br /> \
-    </div>',
-  props: ['item'],
-  methods: {
-    start: function(){
-      console.log('hi')
-    }
-  }  
+Vue.component('location', {
+  template: '#view-location',
+  props: ['item']
 });
 
 Vue.component('person', {
-  template: '<li> \
-    <b>{{ item.first }} {{ item.last }}</b> \
-    <span v-if="item.status">({{ item.status }})</span> \
-    <span v-if="item.dob"> | {{ item.dob }}</span> \
-    <span v-if="item.email"> | {{ item.email }}</span> \
-    <span v-if="item.phone"> | {{ item.phone }}</span> \
-    <span v-if="item.work_phone"> | Work: {{ item.work_phone }}</span> \
-    </li>',
+  template: '#view-person',
   props: ['item']
-})
+});
+
+Vue.component('person-name', {
+  template: '#view-person-name',
+  props: ['item']
+});
+
+Vue.component('person-contact-info', {
+  template: '#view-person-contact-info',
+  props: ['item']
+});
 
 var vm = new Vue({
   el: '#app',

@@ -7,13 +7,12 @@ var cfenv = require("cfenv"),
   jsonParser = bodyParser.json(),
   json2csv = require('json2csv'),
   opts = (process.env.VCAP_SERVICES) ? {vcapServices: JSON.parse(process.env.VCAP_SERVICES)} : {url: process.env.url},
-  dev = (process.env.NODE_ENV) ? process.env.NODE_ENV : false // are we in dev mode?
+  env = (process.env.mode) ? process.env.mode : 'prod' // are we in dev mode?
   ;
 
-  // Initialize the library with my account
-//var cloudant = Cloudant(account:'bradnoble', password:'cl0udant', url:'http://127.0.0.1:5984');// if you don't specify URL, assumes cloudant.com'
+// Initialize Cloudant
 var cloudant = require('cloudant')(opts);
-var db = cloudant.db.use("msc");
+var db = (env == 'dev') ? cloudant.db.use("msc-dev") : cloudant.db.use("msc");
 
 // Create a new Express application.
 var app = express();
@@ -34,8 +33,8 @@ app.use(express.static(__dirname + '/public'));
 
 //nothing to be done - call callback
 passport.serializeUser(function(user, done) {
-  console.log('serializeUser');
-  console.log('user', user);
+  // console.log('serializeUser');
+  // console.log('user', user);
   done(null, user);
 });
 
@@ -72,34 +71,7 @@ app.get('/logout', function(req, res){
    res.redirect('/');
 });
 
-app.get('/getEmails', 
-  users.auth,
-  function(req, res){
-
-    var params = (req.query.statuses) ? req.query.statuses : null;
-    var opts = {};
-    if(params){
-      console.log(params);
-      console.log(params.split(','));
-      console.log('params length', params.length);
-      opts.keys = params.split(',');
-    } 
-
-    // get the results of the API call
-    db.view('app', 'emails', opts, function(err, resp){
-      if (!err) {
-        // console.log(resp);
-        res.send(resp);
-      } 
-      else {
-        console.log('error', err)        
-        res.send(err);
-      }
-    });
-  }
-);
-
-app.get('/getHouseholdsAndPeople', 
+app.get('/admin', 
   users.auth,
   function(req, res){
     //db.view(designname, viewname, [params], [callback])
@@ -138,6 +110,69 @@ app.get('/getHouseholdsAndPeople',
   }
 );
 
+
+app.get('/getEmails', 
+  users.auth,
+  function(req, res){
+
+    var params = (req.query.statuses) ? req.query.statuses : null;
+    var opts = {};
+    if(params){
+      console.log(params);
+      console.log(params.split(','));
+      console.log('params length', params.length);
+      opts.keys = params.split(',');
+    } 
+
+    // get the results of the API call
+    db.view('app', 'emails', opts, function(err, resp){
+      if (!err) {
+        // console.log(resp);
+        res.send(resp);
+      } 
+      else {
+        console.log('error', err)        
+        res.send(err);
+      }
+    });
+  }
+);
+
+app.get('/list', 
+  users.auth,
+  function(req, res){
+    //db.view(designname, viewname, [params], [callback])
+    db.view('app', 'householdsAndPeople', {'include_docs': true}, function(err, resp){
+      if (!err) {
+        var mapped = function(data){
+          return data.rows.map(function(row) {
+            return row.doc; // this is the entire payload
+          });
+        };
+        // add people to the household
+        var docs = mapped(resp);
+        var households = {};
+        var people = [];
+        for (i = 0; i < docs.length; i++) { 
+          if(docs[i].type == 'person' && docs[i].first && docs[i].last && docs[i].status != 'deceased' && docs[i].status != 'non-member'){
+            // build an object that holds objects that hold arrays of people
+            people.push(docs[i]);
+          } else if (docs[i].type == 'household') {
+            households[docs[i]._id] = docs[i];
+          }
+          // console.log(people);
+        }
+        for (i = 0; i < people.length; i++) { 
+          // connect the household info to the person
+          people[i].household = households[people[i].household_id]
+        }
+        // console.log(docs[1]);
+        res.send(people);
+      }
+    });
+  }
+);
+
 app.get('/getPeopleForCSV', 
   function(req, res){
 
@@ -152,8 +187,6 @@ app.get('/getPeopleForCSV',
           var household_fields = [];
           var whitelist = ['_id', '_rev', 'type'];
 
-
-
           var mapped = function(data){
             return data.rows.map(function(row) {
               if(row.doc.type == 'household'){
@@ -161,7 +194,7 @@ app.get('/getPeopleForCSV',
                 row.doc.household_phone = row.doc.phone;
                 households[row.doc._id] = row.doc;
               }
-              if(row.doc.type == 'person'){
+              if(row.doc.type == 'person' && row.doc.status != 'deceased' && row.doc.status != 'non-member' && row.doc.status != 'guest' && row.doc.status != ''){
                 people[z] = row.doc;
                 if(people_fields.length == 0 && row.doc.household_id){
                   people_fields = Object.keys(row.doc);
