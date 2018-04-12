@@ -240,8 +240,11 @@
           <ul class="collection">
             <li class="collection-item grey lighten-4 row">
               <div class="input-field col m12 s12">
-                <span class="prefix" v-if="searchStr"><i class="material-icons" v-on:click="clearSearchStr()" title="clear the search input">clear</i></span>
-                <input id="search" v-model="searchStr" @keyup="search()" placeholder="First of last name..." />
+                <span class="prefix">
+                  <i class="material-icons" v-if="searchStr" v-on:click="clearSearchStr()" title="clear the search input">clear</i>
+                  <i class="material-icons" v-if="!searchStr" title="search">search</i>
+                </span>
+                <input id="search" v-model="searchStr" @keyup="search()" placeholder="First or last name..." />
                 <label for="search" class="active">Search by name</label>
               </div>      
             </li>
