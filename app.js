@@ -62,13 +62,13 @@ app.get('/logout', function(req, res){
   // console.log('session', req.session);
   // console.log('user', req.user);
   req.session.loggedOut = true;
-  //req.logout();
+  // req.logout();
   // req.session.destroy(function (err) {
   //   if (err) { return next(err); }
   //   // The response should indicate that the user is no longer authenticated.
   //   return res.send({ authenticated: req.isAuthenticated() });
   // });
-   res.redirect('/');
+  res.send('You are logged out.');
 });
 
 app.get('/admin', 

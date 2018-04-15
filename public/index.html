@@ -72,8 +72,9 @@
         <li><router-link to="/list">Membership List</router-link></li>
         <li><router-link to="/emails"><i class="material-icons tiny">email</i> Email Addresses</router-link></li>
         <li><a href="/getPeopleForCSV"><i class="material-icons tiny">file_download</i> Download List</a></li>
-        <li><a href="/#admin/new"><i class="material-icons">add</i> Add Houseohld</a></li>
-        <li><a href="/logout">Logout</a></li>
+        <li><router-link to="/admin/new">Add Household</router-link></li>
+        <li><router-link to="/admin">Admin</router-link></li>
+        <li><router-link to="/logout">Logout</router-link></li>
       </ul><!-- sideNav -->
 
       <div class="container">       
@@ -189,13 +190,13 @@
     <script type="text/x-template" id="view-person">
       <li class="row collection-item">
         <div class="col m6"><person-name :item="item"></person-name></div>
-        <div class="col m6"><person-contact-info v-bind:item="item"></person-contact-info></div>
+        <div class="col m6"><person-contact-info :item="item"></person-contact-info></div>
       </li>
     </script>
 
     <script type="text/x-template" id="view-person-name">
       <span>
-        <b>{{ item.first }} {{ item.last }}</b><br />
+        <b>{{ item.last }}, {{ item.first }}</b><br />
         {{ item.status }}
       </span>
     </script>
@@ -203,7 +204,7 @@
     <script type="text/x-template" id="view-person-contact-info">
       <span>
         <span v-if="item.email" class="chip"><i class="material-icons tiny">email</i> {{ item.email }}</span>
-        <span v-if="item.phone" class="chip"><i class="material-icons tiny">phone</i> {{ item.phone }}</span>
+        <span v-if="item.phone" class="chip"><i class="material-icons tiny">phone_iphone</i> {{ item.phone }}</span>
       </span>
     </script>
 
@@ -474,6 +475,12 @@
         </div><!--row-->
 
       </div>
+    </script>
+
+    <script type="text/x-template" id="logout">
+      <span>
+        <h1>{{ item }}</h1>
+      </span>
     </script>
 
     <!--Import jQuery before materialize.js-->

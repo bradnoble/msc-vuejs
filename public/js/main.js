@@ -474,6 +474,38 @@ var viewHousehold = {
   }
 };
 
+var logout = {
+  template: '#logout',
+  data: function(){
+    return {
+      item: {}
+    }
+  },
+  created: function() {
+    this.start();
+  },
+  methods: {
+    setPageTitle: function(){
+      document.title = (this.item.name) ? this.item.name : 'Logout';
+    },
+    start: function() {
+      _this = this;
+      this.$http.get('/logout')
+        .then(function(resp){
+          // console.log('start', resp)        
+          _this.item = resp.data;
+          _this.setPageTitle();
+          }, 
+          function(error){
+          _this.item = {
+            name: 'sorry!'
+          }
+        }
+      );
+    }
+  }
+};
+
 
 // 2. Define some routes
 // Each route should map to a component. The "component" can
@@ -486,7 +518,6 @@ const routes = [
     component: list, 
     alias: '/'
   },
-
   { 
     path: '/list/:id', 
     components: {
@@ -494,6 +525,7 @@ const routes = [
     }, 
     props: true 
   },
+  { path: '/logout', component: logout },
   { path: '/admin', component: admin },
   { path: '/admin/:id', component: editHousehold, props: true },
   { path: '/emails', component: emails },
