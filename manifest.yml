@@ -7,6 +7,7 @@ applications:
 - name: msc
   path: .
   instances: 1
+  buildpack: sdk-for-nodejs
   disk_quota: 512M
   memory: 256M
   host: msc

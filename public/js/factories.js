@@ -1,10 +1,11 @@
 // each person can be one of these
 var getStatuses = function(){
-  return ['active','inactive','life','junior','child','non-member','applicant','honorary']; 
+  return ['active','inactive','life','junior','child','non-member','applicant','honorary','deceased']; 
 }
+
 // each person can be one of these
 var getGenders = function(){
-  return ['Male','Female']; 
+  return ['Male','Female'];
 }
 
 var docDefaults = function(type) {
