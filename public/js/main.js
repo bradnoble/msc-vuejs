@@ -1,3 +1,11 @@
+//Page init
+$(function () {
+  $('.dropdown-trigger').dropdown();
+  $('.modal').modal();
+  //>>MaterializeCSS 1.0.0 features
+  // $('.tooltipped').tooltip();
+  // $('.tap-target').featureDiscovery();
+});
 
 // 1. Define route components.
 // These can be imported from other files
@@ -167,9 +175,6 @@ var adminPouch = {
     }
   }
 };
-
-
-
 
 var admin = {
   template: '#admin',
@@ -506,6 +511,125 @@ var logout = {
   }
 };
 
+/*
+* Resources: module (Google Drive)
+*/
+var resources = {
+  template: '#resources',
+  data() {
+    return {
+      path: [],
+      files: []
+    }
+  },
+  created() {
+    document.title = 'Resources - MSC';
+    this.init();
+    this.start();
+  },
+  methods: {
+    init: function () {
+      let _this = this;
+    },
+    start: function () {
+      this.$http.get('/resources')
+        .then((res) => {
+          this.path.push({ name: 'MSC Drive', id: '-1' });
+          this.files = res.data;
+        }
+        );
+    },
+    onFolderView: function (file, event) {
+
+      //Only process if a folder...
+      if (file.mimeType.includes('folder')) {
+        const _this = this;
+
+        this.$http.get('/resources/' + file.id)
+          .then((res) => {
+            _this.path.push({ name: file.name, id: file.id });
+            _this.files = res.data;
+
+            //Format file size to KB etc.
+            $.each(_this.files, function (index, file) {
+              file.size = formatBytes(file.size);
+            })
+
+          }
+          );
+      }
+    },
+    onFileView: function (file, event) {
+
+      const _this = this;
+
+      this.$http.get('/resources/view/' + file.id)
+        .then((res) => {
+          console.log('Response back w/ PDF data');
+
+          //Decode base-64 string
+          let pdfData = atob(res.data);
+
+          //Convert to byte array
+          var uint8Array = new Uint8Array(pdfData.length);
+          for (var i = 0; i < pdfData.length; i++) {
+            uint8Array[i] = pdfData.charCodeAt(i);
+          }
+
+          //Load iframe for PDF viewer
+          var pdfjsframe = document.getElementById('pdfViewer');
+
+          //PDF viewer size
+          var $window = $(pdfjsframe.contentWindow);
+          $('#pdfViewer').css('width', '100%'); //($window.height() * 0.85));
+          $('#pdfViewer').css('height', '1300px'); //($window.height() * 0.95));
+
+          pdfjsframe.contentWindow.PDFViewerApplication.open(uint8Array);
+
+          //Open modal
+          //>>MaterializeCSS 1.0.0 approach w/o jQuery
+          // var elem = document.querySelector('.modal');
+          // var modal = M.Modal.getInstance(elem);
+          // modal.open();
+
+          //MaterializeCSS 0.100.2 approach w/ jQuery
+          $('#pdfModal').modal('open');
+
+        });
+    },
+    onFileDownload: function (file, event) {
+      window.open('/resources/download/' + file.id);
+    },
+    onBreadcrumb: function (id, event) {
+      const _this = this;
+
+      this.$http.get('/resources/' + id)
+        .then((res) => {
+          //Remove all folders below the selected one
+          const index = _this.path.map(function (x) { return x.id; }).indexOf(id);
+          _this.path.splice((index + 1));
+          _this.files = res.data;
+        }
+        );
+    },
+    onSearch: function (event) {
+      let searchText = $(event.target).val().trim();
+      alert(searchText);
+    }
+  }
+}
+
+/*
+ * Resources: Format bytes to KB, MB, etc. 
+ */
+function formatBytes(bytes, decimals) {
+  if (bytes == 0) return '0 Bytes';
+  let k = 1024,
+    dm = decimals || 2,
+    sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+    i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
 
 // 2. Define some routes
 // Each route should map to a component. The "component" can
@@ -529,7 +653,8 @@ const routes = [
   { path: '/admin', component: admin },
   { path: '/admin/:id', component: editHousehold, props: true },
   { path: '/emails', component: emails },
-  { path: '/list/turn-off/:id', component: editHousehold, props: true }
+  { path: '/list/turn-off/:id', component: editHousehold, props: true },
+  { path: '/resources/:id?', component: resources },
 ]
 
 // 3. Create the router instance and pass the `routes` option

@@ -7,7 +7,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "localhost",
       "program": "${workspaceRoot}/app.js"
     }
   ]
