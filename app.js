@@ -59,14 +59,12 @@ passport.use(users.passportStrategy());
 
 /* Resoures setup */
 
-//OAuth client local module for Google API
-var oauthclient = require('oauthclient');
-oauthclient.init();
-//Initialize GoogleApi object
-var google = require('googleapis');
-//Google Drive local modules
+//Google Drive module
 var gdrive = require('gdrive');
-gdrive.init();
+//OAuth client local module for Google API
+gdrive.oauthclient.init();
+//Google Drive API
+gdrive.api.init();
 
 /* Resoures setup */
 
@@ -455,8 +453,8 @@ app.post('/update', jsonParser, function (req, res) {
 app.get('/resources',
   users.auth,
   (req, res) => {
-    gdrive.setOAuthClient(oauthclient.getOAuthClient());
-    gdrive.getRoot((files) => {
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+    gdrive.api.getRoot((files) => {
       res.send(files);
     });
   });
@@ -468,7 +466,7 @@ app.get('/resources/download/:id',
 users.auth,
 (req, res) => {
 
-  gdrive.setOAuthClient(oauthclient.getOAuthClient());
+  gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
   if (req.params.id !== undefined) {
     res.writeHead(200, {
@@ -478,7 +476,7 @@ users.auth,
       'Content-Type': 'application/pdf'
     });
 
-    gdrive.getFile(req.params.id, res, () => {
+    gdrive.api.getFile(req.params.id, res, () => {
       console.log('File sent in response');
       res.send();
       res.end();
@@ -498,10 +496,10 @@ users.auth,
 */
 app.get('/resources/:folderId', (req, res) => {
 
-  gdrive.setOAuthClient(oauthclient.getOAuthClient());
+  gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
   if (req.params.folderId !== undefined) {
-    gdrive.listFilesByFolder(req.params.folderId, (files) => {
+    gdrive.api.listFilesByFolder(req.params.folderId, (files) => {
       res.send(files);
     });
   } else {
@@ -515,10 +513,10 @@ app.get('/resources/:folderId', (req, res) => {
 */
 app.get('/resources/search/:searchText', (req, res) => {
 
-  gdrive.setOAuthClient(oauthclient.getOAuthClient());
+  gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
   if (req.params.searchText !== undefined) {
-    gdrive.findFiles(req.params.search, (files) => {
+    gdrive.api.findFiles(req.params.search, (files) => {
       res.send(files);
     });
   } else {
@@ -532,7 +530,7 @@ app.get('/resources/search/:searchText', (req, res) => {
 */
 app.get('/resources/view/:id', (req, res) => {
 
-  gdrive.setOAuthClient(oauthclient.getOAuthClient());
+  gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
   if (req.params.id !== undefined) {
     res.writeHead(200, {
@@ -541,7 +539,7 @@ app.get('/resources/view/:id', (req, res) => {
       'Content-Type': 'application/pdf'
     });
 
-    gdrive.getFileBase64(req.params.id, res, () => {
+    gdrive.api.getFileBase64(req.params.id, res, () => {
 
       console.log('Base64 file sent in response');
       res.send();
