@@ -18,6 +18,10 @@ var db = (env == 'dev') ? cloudant.db.use("msc-dev") : cloudant.db.use("msc");
 var app = express();
 var http = require('http').Server(app);
 
+//Define base directory for application. Use it by referencing '__basedir'
+global.__basedir = __dirname;
+//console.log('base=' + __basedir);
+
 // console.log(JSON.parse(process.env.USERS));
 
 http.listen(appEnv.port, "0.0.0.0", function () {

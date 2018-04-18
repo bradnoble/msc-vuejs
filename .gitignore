@@ -1,3 +1,5 @@
 .env
 node_modules
 *.dump
+.credentials
+client_secret*.*
