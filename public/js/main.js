@@ -549,6 +549,12 @@ var resources = {
           .then((res) => {
             _this.path.push({ name: file.name, id: file.id });
             _this.files = res.data;
+
+            //Format file size to KB etc.
+            $.each(_this.files, function (index, file) {
+              file.size = formatBytes(file.size);
+            })
+
           }
           );
       }
@@ -613,6 +619,18 @@ var resources = {
   }
 }
 
+/*
+ * Resources: Format bytes to KB, MB, etc. 
+ */
+function formatBytes(bytes, decimals) {
+  if (bytes == 0) return '0 Bytes';
+  let k = 1024,
+    dm = decimals || 2,
+    sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+    i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 // 2. Define some routes
 // Each route should map to a component. The "component" can
 // either be an actual component constructor created via
@@ -633,7 +651,9 @@ const routes = [
   },
   { path: '/logout', component: logout },
   { path: '/admin', component: admin },
-  { path: '/admin/:id', component: editHousehold, props: true },
+  { path: '/admin/household/:id', component: editHousehold, props: true },
+  { path: '/admin/household/edit/:id', component: editHousehold, props: true },
+  { path: '/admin/member/edit/:id', component: editPerson, props: true },
   { path: '/emails', component: emails },
   { path: '/list/turn-off/:id', component: editHousehold, props: true },
   { path: '/resources/:id?', component: resources },
@@ -653,6 +673,11 @@ Vue.component('location', {
 
 Vue.component('person', {
   template: '#view-person',
+  props: ['item']
+});
+
+Vue.component('admin-person', {
+  template: '#admin-person',
   props: ['item']
 });
 
