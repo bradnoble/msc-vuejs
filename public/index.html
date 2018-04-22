@@ -190,7 +190,8 @@
             </li>
             <li v-bind:id="item._id" v-for="item in items" v-if="!item.hide" class="collection-item">
               <h5>
-                {{ item.name }} <router-link :to="{ path: /admin/ + item._id }" class="" title="Add a person to this household"><i class="material-icons">edit</i></router-link>
+                {{ item.name }} 
+                <router-link :to="{ path: '/admin/household/' + item._id }" class="" title="Edit the contact info for this household"><i class="material-icons">edit</i></router-link>
               </h5>
               <div class="row">
                 <div class="col m3">
@@ -229,7 +230,7 @@
       </span>
     </script>
 
-  <script type="text/x-template" id="view-person">
+    <script type="text/x-template" id="view-person">
       <li class="row collection-item">
         <div class="col m6"><person-name :item="item"></person-name></div>
         <div class="col m6"><person-contact-info :item="item"></person-contact-info></div>
@@ -314,11 +315,52 @@
       </div>
     </script>
 
+  <script type="text/x-template" id="admin-person-edit">
+    <div>
+      {{ item }}
+    </div>
+  </script>
+
+  <script type="text/x-template" id="admin-person">
+    <router-link :to="{ path: '/admin/household/' + item._id }" class="collection-item avatar">
+      <i class="material-icons circle">person</i>
+      <span class="title">
+        <person-name :item="item"></person-name>
+      </span>
+      <span>
+        <person-contact-info :item="item"></person-contact-info>
+      </span>
+      <span class="secondary-content"><i class="material-icons">chevron_right</i></span>
+    </router-link>
+  </script>
+
   <script type="text/x-template" id="edit-household">
-      <div>
-        <h6>
-          <a href="/#admin">Admin</a> / Edit Household
-        </h6>
+    <div>
+      <h6>
+        <a href="#/admin">Admin</a> / {{ item.label_name }}
+      </h6>
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">
+            {{ item.label_name }}
+          </span>
+          <location v-bind:item="item"></location>
+          <ul class="collection">
+            <admin-person 
+              v-for="person in item.people" 
+              v-bind:key="person._id" 
+              v-bind:item="person">
+            </admin-person>
+          </ul>
+        </div>
+        <div class="card-action blue-grey darken-1">
+            <a href="#/admin">&larr; Admin</a>
+          </div>
+          <pre class="hide">{{ item }}</pre>
+      </div>
+    </div>
+    
+    <div>
         <div class="row">
           <div class="col m4 s12">
             <ul class="collection">

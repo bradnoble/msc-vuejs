@@ -651,7 +651,9 @@ const routes = [
   },
   { path: '/logout', component: logout },
   { path: '/admin', component: admin },
-  { path: '/admin/:id', component: editHousehold, props: true },
+  { path: '/admin/household/:id', component: editHousehold, props: true },
+  { path: '/admin/household/edit/:id', component: editHousehold, props: true },
+  { path: '/admin/member/edit/:id', component: editPerson, props: true },
   { path: '/emails', component: emails },
   { path: '/list/turn-off/:id', component: editHousehold, props: true },
   { path: '/resources/:id?', component: resources },
@@ -671,6 +673,11 @@ Vue.component('location', {
 
 Vue.component('person', {
   template: '#view-person',
+  props: ['item']
+});
+
+Vue.component('admin-person', {
+  template: '#admin-person',
   props: ['item']
 });
 
