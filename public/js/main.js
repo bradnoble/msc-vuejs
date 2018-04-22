@@ -17,6 +17,14 @@ $(function () {
 
 // 1. Define route components.
 // These can be imported from other files
+var editPerson = {
+  template: '#admin-person-edit',
+  data: function(){
+    item: {}
+  }
+}
+
+
 var editHousehold = {
   template: '#edit-household',
   data: function () {
