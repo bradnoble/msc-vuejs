@@ -52,7 +52,7 @@
           </a>
           <ul class="right hide-on-med-and-down">
             <li>
-              <router-link to="/list">Membership List</router-link>
+              <router-link :to="{name:'list'}">Membership List</router-link>
             </li>
             <li>
               <router-link to="/emails">Email Addresses</router-link>
@@ -67,7 +67,7 @@
               <router-link to="/admin/new">Add Household</router-link>
             </li>
             <li>
-              <router-link to="/admin">Admin</router-link>
+              <router-link :to="{name:'admin'}">Admin</router-link>
             </li>
             <li>
               <router-link to="/logout">Logout</router-link>
@@ -126,11 +126,49 @@
   </div>
   <!-- app -->
 
-  <!-- 
-      BEGIN TEMPLATES
-    -->
 
-  <script type="text/x-template" id="emails">
+
+
+
+  <!-- 
+    BEGIN TEMPLATES
+  -->
+
+
+
+
+  <script type="text/x-template" id="home">
+      <div>
+        <h1>
+          Welcome
+        </h1>
+        <div class="row">
+          <div class="col m6 s12">
+            <p>
+              The Montclair Ski Club (MSC) is a restricted membership club that was founded in 1947.
+            </p>
+            <p>          
+              In 1959, the club built a ski lodge at the base of Mad River Glen in northern Vermont. The club is focused on providing avid skiers and their families with a warm, caring environment where personal relationships are valued. Currently there are several second and third generation club members.
+            </p>
+            <p>                    
+              Membership in the club is restricted to 100 active members who are expected to participate in a variety of ways, including serving on committees and boards, helping to maintain our lodge and representing the club to the outside world. MSC is a member of the New Jersey Ski Council and encourages its members to participate in its activities.
+            </p>
+            <p>                    
+              Social activities are also a focus of the ski club. An annual Christmas party, a summer picnic, a wine and cheese party, bike rides and an annual September trip to a camp in upstate New York are highlights.
+            </p>
+            <p>                    
+              To become a member of the club, you must be sponsored by a member, complete several tasks during the applicant process, be recommended by the membership committee and receive a positive vote by the membership. The process usually takes a year, assuming that there is an opening on the active membership list.  
+            </p>
+          </div>
+          <div class="col m6 s12">
+            <p>
+              Member links
+            </p>
+          </div>
+      </div>
+    </script>
+
+    <script type="text/x-template" id="emails">
       <div class="card-panel">
         <h6>
           <a href="/#list">Membership List</a> / Email addresses
@@ -239,8 +277,8 @@
 
   <script type="text/x-template" id="view-person-name">
       <span>
-        <b>{{ item.last }}, {{ item.first }}</b><br />
-        {{ item.status }}
+        <b>{{ item.last }}, {{ item.first }}</b>
+        <span class="person-status">{{ item.status }}</span>
       </span>
     </script>
 
@@ -315,51 +353,177 @@
       </div>
     </script>
 
-  <script type="text/x-template" id="admin-person-edit">
-    <div>
+  <script type="text/x-template" id="error">
+    <div v-if="item" class="alert error">
       {{ item }}
     </div>
   </script>
 
+  <script type="text/x-template" id="loading">
+    <div v-if="status" >
+      <div class="progress">
+        <div class="indeterminate"></div>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-template" id="admin-person-edit">
+    <div>
+      <error :item="error"></error>
+      <loading :status="loading"></loading>
+      <div v-if="!error">
+        <h6>
+          <router-link :to="{name: 'admin'}">Admin</router-link> / <router-link :to="{name:'admin-household', params: {id: item.household_id }}">{{ item.last }}</router-link> / Edit Person
+        </h6>
+        <div class="row">
+          <div class="col m4 hide">
+            {{ item }}
+          </div><!-- left col -->
+          <div class="col m8">
+            <div class="card">
+                <div class="card-content">
+                  <div class="row">
+                    <div class="input-field col m6 s12">              
+                      <input type="text" id="item_first" v-model="item.first"  />
+                      <label for="item_first" class="active">First name</label>
+                    </div>
+                    <div class="input-field col m6 s12">              
+                      <input type="text" id="item_last" v-model="item.last"  />
+                      <label for="item_last" class="active">Last name</label>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="input-field col s6">              
+                      <input type="text" id="item_phone" v-model="item.phone"  />
+                      <label for="item_phone" class="active">Mobile phone</label>
+                    </div>
+                    <div class="input-field col s6">              
+                      <input type="text" id="item_work_phone" v-model="item.work_phone"  />
+                      <label for="item_work_phone" class="active">Work phone</label>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col m6 s12">              
+                      <label>Membership status</label>
+                      <p v-for="(value, idx) in statuses">
+                        <input 
+                          type="radio" 
+                          :name="item._id + '-' + idx" 
+                          :id="item._id + '-' + idx" 
+                          :value="value" 
+                          v-model="item.status" />
+                        <label v-bind:for="item._id + '-' + idx">{{ value }}</label>
+                      </p>                
+                    </div>
+                    <div class="col m6 s12">              
+                      <label>Gender</label>
+                      <p v-for="(value, index) in genders">
+                        <input type="radio" 
+                          :name="item._id + '-gender-' + index" 
+                          :id="item._id + '-gender-' + index" 
+                          :value="value" 
+                          v-model="item.gender" />
+                        <label :for="item._id + '-gender-' + index">{{ value }}</label>
+                      </p>                
+                    </div>
+                  </div><!-- row -->
+                  <div>
+                    <p>
+                      <input type="checkbox" v-bind:id="item._id" v-model="item._deleted" v-on:click="removePerson()" />
+                      <label v-bind:for="item._id" class="red-text text-darken-2">Remove this person</label>
+                    </p>
+                  </div>
+              </div><!-- card content -->
+                <div class="card-action grey lighten-4">
+                  <input type="hidden" v-model="item.household_id"  />
+                  <button v-on:click="save()" id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
+                  <!--
+                    <a href="#/admin" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</a>
+                  -->
+                  <router-link :to="{name: 'admin-household', params: {id: item.household_id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel<router-link>
+                </div>
+            </div><!-- right col -->
+          </div><!-- row -->
+
+        </div><!-- if not error -->
+    </div>
+  </script>
+
   <script type="text/x-template" id="admin-person">
-    <router-link :to="{ path: '/admin/household/' + item._id }" class="collection-item avatar">
+    <router-link :to="{ path: '/admin/household/' + item.household_id + '/person/' + item._id }" class="collection-item avatar">
       <i class="material-icons circle">person</i>
       <span class="title">
         <person-name :item="item"></person-name>
       </span>
-      <span>
+      <p>
         <person-contact-info :item="item"></person-contact-info>
-      </span>
+      </p>
       <span class="secondary-content"><i class="material-icons">chevron_right</i></span>
     </router-link>
   </script>
 
-  <script type="text/x-template" id="edit-household">
-    <div>
+  <!-- a list of people in the household -->
+  <script type="text/x-template" id="first-child">
+    <div class="card">
+      <loading :status="loading"></loading>
+      <error :item="error"></error>
+      <admin-person 
+        v-for="person in item.people" 
+        v-bind:key="person._id" 
+        v-bind:item="person">
+      </admin-person>                
+    </div>
+  </script>
+
+  <!-- a list of people in the household -->
+  <script type="text/x-template" id="second-child">
+    <div class="card">
+      <loading :status="loading"></loading>
+      <div v-show="!loading">
+        Second child {{ item }}
+      </div>
+    </div>
+  </script>
+
+
+
+
+  <script type="text/x-template" id="admin-household">
+    <div class="row">
       <h6>
         <a href="#/admin">Admin</a> / {{ item.label_name }}
       </h6>
-      <div class="card">
-        <div class="card-content">
-          <span class="card-title">
-            {{ item.label_name }}
-          </span>
-          <location v-bind:item="item"></location>
-          <ul class="collection">
-            <admin-person 
-              v-for="person in item.people" 
-              v-bind:key="person._id" 
-              v-bind:item="person">
-            </admin-person>
-          </ul>
-        </div>
-        <div class="card-action blue-grey darken-1">
-            <a href="#/admin">&larr; Admin</a>
+      <div class="col s12 m8">
+        <div class="card">
+          <div class="card-content">
+
+            <span class="card-title">
+                {{ item.label_name }}
+            </span>  
+            <location v-bind:item="item"></location>
+
+            <router-view></router-view>
+
+            <ul class="collection">
+              <admin-person 
+                v-for="person in item.people" 
+                v-bind:key="person._id" 
+                v-bind:item="person">
+              </admin-person>                
+            </ul>
+            <router-link :to="{ name: 'new-person', params: { household_id: item._id, person_id: 'new' }}" title="Add a person to this household">add person</router-link>
+            <!-- todo: edit location link -->
+          </div>
+          <div class="card-action blue-grey darken-1">
+            <a href="#/admin">&larr; Back to Admin</a>
           </div>
           <pre class="hide">{{ item }}</pre>
-      </div>
-    </div>
-    
+        </div><!-- card -->
+      </div><!-- col -->
+    </div><!-- row -->
+  </script>
+
+  <script type="text/x-template" id="edit-household-old">      
     <div>
         <div class="row">
           <div class="col m4 s12">
@@ -651,6 +815,7 @@
 
   <script type="text/javascript" src="/js/factories.js"></script>
   <script type="text/javascript" src="/js/main.js"></script>
+  <script type="text/javascript" src="/js/routes.js"></script>
 </body>
 
 </html>

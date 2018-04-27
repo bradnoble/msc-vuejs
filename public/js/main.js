@@ -1,3 +1,12 @@
+/*
+x edit person
+make edit person and new person children of admin-household?
+new person
+edit household
+new household
+home
+*/
+
 //Page init
 $(function () {
   $('.dropdown-trigger').dropdown();
@@ -9,8 +18,172 @@ $(function () {
 
 // 1. Define route components.
 // These can be imported from other files
-var editHousehold = {
-  template: '#edit-household',
+const home = {
+  template: '#home',
+  data: function(){
+    return {
+      item: {
+        first: 'hi'
+      }      
+    }
+  },
+  created: function(){
+    _this = this;
+    _this.start();
+  },
+  methods: {
+    start: function(){  
+    }
+  }
+}
+
+var firstChild = {
+  template: '#first-child',
+  data: function(){
+    return {
+      item: {},
+      error: '',
+      loading: true
+    }
+  },
+  created: function() {
+    console.log('created')
+    _this = this;
+    console.log(_this.item);
+  },
+  updated: function(){
+    console.log('updated')
+    _this.loading = false;
+    _this.error = 'error';
+    console.log(_this.item);
+  }
+}
+
+
+var secondChild = {
+  template: '#second-child',
+  data: function(){
+    return {
+      item: {},
+      loading: true
+    }
+  },
+  created: function(){
+    _this = this;
+/*
+    _this.start();
+    for(i=0; i < _item.people.length; i++){
+      if(_this.item.people[i]._id == this.$route.params.person_id){
+        console.log(_this.item.people[i]);
+      }
+    }
+*/    
+    console.log(_this.item);
+    console.log(_this.$route.params.person_id);
+    _this.item = _this.item.people;
+    console.log(_this.item);
+},
+  updated: function(){
+    _this.item = "hello from the second child";  
+    console.log(_this.item);    
+    _this.loading = false;  
+  },
+  methods: {
+    start: function(){
+/*
+      this.$http.get('/getPerson/', {
+        id: this.$route.params.person_id
+        }).then(
+        function(resp){
+          // console.log(resp.data);        
+          _this.item = resp.data;
+      }, function(error){
+          _this.error = error.data.error;
+        }
+      );
+*/  
+    }
+  }
+}
+
+
+var editPerson = {
+  template: '#admin-person-edit',
+  data: function(){
+    return {
+      item: {},
+      error: '',
+      statuses: getStatuses(),
+      genders: getGenders(),
+      loading: true
+    }
+  },
+  created: function() {
+    // console.log('created')
+    _this = this;
+    // console.log(this.$route.params)
+    if(this.$route.params.person_id && this.$route.params.person_id == 'new' ){
+      _this.item = getPersonObject();
+      // assign the new person to the household
+      _this.item.household_id = _this.$route.params.household_id;      
+    } else {
+      this.start();
+    }
+  },
+  updated: function(){
+    // console.log('updated')
+    _this.loading = false;
+  },
+  methods: {
+    start: function() {
+      // console.log('start')
+      this.$http.get('/getPerson/', 
+        {
+         id: this.$route.params.person_id
+        }
+      ).then(
+        function(resp){
+          // console.log(resp.data);        
+          _this.item = resp.data;
+      }, function(error){
+          _this.error = error.data.error;
+        }
+      );
+    }, // start
+    addPerson: function(){
+      var newPerson = getPersonObject();
+      // assign the new person to the household
+      newPerson.household_id = _this.$route.params.person_id;
+    },
+    save: function(){
+      // starting label for the save button
+      var txt = $('#save').text();
+      // temporary message that shows
+      $('#save').text('Saving...');
+      this.$http.post('/postPerson/', this.item)
+        .then(function(resp){
+          setTimeout(function(){ 
+            // revert the label of the save button
+            $('#save').text(txt);
+            // update the data in the view 
+            _this.start();
+            // redirect to the summary tab
+            _this.$router.replace({ path: '/admin/household/' + _this.item.household_id });
+          }, 200);      
+        }, function(error){
+          console.log('error', error);
+        }
+      );
+    },
+    removePerson: function(){
+      // Vue.set(_this.item, '_deleted', true);
+      _this.item._deleted = true;
+    }
+  }
+}
+
+var adminHousehold = {
+  template: '#admin-household',
   data: function(){
     return {
       item: {},
@@ -20,7 +193,7 @@ var editHousehold = {
     }
   },
   created: function() {
-    if(this.$route.params.id == "new"){
+    if(this.$route.params.household_id == "new"){
       var newHousehold = getNewHousehold();
       // https://vuejs.org/2016/02/06/common-gotchas/
       // https://stackoverflow.com/questions/40713905/deeply-nested-data-objects-in-vuejs
@@ -36,14 +209,16 @@ var editHousehold = {
   },
   computed: {},
   methods: {
+/*
     setPageTitle: function(){
       document.title = (this.item.name) ? this.item.name : 'Edit Household';
     },
+*/
     start: function() {
       _this = this;
       this.$http.get('/getHousehold/', 
         {
-          id: this.$route.params.id
+          id: this.$route.params.household_id
         })
         .then(function(resp){
           // console.log('start', resp)        
@@ -54,7 +229,7 @@ var editHousehold = {
           // change legacy values to use materialize switch
           _this.item.mail_news = (_this.item.mail_news == 'yes' || _this.item.mail_news == true ) ? true : false;
           _this.item.mail_list = (_this.item.mail_list == 'yes' || _this.item.mail_list == true ) ? true : false;
-          _this.setPageTitle();
+//          _this.setPageTitle();
           }, function(error){
           _this.item = {
             name: 'sorry!'
@@ -631,40 +806,8 @@ function formatBytes(bytes, decimals) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// 2. Define some routes
-// Each route should map to a component. The "component" can
-// either be an actual component constructor created via
-// `Vue.extend()`, or just a component options object.
-// We'll talk about nested routes later.
-const routes = [
-  { 
-    path: '/list', 
-    component: list, 
-    alias: '/'
-  },
-  { 
-    path: '/list/:id', 
-    components: {
-      default: viewHousehold
-    }, 
-    props: true 
-  },
-  { path: '/logout', component: logout },
-  { path: '/admin', component: admin },
-  { path: '/admin/household/:id', component: editHousehold, props: true },
-  { path: '/admin/household/edit/:id', component: editHousehold, props: true },
-  { path: '/admin/member/edit/:id', component: editPerson, props: true },
-  { path: '/emails', component: emails },
-  { path: '/list/turn-off/:id', component: editHousehold, props: true },
-  { path: '/resources/:id?', component: resources },
-]
+// routes were here
 
-// 3. Create the router instance and pass the `routes` option
-// You can pass in additional options here, but let's
-// keep it simple for now.
-const router = new VueRouter({
-  routes // short for `routes: routes`
-});
 
 Vue.component('location', {
   template: '#view-location',
@@ -691,10 +834,18 @@ Vue.component('person-contact-info', {
   props: ['item']
 });
 
-var vm = new Vue({
-  el: '#app',
-  router
+Vue.component('error', {
+  template: '#error',
+  props: ['item']
 });
+
+Vue.component('loading', {
+  template: '#loading',
+  props: ['status']
+});
+
+
+
 
 new Vue({
     el: 'title',

@@ -255,6 +255,30 @@ app.get('/getPeopleForCSV',
   }
 );
 
+app.get('/getPerson/',
+  users.auth,
+  function (req, res) {
+    var role = req.user.role[0].value;
+    if (role === 'admin') {
+      // the factory passes the id of the document as a query parameter
+      var id = req.query.id;
+      db.get(id, function (err, doc) {
+        if (!err) {
+          res.send(doc);
+        } else {
+          return res.status(404).json(
+            { 
+              "error": "Sorry, we don't have a record of this person." 
+            }
+          );          
+        }
+      });
+    }
+  }
+);
+
+
+
 app.get('/getHousehold/',
   users.auth,
   function (req, res) {
@@ -287,6 +311,8 @@ app.get('/getHousehold/',
           );
           //console.log(doc);
           //res.send(doc);
+        } else {
+          return res.status(404).json({ "error": "Sorry, we don't have a household with that id." });          
         }
       });
     } else {
@@ -294,7 +320,30 @@ app.get('/getHousehold/',
     }
   });
 
-app.post('/postHousehold',
+app.post('/postPerson',
+  users.auth,
+  jsonParser,
+  function (req, res) {
+    var role = req.user.role[0].value;
+    if (role === 'admin') {
+      var person = req.body;
+      db.insert(person, function (err, doc) {
+        if (!err) {
+          console.log('success updating person, will add people to response next');
+          console.log(doc);
+          res.send(doc);
+        }
+        else {
+          console.log('household:' + err.reason);
+        }
+      });
+    } else {
+      // console.log('not admin');
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
+    }
+  });
+  
+  app.post('/postHousehold',
   users.auth,
   jsonParser,
   function (req, res) {
