@@ -354,7 +354,7 @@
     </script>
 
   <script type="text/x-template" id="error">
-    <div v-if="item" class="alert error">
+    <div v-if="item" class="alert error red card-content">
       {{ item }}
     </div>
   </script>
@@ -376,9 +376,6 @@
           <router-link :to="{name: 'admin'}">Admin</router-link> / <router-link :to="{name:'admin-household', params: {id: item.household_id }}">{{ item.last }}</router-link> / Edit Person
         </h6>
         <div class="row">
-          <div class="col m4 hide">
-            {{ item }}
-          </div><!-- left col -->
           <div class="col m8">
             <div class="card">
                 <div class="card-content">
@@ -464,39 +461,139 @@
 
   <!-- a list of people in the household -->
   <script type="text/x-template" id="first-child">
-    <div class="card">
+    <div>
+
       <loading :status="loading"></loading>
       <error :item="error"></error>
-      <admin-person 
-        v-for="person in item.people" 
-        v-bind:key="person._id" 
-        v-bind:item="person">
-      </admin-person>                
+
+      <ul class="collection">
+        <admin-person 
+          v-for="person in item.people" 
+          v-bind:key="person._id" 
+          v-bind:item="person">
+        </admin-person>                
+      </ul>
+      <router-link :to="{ name: 'editPerson', params: { household_id: item._id, person_id: 'new' }}" title="Add a person to this household">
+        <i class="material-icons">person_add</i> Add a person
+      </router-link>
+      <router-link :to="{ name: 'editHousehold', params: { household_id: item._id }}" title="Edit household">
+          <i class="material-icons">edit</i> Edit household
+        </router-link>
+      </div>
+  </script>
+
+  <!-- a form to edit a person in the household -->
+  <script type="text/x-template" id="second-child">
+    <div class="">
+
+      <loading :status="loading"></loading>
+      <error :item="error"></error>
+
+      <div v-show="!error">
+        <div class="card-content blue lighten-5">
+          <span class="card-title"><i class="material-icons">{{ title.icon }}</i> {{ title.content }}</span>
+          <div class="row">
+            <div class="input-field col m6 s12">              
+              <input type="text" id="item_first" v-model="item.first"  />
+              <label for="item_first" class="active">First name</label>
+            </div>
+            <div class="input-field col m6 s12">              
+              <input type="text" id="item_last" v-model="item.last"  />
+              <label for="item_last" class="active">Last name</label>
+            </div>
+          </div>
+          <div class="row">
+              <div class="input-field col s6">              
+                <input type="text" id="item_phone" v-model="item.phone"  />
+                <label for="item_phone" class="active">Mobile phone</label>
+              </div>
+              <div class="input-field col s6">              
+                <input type="text" id="item_work_phone" v-model="item.work_phone"  />
+                <label for="item_work_phone" class="active">Work phone</label>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col m6 s12">              
+                <label>Membership status</label>
+                <p v-for="(value, idx) in statuses">
+                  <input 
+                    type="radio" 
+                    :name="item._id + '-' + idx" 
+                    :id="item._id + '-' + idx" 
+                    :value="value" 
+                    v-model="item.status" />
+                  <label v-bind:for="item._id + '-' + idx">{{ value }}</label>
+                </p>                
+              </div>
+              <div class="col m6 s12">              
+                <label>Gender</label>
+                <p v-for="(value, index) in genders">
+                  <input type="radio" 
+                    :name="item._id + '-gender-' + index" 
+                    :id="item._id + '-gender-' + index" 
+                    :value="value" 
+                    v-model="item.gender" />
+                  <label :for="item._id + '-gender-' + index">{{ value }}</label>
+                </p>                
+              </div>
+            </div><!-- row -->        
+            <div v-if="$route.params.person_id != 'new'">
+              <p>
+                <input type="checkbox" v-bind:id="item._id" v-model="item._deleted" v-on:click="removePerson()" />
+                <label v-bind:for="item._id" class="red-text text-darken-2">Remove this person</label>
+              </p>
+            </div>
+        </div><!-- card-content -->
+        <div class="card-action grey lighten-4">
+          <input type="hidden" v-model="item.household_id"  />
+          <button v-on:click="save()" id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
+          <router-link :to="{name: 'admin-household', params: {id: item.household_id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel<router-link>
+        </div>
+      </div>
     </div>
   </script>
 
-  <!-- a list of people in the household -->
-  <script type="text/x-template" id="second-child">
-    <div class="card">
+  <!-- a form to edit a household -->
+  <script type="text/x-template" id="third-child">
+    <div class="">
+
       <loading :status="loading"></loading>
-      <div v-show="!loading">
-        Second child {{ item }}
+      <error :item="error"></error>
+
+      <div v-show="!error">
+        <div class="card-content blue lighten-5">
+          <span class="card-title"><i class="material-icons">{{ title.icon }}</i> {{ title.content }}</span>
+ 
+            {{ item }}
+
+            <div v-if="$route.params.household_id != 'new'">
+              <p>
+                <input type="checkbox" v-bind:id="item._id" v-model="item._deleted" v-on:click="remove()" />
+                <label v-bind:for="item._id" class="red-text text-darken-2">Remove this household</label>
+              </p>
+            </div>
+
+        </div><!-- card-content -->
+        <div class="card-action grey lighten-4">
+          <input type="hidden" v-model="item.household_id"  />
+          <button v-on:click="save()" id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
+          <router-link :to="{name: 'admin-household', params: {id: item._id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel<router-link>
+        </div>
       </div>
     </div>
   </script>
 
 
-
-
   <script type="text/x-template" id="admin-household">
     <div class="row">
+
+
       <h6>
         <a href="#/admin">Admin</a> / {{ item.label_name }}
       </h6>
       <div class="col s12 m8">
         <div class="card">
           <div class="card-content">
-
             <span class="card-title">
                 {{ item.label_name }}
             </span>  
@@ -504,20 +601,11 @@
 
             <router-view></router-view>
 
-            <ul class="collection">
-              <admin-person 
-                v-for="person in item.people" 
-                v-bind:key="person._id" 
-                v-bind:item="person">
-              </admin-person>                
-            </ul>
-            <router-link :to="{ name: 'new-person', params: { household_id: item._id, person_id: 'new' }}" title="Add a person to this household">add person</router-link>
             <!-- todo: edit location link -->
           </div>
           <div class="card-action blue-grey darken-1">
             <a href="#/admin">&larr; Back to Admin</a>
           </div>
-          <pre class="hide">{{ item }}</pre>
         </div><!-- card -->
       </div><!-- col -->
     </div><!-- row -->

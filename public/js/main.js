@@ -1,8 +1,11 @@
 /*
 x edit person
-make edit person and new person children of admin-household?
-new person
+x make edit person and new person children of admin-household?
+x new person
 edit household
+  delete household should delete people
+  where should delete household take the user? now it returns the user to admin-household, but after deletion it is undefined
+    answer: add error messaging to adminHousehold
 new household
 home
 */
@@ -15,6 +18,7 @@ $(function () {
   // $('.tooltipped').tooltip();
   // $('.tap-target').featureDiscovery();
 });
+
 
 // 1. Define route components.
 // These can be imported from other files
@@ -37,7 +41,14 @@ const home = {
   }
 }
 
-var firstChild = {
+
+/*
+
+>>>>>>>>>>>> ADMIN COMPONENTS
+
+*/
+
+const firstChild = {
   template: '#first-child',
   data: function(){
     return {
@@ -47,126 +58,73 @@ var firstChild = {
     }
   },
   created: function() {
-    console.log('created')
     _this = this;
-    console.log(_this.item);
+  },
+  mounted: function(){
+    _this.item = _this.$parent.item;
   },
   updated: function(){
-    console.log('updated')
     _this.loading = false;
-    _this.error = 'error';
-    console.log(_this.item);
   }
 }
 
-
-var secondChild = {
+const secondChild = {
   template: '#second-child',
   data: function(){
     return {
       item: {},
-      loading: true
+      loading: true,
+      statuses: getStatuses(),
+      genders: getGenders(),
+      title: {},
+      error: ''
     }
   },
   created: function(){
     _this = this;
-/*
-    _this.start();
-    for(i=0; i < _item.people.length; i++){
-      if(_this.item.people[i]._id == this.$route.params.person_id){
-        console.log(_this.item.people[i]);
-      }
-    }
-*/    
-    console.log(_this.item);
-    console.log(_this.$route.params.person_id);
-    _this.item = _this.item.people;
-    console.log(_this.item);
-},
-  updated: function(){
-    _this.item = "hello from the second child";  
-    console.log(_this.item);    
-    _this.loading = false;  
   },
-  methods: {
-    start: function(){
-/*
-      this.$http.get('/getPerson/', {
-        id: this.$route.params.person_id
-        }).then(
-        function(resp){
-          // console.log(resp.data);        
-          _this.item = resp.data;
-      }, function(error){
-          _this.error = error.data.error;
-        }
-      );
-*/  
-    }
-  }
-}
-
-
-var editPerson = {
-  template: '#admin-person-edit',
-  data: function(){
-    return {
-      item: {},
-      error: '',
-      statuses: getStatuses(),
-      genders: getGenders(),
-      loading: true
-    }
-  },
-  created: function() {
-    // console.log('created')
-    _this = this;
-    // console.log(this.$route.params)
+  mounted: function(){
+    // for new people in the household
     if(this.$route.params.person_id && this.$route.params.person_id == 'new' ){
+      _this.title = {
+        icon: "person_add",
+        content: "Add a person to this household"
+      };
       _this.item = getPersonObject();
       // assign the new person to the household
       _this.item.household_id = _this.$route.params.household_id;      
-    } else {
-      this.start();
+    } 
+    // for editing people who are already in the household
+    else {
+      _this.title = {
+        icon: "edit",
+        content: "Edit this person's entry"
+      };
+      var people = _this.$parent.item.people;
+      for(i=0; i < people.length; i++){
+        if(people[i]._id == _this.$route.params.person_id){
+          _this.item = people[i];
+        } 
+      }
+    }
+    if(Object.keys(_this.item).length == 0){
+      _this.error = "Sorry, we don't have a person by that name."
     }
   },
   updated: function(){
-    // console.log('updated')
-    _this.loading = false;
+    _this.loading = false;  
   },
   methods: {
-    start: function() {
-      // console.log('start')
-      this.$http.get('/getPerson/', 
-        {
-         id: this.$route.params.person_id
-        }
-      ).then(
-        function(resp){
-          // console.log(resp.data);        
-          _this.item = resp.data;
-      }, function(error){
-          _this.error = error.data.error;
-        }
-      );
-    }, // start
-    addPerson: function(){
-      var newPerson = getPersonObject();
-      // assign the new person to the household
-      newPerson.household_id = _this.$route.params.person_id;
-    },
     save: function(){
       // starting label for the save button
       var txt = $('#save').text();
       // temporary message that shows
       $('#save').text('Saving...');
-      this.$http.post('/postPerson/', this.item)
+      this.$http.post('/postPerson/', _this.item)
         .then(function(resp){
           setTimeout(function(){ 
             // revert the label of the save button
             $('#save').text(txt);
-            // update the data in the view 
-            _this.start();
             // redirect to the summary tab
             _this.$router.replace({ path: '/admin/household/' + _this.item.household_id });
           }, 200);      
@@ -182,8 +140,120 @@ var editPerson = {
   }
 }
 
+const thirdChild = {
+  template: '#third-child',
+  data: function(){
+    return {
+      item: {},
+      loading: true,
+      title: {},
+      error: ''
+    }
+  },
+  created: function(){
+    _this = this;
+  },
+  mounted: function(){
+
+      _this.title = {
+        icon: "edit",
+        content: "Edit this household contact info"
+      };
+
+      _this.item = _this.$parent.item;
+
+    },
+  updated: function(){
+    _this.loading = false;  
+  },
+  methods: {
+    save: function(){
+      // starting label for the save button
+      var txt = $('#save').text();
+      // temporary message that shows
+      $('#save').text('Saving...');
+      this.$http.post('/postHousehold/', _this.item)
+        .then(function(resp){
+          setTimeout(function(){ 
+            // revert the label of the save button
+            $('#save').text(txt);
+            // redirect to the summary tab
+            _this.$router.replace({ path: '/admin/household/' + _this.item.household_id });
+          }, 200);      
+        }, function(error){
+          console.log('error', error);
+        }
+      );
+    },
+    remove: function(){
+      var people = _this.$parent.item.people;
+      for(i=0; i < people.length; i++){
+        // people[i]._deleted = true;
+        if(people[i]._deleted){
+          delete people[i]._deleted;
+        } else {
+          Vue.set(people[i], '_deleted', true);
+        }
+      }
+      Vue.set(_this.item, '_deleted', true);
+      // _this.item._deleted = true;
+    }
+  }
+}
+
+
 var adminHousehold = {
   template: '#admin-household',
+  props: ['item'],
+  data: function(){
+    return {
+      item: {}
+    }
+  },
+  created: function() {
+    // console.log('created');
+    // this.start();
+  },
+  mounted: function(){
+    // console.log('mounted');
+    this.start();
+  },
+  computed: function(){
+    // console.log('computed');    
+    // this.start();
+  },
+  updated: function(){
+    // console.log('updated');    
+  },
+  methods: {
+    start: function() {
+      // console.log('start')
+      _this = this;
+      this.$http.get('/getHousehold/', 
+        {
+          id: this.$route.params.household_id
+        })
+        .then(function(resp){
+            _this.item = resp.data;
+          }, function(error){
+            _this.item = {
+              name: 'error'
+            }
+          }
+        );
+    }
+  },
+  watch: {
+    '$route' (to, from) {
+      console.log('$route', to, from)
+      this.start();
+    }
+  }
+};
+
+var adminHousehold_old = {
+  template: '#admin-household',
+  // props: ['item'],
   data: function(){
     return {
       item: {},
