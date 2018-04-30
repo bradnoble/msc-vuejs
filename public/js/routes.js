@@ -19,33 +19,29 @@ const routes = [
     },
     // ADMIN ROUTES
     { 
-      name: 'admin',
       path: '/admin', 
+      name: 'admin',
       component: admin 
     },
     { 
       path: '/admin/household/:household_id', 
+      name: 'admin-household',
       component: adminHousehold, 
-      props: true,
       children: [
         {
-          name: 'editPerson',
-          path: 'person/:person_id',
-          component: secondChild,
-          props: true
-        },
-        {
-          name: 'editHousehold',
-          path: 'edit',
-          component: thirdChild,
-          props: true
-        },        
-        {
-          name: 'admin-household',
           path: '',
-          component: firstChild,
-          props: true
+          component: firstChild
         },
+        {
+          path: 'person/:person_id',
+          name: 'editPerson',
+          component: secondChild
+        },
+        {
+          path: 'edit',
+          name: 'editHousehold',
+          component: thirdChild
+        }
       ]
     },
     { path: '/emails', component: emails },

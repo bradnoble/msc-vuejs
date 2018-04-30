@@ -447,7 +447,7 @@
   </script>
 
   <script type="text/x-template" id="admin-person">
-    <router-link :to="{ path: '/admin/household/' + item.household_id + '/person/' + item._id }" class="collection-item avatar">
+    <router-link :to="{ name: 'editPerson', params: {household_id: item.household_id, person_id: item._id }}" class="collection-item avatar">
       <i class="material-icons circle">person</i>
       <span class="title">
         <person-name :item="item"></person-name>
@@ -461,6 +461,56 @@
 
   <!-- a list of people in the household -->
   <script type="text/x-template" id="first-child">
+    <div>
+      <br />
+      first child {{ item }}
+      <br />
+      <div>
+        <router-link :to="{ name:'editPerson', params:{household_id: 'household-140', person_id: 'person-118' }}">person-118</router-link>
+      </div>
+    </div>
+  </script>
+
+  <!-- a form to edit a person in the household -->
+  <script type="text/x-template" id="second-child">
+    <div>
+
+        second child {{ person }}
+        <br />
+        <router-link :to="{ name:'admin-household', params:{household_id: 'household-140' }}">household</router-link>
+
+    </div>
+  </script>
+
+  <!-- a form to edit a household -->
+  <script type="text/x-template" id="third-child">
+    <div>
+      third child {{ item }}
+    </div>
+  </script>
+
+  <script type="text/x-template" id="admin-household">
+    <div>
+      <loading :status="loading"></loading>
+      parent loading {{ loading }}<br />
+      parent item {{ item.label_name }}
+      <router-view :item="item"></router-view>
+    </div><!--  -->
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+  <!-- a list of people in the household -->
+  <script type="text/x-template" id="first-child-old">
     <div>
 
       <loading :status="loading"></loading>
@@ -483,7 +533,7 @@
   </script>
 
   <!-- a form to edit a person in the household -->
-  <script type="text/x-template" id="second-child">
+  <script type="text/x-template" id="second-child-old">
     <div class="">
 
       <loading :status="loading"></loading>
@@ -547,14 +597,14 @@
         <div class="card-action grey lighten-4">
           <input type="hidden" v-model="item.household_id"  />
           <button v-on:click="save()" id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
-          <router-link :to="{name: 'admin-household', params: {id: item.household_id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel<router-link>
+          <router-link :to="{name: 'admin-household', params: {household_id: item.household_id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel<router-link>
         </div>
       </div>
     </div>
   </script>
 
   <!-- a form to edit a household -->
-  <script type="text/x-template" id="third-child">
+  <script type="text/x-template" id="third-child-old">
     <div class="">
 
       <loading :status="loading"></loading>
@@ -577,38 +627,43 @@
         <div class="card-action grey lighten-4">
           <input type="hidden" v-model="item.household_id"  />
           <button v-on:click="save()" id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
-          <router-link :to="{name: 'admin-household', params: {id: item._id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel<router-link>
+          <router-link :to="{name: 'admin-household', params: {household_id: item._id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel<router-link>
         </div>
       </div>
     </div>
   </script>
 
-
-  <script type="text/x-template" id="admin-household">
-    <div class="row">
-
-
-      <h6>
-        <a href="#/admin">Admin</a> / {{ item.label_name }}
-      </h6>
-      <div class="col s12 m8">
-        <div class="card">
-          <div class="card-content">
-            <span class="card-title">
-                {{ item.label_name }}
-            </span>  
-            <location v-bind:item="item"></location>
-
-            <router-view></router-view>
-
-            <!-- todo: edit location link -->
+  <script type="text/x-template" id="admin-household-old">
+    <div>
+      error {{ error }}
+      loading {{ loading }}
+        <div>
+            <div class="row">
+              <h6>
+                <a href="#/admin">Admin</a> / {{ item.label_name }}
+              </h6>
+              <div class="col s12 m8">
+                <div class="card">
+                  <div class="card-content">
+                    <span class="card-title">
+                        {{ item.label_name }}
+                    </span>  
+                    <location v-bind:item="item"></location>
+        
+                    <router-view></router-view>
+        
+                    <!-- todo: edit location link -->
+                  </div>
+                  <div class="card-action blue-grey darken-1">
+                    <a href="#/admin">&larr; Back to Admin</a>
+                  </div>
+                </div><!-- card -->
+              </div><!-- col -->          
+            </div><!--row-->
           </div>
-          <div class="card-action blue-grey darken-1">
-            <a href="#/admin">&larr; Back to Admin</a>
-          </div>
-        </div><!-- card -->
-      </div><!-- col -->
-    </div><!-- row -->
+    
+
+    </div><!--  -->
   </script>
 
   <script type="text/x-template" id="edit-household-old">      

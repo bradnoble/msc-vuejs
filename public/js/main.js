@@ -50,6 +50,202 @@ const home = {
 
 const firstChild = {
   template: '#first-child',
+  props: ['item'], // gotta use props to grab data from the parent
+  data: function(){
+    return {
+      // item: {}, // don't recast the item cuz we got it from props
+      error: ''
+    }
+  },
+  created: function() {
+    // _this = this;
+    console.log('created')
+    console.log(this.item)
+  },
+  mounted: function(){
+    // this.item = _this.$parent.item.people;
+    // console.log(this.item)
+    console.log('mounted')
+    console.log(this.item)
+  },
+  updated: function(){
+    console.log('updated')
+    console.log(this.item)
+  }
+}
+
+const secondChild = {
+  template: '#second-child',
+  data: function(){
+    return {
+      person: {},
+      // loading: true,
+      statuses: getStatuses(),
+      genders: getGenders(),
+      title: {},
+      error: ''
+    }
+  },
+  created: function(){
+    console.log('created')
+    console.log(this.item)
+    // _this = this;
+  },
+  mounted: function(){
+    _this = this;
+    console.log('mounted')
+
+    this.$http.get('/getPerson/', 
+    {
+      id: this.$route.params.person_id
+    })
+    .then(function(resp){
+        console.log('data')
+        _this.person = resp.data;
+      }, function(error){
+        _this.error = error;
+      }
+    );
+    console.log(this.item)
+
+  },
+  updated: function(){
+   // _this.loading = false;  
+   console.log('updated')
+   console.log(this.item)
+  },
+  methods: {
+    save: function(){
+      // starting label for the save button
+      var txt = $('#save').text();
+      // temporary message that shows
+      $('#save').text('Saving...');
+      this.$http.post('/postPerson/', _this.item)
+        .then(function(resp){
+          setTimeout(function(){ 
+            // revert the label of the save button
+            $('#save').text(txt);
+            // redirect to the summary tab
+            _this.$router.replace({ path: '/admin/household/' + _this.item.household_id });
+          }, 200);      
+        }, function(error){
+          console.log('error', error);
+        }
+      );
+    },
+    removePerson: function(){
+      // Vue.set(_this.item, '_deleted', true);
+      _this.item._deleted = true;
+    }
+  }
+}
+
+const thirdChild = {
+  template: '#third-child',
+  data: function(){
+    return {
+      item: {},
+      loading: true,
+      title: {},
+      error: ''
+    }
+  },
+  created: function(){
+    _this = this;
+  },
+  mounted: function(){
+    _this.title = {
+      icon: "edit",
+      content: "Edit this household contact info"
+    };
+    _this.item = _this.$parent.item;
+  },
+  updated: function(){
+    _this.loading = false;  
+  },
+  methods: {
+    save: function(){
+      // starting label for the save button
+      var txt = $('#save').text();
+      // temporary message that shows
+      $('#save').text('Saving...');
+      this.$http.post('/postHousehold/', _this.item)
+        .then(function(resp){
+          setTimeout(function(){ 
+            // revert the label of the save button
+            $('#save').text(txt);
+            // redirect to the summary tab
+            _this.$router.replace({ path: '/admin/household/' + _this.item.household_id });
+          }, 200);      
+        }, function(error){
+          console.log('error', error);
+        }
+      );
+    },
+    remove: function(){
+      var people = _this.$parent.item.people;
+      for(i=0; i < people.length; i++){
+        // people[i]._deleted = true;
+        if(people[i]._deleted){
+          delete people[i]._deleted;
+        } else {
+          Vue.set(people[i], '_deleted', true);
+        }
+      }
+      Vue.set(_this.item, '_deleted', true);
+      // _this.item._deleted = true;
+    }
+  }
+}
+
+const adminHousehold = {
+  template: '#admin-household',
+  data: function(){
+    return {
+      item: {},
+      loading: true
+    }
+  },
+  created: function() {
+    _this = this;
+    console.log('created', this.loading);
+
+    this.$http.get('/getHousehold/', 
+    {
+      id: this.$route.params.household_id
+    })
+    .then(function(resp){
+        console.log('data')
+        _this.item = resp.data;
+      }, function(error){
+        _this.error = error;
+      }
+    );
+  },
+  mounted: function(){
+    this.loading = false;
+    console.log('mounted', this.loading);
+    // this.start();
+  },
+  updated: function(){
+    console.log('parent updated')
+  },
+  watch: { // created _this does not make it in here, but this still works
+    loading: function(val, oldVal){ 
+      // console.log('watch', val, oldVal);
+      // console.log('watch', this.loading)
+    }
+  },
+  methods: {
+    start: function() {
+    }
+  }
+};
+
+
+
+const firstChild_old = {
+  template: '#first-child',
   data: function(){
     return {
       item: {},
@@ -68,7 +264,7 @@ const firstChild = {
   }
 }
 
-const secondChild = {
+const secondChild_old = {
   template: '#second-child',
   data: function(){
     return {
@@ -140,7 +336,7 @@ const secondChild = {
   }
 }
 
-const thirdChild = {
+const thirdChild_old = {
   template: '#third-child',
   data: function(){
     return {
@@ -154,15 +350,12 @@ const thirdChild = {
     _this = this;
   },
   mounted: function(){
-
-      _this.title = {
-        icon: "edit",
-        content: "Edit this household contact info"
-      };
-
-      _this.item = _this.$parent.item;
-
-    },
+    _this.title = {
+      icon: "edit",
+      content: "Edit this household contact info"
+    };
+    _this.item = _this.$parent.item;
+  },
   updated: function(){
     _this.loading = false;  
   },
@@ -202,56 +395,100 @@ const thirdChild = {
 }
 
 
-var adminHousehold = {
+var adminHousehold_old = {
   template: '#admin-household',
   props: ['item'],
   data: function(){
     return {
-      item: {}
+      item: {},
+      error: '',
+      loading: true
     }
   },
   created: function() {
-    // console.log('created');
-    // this.start();
+    _this = this;
+    console.log('created');
+/*
+    this.$http.get('/getHousehold/', 
+    {
+      id: this.$route.params.household_id
+    })
+    .then(function(resp){
+        console.log('data')
+        _this.item = resp.data;
+      }, function(error){
+        _this.error = error;
+      }
+    );
+*/
+    _this.item = {
+      "_id": "household-140",
+      "_rev": "5-a38659e4274d63c91dad83c6ac9292f8",
+      "name": "Bancroft",
+      "label_name": "Bancroft",
+      "street1": "24 Pinewood Village",
+      "street2": "",
+      "city": "West Lebanon",
+      "state": "NH",
+      "zip": "03784",
+      "phone": "802-496-9562",
+      "mail_news": true,
+      "mail_list": true,
+      "list_on_website": "yes",
+      "type": "household",
+      "people": [
+          {
+              "_id": "person-118",
+              "_rev": "27-77b4036bebad3376c0919f09caa06ff6",
+              "last": "Bancroft",
+              "first": "Monk",
+              "status": "deceased",
+              "household_id": "household-140",
+              "phone": "",
+              "email": "monkb@madriver.com",
+              "work_phone": "",
+              "gender": "Male",
+              "type": "person",
+              "dob": ""
+          },
+          {
+              "_id": "person-120",
+              "_rev": "15-97c155a6a43849fd7a503b207307132b",
+              "last": "Bancroft",
+              "first": "Janes",
+              "status": "non-member",
+              "household_id": "household-140",
+              "phone": "",
+              "email": "jnbancroft@madriver.com",
+              "work_phone": "",
+              "gender": "Female",
+              "type": "person"
+          }
+      ]
+  };
+//    _this.start();
   },
   mounted: function(){
-    // console.log('mounted');
-    this.start();
-  },
-  computed: function(){
-    // console.log('computed');    
-    // this.start();
+    console.log('mounted');
+    _this.start();
   },
   updated: function(){
-    // console.log('updated');    
+    console.log('updated');    
   },
   methods: {
     start: function() {
-      // console.log('start')
-      _this = this;
-      this.$http.get('/getHousehold/', 
-        {
-          id: this.$route.params.household_id
-        })
-        .then(function(resp){
-            _this.item = resp.data;
-          }, function(error){
-            _this.item = {
-              name: 'error'
-            }
-          }
-        );
+      console.log('start')
     }
   },
   watch: {
     '$route' (to, from) {
       console.log('$route', to, from)
-      this.start();
+      _this.start();
     }
   }
 };
 
-var adminHousehold_old = {
+var adminHousehold_older = {
   template: '#admin-household',
   // props: ['item'],
   data: function(){
