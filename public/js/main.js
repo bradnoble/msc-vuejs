@@ -5,6 +5,14 @@ $(function () {
   $('.tooltipped').tooltip();
   //>>MaterializeCSS 1.0.0 features
   // $('.tap-target').featureDiscovery();
+
+  // Initialize collapse button
+  // $(".button-collapse").sideNav({
+  //   closeOnClick: true, // Closes side-nav on <a> clicks, useful for Angular/Meteor    
+  // });
+  // Initialize collapsible (uncomment the line below if you use the dropdown variation)
+  //$('.collapsible').collapsible();
+
 });
 
 // 1. Define route components.
@@ -571,20 +579,20 @@ var resources = {
 
           //Load iframe for PDF viewer
           var pdfjsframe = document.getElementById('pdfViewer');
+          pdfjsframe.contentWindow.PDFViewerApplication.open(uint8Array);
+          // pdfjsframe.width = '1200';
+          // pdfjsframe.height ='1200';
 
-          //PDF viewer size
-          // var $window = $(pdfjsframe.contentWindow);
-
-          $('#pdfModal', window.parent.document).width('90%');
-          $('#pdfModal', window.parent.document).height('1900px');
+          // //PDF viewer size
+          $('#pdfModal', window.parent.document).width('65%');
+          $('#pdfModal', window.parent.document).height('100%');
           $('#pdfViewer', window.parent.document).width('100%');
           $('#pdfViewer', window.parent.document).height('100%');
 
+          // // var $window = $(pdfjsframe.contentWindow);
           // $('#pdfViewer').css('width', '100%'); //($window.height() * 0.85));
           // $('#pdfViewer').css('height', '1300px'); //($window.height() * 0.95));
-
-          pdfjsframe.contentWindow.PDFViewerApplication.open(uint8Array);
-
+    
           //Open modal
           //>>MaterializeCSS 1.0.0 approach w/o jQuery
           // var elem = document.querySelector('.modal');
@@ -595,6 +603,10 @@ var resources = {
           $('#pdfModal').modal('open');
 
         });
+    },
+    onPDFLoad: function (iFrame) {
+      iFrame.width = iFrame.contentWindow.document.body.scrollWidth;
+      iFrame.height = iFrame.contentWindow.document.body.scrollHeight;
     },
     onFileDownload: function (file, event) {
       window.open('/resources/download/' + file.id);
@@ -682,9 +694,3 @@ new Vue({
     title: 'My Title'
   }
 })
-// Initialize collapse button
-$(".button-collapse").sideNav({
-  closeOnClick: true, // Closes side-nav on <a> clicks, useful for Angular/Meteor    
-});
-    // Initialize collapsible (uncomment the line below if you use the dropdown variation)
-  //$('.collapsible').collapsible();
