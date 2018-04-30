@@ -59,62 +59,52 @@ const firstChild = {
   },
   created: function() {
     // _this = this;
-    console.log('created')
-    console.log(this.item)
+    // console.log('created')
+    // console.log(this.item)
   },
   mounted: function(){
     // this.item = _this.$parent.item.people;
     // console.log(this.item)
-    console.log('mounted')
-    console.log(this.item)
+    // console.log('mounted')
+    // console.log(this.item)
   },
   updated: function(){
-    console.log('updated')
-    console.log(this.item)
+    // console.log('updated')
+    // console.log(this.item)
   }
 }
 
 const secondChild = {
   template: '#second-child',
+  props: ['household_id', 'person_id', 'loading', 'error'],
   data: function(){
     return {
       person: {},
-      // loading: true,
       statuses: getStatuses(),
       genders: getGenders(),
       title: {},
       error: ''
     }
   },
-  created: function(){
-    console.log('created')
-    console.log(this.item)
-    // _this = this;
-  },
+  created: function(){},
   mounted: function(){
-    _this = this;
-    console.log('mounted')
-
-    this.$http.get('/getPerson/', 
-    {
-      id: this.$route.params.person_id
-    })
-    .then(function(resp){
-        console.log('data')
-        _this.person = resp.data;
-      }, function(error){
-        _this.error = error;
-      }
-    );
-    console.log(this.item)
-
+    this.get();
   },
-  updated: function(){
-   // _this.loading = false;  
-   console.log('updated')
-   console.log(this.item)
-  },
+  updated: function(){},
   methods: {
+    get: function(){
+      let _this = this;
+      this.$http.get('/getPerson/', 
+      {
+        id: this.$route.params.person_id
+      })
+      .then(function(resp){
+          _this.person = resp.data;
+        }, function(error){
+          _this.error = error;
+        }
+      );        
+    },
     save: function(){
       // starting label for the save button
       var txt = $('#save').text();
@@ -200,35 +190,22 @@ const thirdChild = {
 
 const adminHousehold = {
   template: '#admin-household',
+  props: ['household_id'],
   data: function(){
     return {
       item: {},
-      loading: true
+      loading: true,
+      error: ''
     }
   },
   created: function() {
-    _this = this;
-    console.log('created', this.loading);
-
-    this.$http.get('/getHousehold/', 
-    {
-      id: this.$route.params.household_id
-    })
-    .then(function(resp){
-        console.log('data')
-        _this.item = resp.data;
-      }, function(error){
-        _this.error = error;
-      }
-    );
   },
   mounted: function(){
-    this.loading = false;
-    console.log('mounted', this.loading);
-    // this.start();
+    this.get();
   },
   updated: function(){
-    console.log('parent updated')
+    // console.log('parent updated')
+    this.loading = false;
   },
   watch: { // created _this does not make it in here, but this still works
     loading: function(val, oldVal){ 
@@ -237,7 +214,15 @@ const adminHousehold = {
     }
   },
   methods: {
-    start: function() {
+    get: function() {
+      let _this = this; // need `_this` to cast and set `this` into the API call
+      this.$http.get('/getHousehold/', {
+        id: _this.household_id // can this be cast in via props?
+      }).then(function(resp){
+        _this.item = resp.data;
+      }, function(error){
+        _this.error = error.data.error;
+      });
     }
   }
 };

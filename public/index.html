@@ -354,11 +354,25 @@
     </script>
 
   <script type="text/x-template" id="error">
-    <div v-if="item" class="alert error red card-content">
-      {{ item }}
+    <div v-if="error">
+      <div class="alert error card">
+        <div class="card-content red white-text">
+          {{ error }}
+        </div>      
+      </div>
+      <router-link :to="{name: 'admin'}">Return to Admin</router-link>
+      <hr />
+      <p>
+        If you are getting this error and you don't know why, copy this stuff and send it to Brad Noble:
+      </p>
+      <blockquote>
+        <pre>Path: {{ $route.path }}
+Parameters:
+{{ $route.params }}</pre>
+      </blockquote>
     </div>
   </script>
-
+  
   <script type="text/x-template" id="loading">
     <div v-if="status" >
       <div class="progress">
@@ -462,7 +476,6 @@
   <!-- a list of people in the household -->
   <script type="text/x-template" id="first-child">
     <div>
-      <br />
       first child {{ item }}
       <br />
       <div>
@@ -474,10 +487,14 @@
   <!-- a form to edit a person in the household -->
   <script type="text/x-template" id="second-child">
     <div>
-
-        second child {{ person }}
-        <br />
-        <router-link :to="{ name:'admin-household', params:{household_id: 'household-140' }}">household</router-link>
+      <br />
+      second child person <pre>{{ person }}</pre>
+      <br />
+      statuses {{ statuses }}
+      <br />
+      <router-link :to="{ name:'admin-household', params:{household_id: 'household-140' }}">
+        household
+      </router-link>
 
     </div>
   </script>
@@ -492,9 +509,11 @@
   <script type="text/x-template" id="admin-household">
     <div>
       <loading :status="loading"></loading>
-      parent loading {{ loading }}<br />
+      <error :error="error"></error>
       parent item {{ item.label_name }}
-      <router-view :item="item"></router-view>
+
+      <router-view :item="item" :loading="loading" ></router-view>
+
     </div><!--  -->
   </script>
 

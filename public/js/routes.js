@@ -26,21 +26,25 @@ const routes = [
     { 
       path: '/admin/household/:household_id', 
       name: 'admin-household',
-      component: adminHousehold, 
+      component: adminHousehold,
+      props: true, 
       children: [
         {
           path: '',
-          component: firstChild
+          component: firstChild,
+          props: true
         },
         {
           path: 'person/:person_id',
           name: 'editPerson',
-          component: secondChild
+          component: secondChild,
+          props: true
         },
         {
           path: 'edit',
           name: 'editHousehold',
-          component: thirdChild
+          component: thirdChild,
+          props: true
         }
       ]
     },
