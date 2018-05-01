@@ -25,12 +25,12 @@ const routes = [
     },
     { 
       path: '/admin/household/:household_id', 
-      name: 'admin-household',
       component: adminHousehold,
       props: true, 
       children: [
         {
           path: '',
+          name: 'admin-household',
           component: firstChild,
           props: true
         },
@@ -49,7 +49,7 @@ const routes = [
       ]
     },
     { path: '/emails', component: emails },
-    { path: '/list/turn-off/:id', component: adminHousehold, props: true },
+//    { path: '/list/turn-off/:id', component: adminHousehold, props: true },
     { path: '/logout', component: logout },
     { path: '/resources/:id?', component: resources }
   ]

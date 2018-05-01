@@ -2,6 +2,11 @@
 x edit person
 x make edit person and new person children of admin-household?
 x new person
+
+emit loading and error to parent 
+try and remove call to db from second child
+
+
 edit household
   delete household should delete people
   where should delete household take the user? now it returns the user to admin-household, but after deletion it is undefined
@@ -23,22 +28,7 @@ $(function () {
 // 1. Define route components.
 // These can be imported from other files
 const home = {
-  template: '#home',
-  data: function(){
-    return {
-      item: {
-        first: 'hi'
-      }      
-    }
-  },
-  created: function(){
-    _this = this;
-    _this.start();
-  },
-  methods: {
-    start: function(){  
-    }
-  }
+  template: '#home'
 }
 
 
@@ -82,13 +72,34 @@ const secondChild = {
       person: {},
       statuses: getStatuses(),
       genders: getGenders(),
-      title: {},
-      error: ''
+      title: {}
     }
   },
   created: function(){},
   mounted: function(){
+    // frob the process meter
+    // the parent update method will turn it off when it completes
+    this.$parent.loading = true;
+
+    // for new people in the household
+    if(this.person_id == 'new' ){
+      this.title = {
+        icon: "person_add",
+        content: "Add a person to this household"
+      };
+      this.person = getPersonObject();
+      // assign the new person to the household
+      this.person.household_id = this.household_id;      
+    } 
+    // for editing people who are already in the household
+    else {
+      this.title = {
+        icon: "edit",
+        content: "Edit this person's entry"
+      };
+    // grab the person's data from the database
     this.get();
+    }
   },
   updated: function(){},
   methods: {
@@ -96,27 +107,28 @@ const secondChild = {
       let _this = this;
       this.$http.get('/getPerson/', 
       {
-        id: this.$route.params.person_id
+        id: _this.person_id
       })
       .then(function(resp){
           _this.person = resp.data;
         }, function(error){
-          _this.error = error;
+          _this.$parent.error = error.data.error;
         }
       );        
     },
     save: function(){
+      let _this = this;
       // starting label for the save button
       var txt = $('#save').text();
       // temporary message that shows
       $('#save').text('Saving...');
-      this.$http.post('/postPerson/', _this.item)
+      this.$http.post('/postPerson/', _this.person)
         .then(function(resp){
           setTimeout(function(){ 
             // revert the label of the save button
             $('#save').text(txt);
             // redirect to the summary tab
-            _this.$router.replace({ path: '/admin/household/' + _this.item.household_id });
+            _this.$router.replace({ name:'admin-household', params: {household_id: _this.household_id} });
           }, 200);      
         }, function(error){
           console.log('error', error);
@@ -124,48 +136,53 @@ const secondChild = {
       );
     },
     removePerson: function(){
+      let _this = this;
       // Vue.set(_this.item, '_deleted', true);
-      _this.item._deleted = true;
+      _this.person._deleted = true;
     }
   }
 }
 
 const thirdChild = {
   template: '#third-child',
+  props: ['household_id', 'loading', 'error', 'item'],
   data: function(){
     return {
-      item: {},
-      loading: true,
       title: {},
-      error: ''
     }
   },
-  created: function(){
-    _this = this;
-  },
+  created: function(){},
   mounted: function(){
-    _this.title = {
-      icon: "edit",
-      content: "Edit this household contact info"
-    };
-    _this.item = _this.$parent.item;
+    // if the route has a household_id, then this must be the edit view
+    if(this.household_id){
+      this.title = {
+        icon: "edit",
+        content: "Edit this household contact info"
+      };
+    } else {
+      this.title = {
+        icon: "add",
+        content: "Add a household"
+      };      
+    }
   },
-  updated: function(){
-    _this.loading = false;  
-  },
+  updated: function(){},
   methods: {
     save: function(){
+      let _this = this;
       // starting label for the save button
       var txt = $('#save').text();
       // temporary message that shows
       $('#save').text('Saving...');
+      console.log(_this.item.name)
       this.$http.post('/postHousehold/', _this.item)
         .then(function(resp){
+          console.log(resp)
           setTimeout(function(){ 
             // revert the label of the save button
             $('#save').text(txt);
             // redirect to the summary tab
-            _this.$router.replace({ path: '/admin/household/' + _this.item.household_id });
+            _this.$router.replace({ name:'admin-household', params: {household_id: _this.household_id} });
           }, 200);      
         }, function(error){
           console.log('error', error);
@@ -198,19 +215,25 @@ const adminHousehold = {
       error: ''
     }
   },
-  created: function() {
-  },
+  created: function(){},
   mounted: function(){
+    // grab the household data
     this.get();
   },
   updated: function(){
+    let _this = this;
     // console.log('parent updated')
-    this.loading = false;
+    setTimeout(function(){ 
+      _this.loading = false;
+    }, 200);      
   },
-  watch: { // created _this does not make it in here, but this still works
-    loading: function(val, oldVal){ 
-      // console.log('watch', val, oldVal);
-      // console.log('watch', this.loading)
+  watch: {
+    '$route': function(to, from){ 
+      let _this = this;
+      if(from.name == 'editPerson' || from.name == 'editHousehold'){
+        // after editing a person or household, update the household and the people
+        _this.get();
+      }
     }
   },
   methods: {
@@ -1128,7 +1151,7 @@ Vue.component('person-contact-info', {
 
 Vue.component('error', {
   template: '#error',
-  props: ['item']
+  props: ['error']
 });
 
 Vue.component('loading', {
