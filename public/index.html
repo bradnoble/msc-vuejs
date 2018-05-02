@@ -282,11 +282,12 @@
     </script>
 
   <script type="text/x-template" id="view-person-contact-info">
-      <span>
-        <span v-if="item.email" class="chip"><i class="material-icons tiny">email</i> {{ item.email }}</span>
-        <span v-if="item.phone" class="chip"><i class="material-icons tiny">phone_iphone</i> {{ item.phone }}</span>
-      </span>
-    </script>
+    <span>
+      <span v-if="item.email" class="chip"><i class="material-icons tiny">email</i>&nbsp;{{ item.email }}</span>
+      <span v-if="item.phone" class="chip"><i class="material-icons tiny">phone_iphone</i>&nbsp;{{ item.phone }}</span>
+      <span v-if="item.work_phone" class="chip"><i class="material-icons tiny">work</i>&nbsp;{{ item.work_phone }}</span>
+    </span>
+  </script>
 
   <script type="text/x-template" id="view-household">
       <div>

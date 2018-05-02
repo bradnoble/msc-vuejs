@@ -1,16 +1,32 @@
 /*
 x new household
+admin controls
+  better search like /list - 3 chars
+  make add household a 'more-vert' option, better heading
 remove household
   deleting household should delete people
   where should delete household take the user? now it returns the user to admin-household, but after deletion it is undefined
     answer: add error messaging to adminHousehold
 home updates to right rail
 form validation
+
+list
+  tabs
+    per status
+  download
+    per status
+    per household
+
+add datestamps to adds and edits
+- ISO string format '2018-05-02T13:53:24.118Z' which you get from `new Date().toISOString()`
+- millseconds since 1970 -`1525269204118` which you get from `new Date().getTime()`
+
 */
 
 //Page init
 $(function () {
   $('.dropdown-trigger').dropdown();
+  $('.dropdown-button').dropdown(); // chris do we need both of these?
   $('.modal').modal();
   //>>MaterializeCSS 1.0.0 features
   // $('.tooltipped').tooltip();
