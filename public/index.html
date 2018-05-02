@@ -1121,7 +1121,7 @@ Parameters:
       </div>
       <div class="row">
         <div class="col s12">
-          <nav class="blue lighten-2 z-depth-0">
+          <nav class="blue lighten-1 z-depth-0">
             <div class="nav-wrapper">
               <span v-for="folder in path" v-on:click="onBreadcrumb(folder.id, $event)" class="breadcrumb cursor-pointer">{{folder.name}}</span>
             </div>
@@ -1135,32 +1135,36 @@ Parameters:
       </div>
       <div class="row">
         <div class="col s12">
-          <div class="row">
-            <div class="col s4">Name</div>
+          <div class="row grey lighten-4">
+            <div class="col s5">Name</div>
             <div class="col s1">Type</div>
+            <div class="col s2">Modified</div>
             <div class="col s2">Size</div>
-            <div class="col s3">Updated</div>
-            <div class="col s2"></div>
+            <div class="col s1"></div>
+            <div class="col s1"></div>
           </div>
       </div>
-      <div class="row"  v-for="file in files" :key="file.id" v-if="file.mimeType.includes('folder')">
-        <div class="col s4" @click="onFolderView(file,$event)"><i class="material-icons small cursor-pointer">folder</i><span class="cursor-pointer">&nbsp;{{file.name}}</span></div>
+      <div class="row">
+          <div class="col s12">
+        <div class="row"  v-for="file in files" :key="file.id" v-if="file.type=='Folder'">
+        <div class="col s5" @click="onFolderView(file,$event)"><i class="material-icons small cursor-pointer">folder</i><span class="cursor-pointer">&nbsp;{{file.name}}</span></div>
         <div class="col s1">&minus;</div>
         <div class="col s2">&minus;</div>
-        <div class="col s3">&minus;</div>
-        <div class="col s2"></div>
+        <div class="col s2">&minus;</div>
+        <div class="col s1"></div>
+        <div class="col s1"></div>
       </div>
-
-      <div class="row"  v-for="file in files" :key="file.id" v-if="!file.mimeType.includes('folder')">
-        <div class="col s4" @click="onFileView(file, $event)"><i class="material-icons small cursor-pointer">description</i><span class="cursor-pointer">&nbsp;{{file.name}}</span></div>
-        <div class="col s1">{{file.mimeType.includes('folder')?'-':file.mimeType.includes('pdf')?'PDF':'NO'}}</div>
-        <div class="col s2">{{file.mimeType.includes('folder')?'&minus;':file.size}}</div>
-        <div class="col s3">{{file.modifiedTime.substr(0,10) + ' ' +file.modifiedTime.substr(11,5)}}</div>
-        <div class="col s2"><i v-if="file.mimeType.includes('file') || file.mimeType.includes('pdf')" class="material-icons small tooltipped cursor-pointer" data-position="bottom" data-delay="50" data-tooltip="Download PDF" @click="onFileDownload(file, $event)">archive</i></div>
+      <div class="row"  v-for="file in files" :key="file.id" v-if="file.type!='Folder'">
+        <div class="col s5"><i class="material-icons small">{{(file.type=='PDF'?'description':(file.type=='Spreadsheet'?'grid_on':'format_align_left'))}}</i><span>&nbsp;{{file.name}}</span></div>
+        <div class="col s1">{{file.type}}</div>
+        <div class="col s2">{{file.modifiedTimeFormatted}}</div>
+        <div class="col s2" v-html="file.sizeFormatted"></div>
+        <div class="col s1" @click="(file.canView?onFileView(file, $event):null)"><i class="material-icons small cursor-pointer" v-if="file.canView" >open_in_browser</i></div>
+        <div class="col s1"><i v-if="file.canDownload" class="material-icons small tooltipped cursor-pointer" data-position="bottom" data-delay="50" data-tooltip="Download PDF" @click="onFileDownload(file, $event)">file_download</i></div>
       </div>
-
-
     </div>
+  </div>
+</div>
   </script>
 
   <!--Resources: PDF viewer for Google Docs-->

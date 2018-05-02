@@ -546,33 +546,68 @@ app.get('/resources',
  * Download Google Drive file
  **/
 app.get('/resources/download/:id',
-users.auth,
-(req, res) => {
+  users.auth,
+  (req, res) => {
 
-  gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
-  if (req.params.id !== undefined) {
-    res.writeHead(200, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'X-Requested-With',
-      'Content-Disposition': "attachment;filename='MSCFile.pdf'",
-      'Content-Type': 'application/pdf'
-    });
+    if (req.params.id !== undefined) {
 
-    gdrive.api.getFile(req.params.id, res, () => {
-      console.log('File sent in response');
-      res.send();
+      //Get file metadata w/ filename for d/l
+      // let fileName;
+      // gdrive.api.getFileMetaData(req.params.id, (metadata) => {
+      //   //Get file name from metadata
+      //   fileName = metadata.name;
+
+      //Get file contents and d/l
+      gdrive.api.getFile(req.params.id, res, () => {
+        res.send();
+        res.end();
+      });
+      // });
+    } else {
       res.end();
-    });
-  } else {
-    res.end();
-  }
+    }
 
-});
+  });
+
+app.get('/resources/export/:id',
+  users.auth,
+  (req, res) => {
+
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+
+    if (req.params.id !== undefined) {
+
+      //Get file metadata w/ filename for d/l
+      let fileName;
+      gdrive.api.getFileMetaData(req.params.id, (metadata) => {
+        fileName = metadata.name;
+
+        //Setup response for file d/l
+        res.writeHead(200, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'X-Requested-With',
+          'Content-Disposition': "attachment;filename='" + fileName + "'",
+          'Content-Type': 'application/pdf'
+        });
+
+        //Get file contents and d/l
+        gdrive.api.getFile(req.params.id, res, () => {
+          console.log(fileName + ' sent in response');
+          res.send();
+          res.end();
+        });
+      });
+    } else {
+      res.end();
+    }
+
+  });
 
 /*
- * API endpoints
- */
+* API endpoints
+*/
 
 /*
 * Resources: Endpoint for retrieving list of GDrive metadata for a folder

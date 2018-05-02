@@ -33,9 +33,6 @@ $(function () {
   // $('.tap-target').featureDiscovery();
 });
 
-
-// 1. Define route components.
-// These can be imported from other files
 const home = {
   template: '#home'
 }
@@ -503,9 +500,10 @@ var adminHousehold_old = {
   }
 };
 
-var adminHousehold_older = {
-  template: '#admin-household',
-  // props: ['item'],
+
+
+var editHousehold = {
+  template: '#edit-household',
   data: function(){
     return {
       item: {},
