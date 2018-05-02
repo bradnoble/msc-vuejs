@@ -166,6 +166,8 @@ app.get('/list',
         var docs = mapped(resp);
         var households = {};
         var people = [];
+        var finalArray = [];
+
         for (i = 0; i < docs.length; i++) {
           if (docs[i].type == 'person' && docs[i].first && docs[i].last && docs[i].status != 'deceased' && docs[i].status != 'non-member') {
             // build an object that holds objects that hold arrays of people
@@ -173,14 +175,16 @@ app.get('/list',
           } else if (docs[i].type == 'household') {
             households[docs[i]._id] = docs[i];
           }
-          // console.log(people);
         }
+        // connect the household info to the person
+        // only if there's a household to connect a person to
         for (i = 0; i < people.length; i++) {
-          // connect the household info to the person
-          people[i].household = households[people[i].household_id]
+          if(households[people[i].household_id]){
+            people[i].household = households[people[i].household_id]
+            finalArray.push(people[i]);
+          }
         }
-        // console.log(docs[1]);
-        res.send(people);
+        res.send(finalArray);
       }
     });
   }
