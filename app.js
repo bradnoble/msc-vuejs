@@ -343,7 +343,33 @@ app.post('/postPerson',
     }
   });
   
-  app.post('/postHousehold',
+app.post('/postHousehold',
+  users.auth,
+  jsonParser,
+  function (req, res) {
+    var role = req.user.role[0].value;
+    if (role === 'admin') {
+
+      var household = req.body;
+
+        db.insert(household, function (err, doc) {
+          if (!err) {
+            console.log('success updating household, will add people to response next');
+            res.send(doc);
+          }
+          else {
+            console.log('household:' + err.reason);
+            res.status(401).json({ "error": err.reason });
+          }
+        });
+
+    } else {
+      // console.log('not admin');
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
+    }
+  });
+
+app.post('/postHouseholdOld',
   users.auth,
   jsonParser,
   function (req, res) {

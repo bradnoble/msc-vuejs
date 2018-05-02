@@ -23,6 +23,19 @@ const routes = [
       name: 'admin',
       component: admin 
     },
+    {
+      path: '/admin/household/new', 
+      component: newHousehold,
+      props: true,
+      children: [
+        {
+          path: '',
+          name: 'new-household',
+          component: thirdChild,
+          props: true
+        }        
+      ]
+    },
     { 
       path: '/admin/household/:household_id', 
       component: adminHousehold,

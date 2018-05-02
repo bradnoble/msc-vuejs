@@ -3,13 +3,15 @@
 
 <head>
   <title>Montclair Ski Club - {{ title }}</title>
+<!--
   <script src="/js/pouchdb-6.3.4.min.js"></script>
   <script src="/js/pouchdb.find.min.js"></script>
   <script src="/js/pouchdb.silverlining.min.js"></script>
   <script>
     var db = new PouchDB('msc');
   </script>
-  <script src="/js/vue.min.js"></script>
+-->
+<script src="/js/vue.min.js"></script>
   <script src="/js/vue-resource.min.js"></script>
   <script src="/js/vue-router.js"></script>
   <!--Import Google Icon Font-->
@@ -64,9 +66,6 @@
               <router-link to="/resources">Resources</router-link>
             </li>
             <li>
-              <router-link to="/admin/new">Add Household</router-link>
-            </li>
-            <li>
               <router-link :to="{name:'admin'}">Admin</router-link>
             </li>
             <li>
@@ -106,9 +105,6 @@
       <li>
         <a href="/getPeopleForCSV">
           <i class="material-icons tiny">file_download</i> Download List</a>
-      </li>
-      <li>
-        <router-link to="/admin/new">Add Household</router-link>
       </li>
       <li>
         <router-link to="/admin">Admin</router-link>
@@ -216,7 +212,10 @@
 
   <script type="text/x-template" id="admin">
       <div>
-        <h2>Admin</h2>
+        <p>
+          Admin
+          <router-link :to="{name:'new-household'}">Add household</router-link>
+        </p>
         <div v-if="!loading">
           <ul class="collection">
             <li class="collection-item grey lighten-4 row">
@@ -237,11 +236,11 @@
                 </div>
                 <div class="col m9">
                   <ul class="collection">
-                      <person 
+                      <admin-person 
                       v-for="person in item.people" 
                       v-bind:key="person._id" 
                       v-bind:item="person">
-                    </person>
+                    </admin-person>
                   </ul>
                 </div>
               </div><!--row-->
@@ -476,19 +475,15 @@ Parameters:
   <!-- a list of people in the household -->
   <script type="text/x-template" id="first-child">
     <div>
-      <ul class="collection">
+      <ul class="collection" v-show="item.people.length > 0">
         <admin-person 
           v-for="person in item.people" 
           v-bind:key="person._id" 
           v-bind:item="person">
         </admin-person>                
       </ul>
-      <router-link :to="{ name: 'editPerson', params: { household_id: item._id, person_id: 'new' }}" title="Add a person to this household">
-        <i class="material-icons">person_add</i> Add a person
-      </router-link>
-      <router-link :to="{ name: 'editHousehold', params: { household_id: item._id }}" title="Edit household">
-        <i class="material-icons">edit</i> Edit household
-      </router-link>
+      <div v-if="item.people.length == 0">
+        <router-link :to="{name: 'editPerson', params: {household_id: item._id, person_id: 'new'}}">Add a person</router-link>
     </div>
   </script>
 
@@ -562,7 +557,7 @@ Parameters:
   <!-- a form to edit a household -->
   <script type="text/x-template" id="third-child">
     <div>
-        {{ item }}
+        <!-- <pre>{{ item }}</pre> -->
         <div class="card-content blue lighten-5">
             <span class="card-title"><i class="material-icons">{{ title.icon }}</i> {{ title.content }}</span>
    
@@ -652,20 +647,61 @@ Parameters:
     </div>
   </script>
 
+
+  <script type="text/x-template" id="new-household">
+    <div>        
+      <h6>
+        <a href="#/admin">Admin</a> / Add a household
+      </h6>
+      <div class="row">
+        <div class="col s12 m8">
+          <div class="card">
+            <div class="card-content">
+              <span class="card-title">
+                Add household
+              </span>
+              <router-view :item="item"></router-view>
+            </div><!--card-content-->
+          </div><!--card-->
+        </div><!--col-->
+      </div><!--row-->
+    </div>
+  </script>
+
+
   <script type="text/x-template" id="admin-household">
     <div>
       <loading :status="loading"></loading>
       <error :error="error"></error>
       <div v-if="!error">
+        <h6>
+          <a href="#/admin">Admin</a> / {{ item.name }}
+        </h6>
         <div class="row">
-          <h6>
-            <a href="#/admin">Admin</a> / {{ item.label_name }}
-          </h6>
           <div class="col s12 m8">
             <div class="card">
               <div class="card-content">
                 <span class="card-title">
-                    {{ item.label_name }}
+                    {{ item.name }}
+                    <!-- Dropdown Trigger -->
+                    <span class="secondary-content">
+                      <a class="dropdown-button" href="#" data-constrainwidth="false" data-alignment="right" data-activates="dropdown1" title="click to see options">
+                        <i class="material-icons">more_vert</i>
+                      </a>
+                    </span>
+                    <!-- Dropdown Structure -->
+                    <ul id='dropdown1' class='dropdown-content'>
+                      <li>
+                        <router-link :to="{ name: 'editPerson', params: { household_id: item._id, person_id: 'new' }}" title="Add a person to this household">
+                          <i class="material-icons">person_add</i> Add a person
+                        </router-link>
+                      </li>
+                      <li>
+                        <router-link :to="{ name: 'editHousehold', params: { household_id: item._id }}" title="Edit household">
+                          <i class="material-icons">edit</i> Edit household
+                        </router-link>
+                      </li>
+                    </ul>
                 </span>  
                 <location v-bind:item="item"></location>
     

@@ -1,18 +1,11 @@
 /*
-x edit person
-x make edit person and new person children of admin-household?
-x new person
-
-emit loading and error to parent 
-try and remove call to db from second child
-
-
-edit household
-  delete household should delete people
+x new household
+remove household
+  deleting household should delete people
   where should delete household take the user? now it returns the user to admin-household, but after deletion it is undefined
     answer: add error messaging to adminHousehold
-new household
-home
+home updates to right rail
+form validation
 */
 
 //Page init
@@ -43,25 +36,11 @@ const firstChild = {
   props: ['item'], // gotta use props to grab data from the parent
   data: function(){
     return {
-      // item: {}, // don't recast the item cuz we got it from props
-      error: ''
     }
   },
-  created: function() {
-    // _this = this;
-    // console.log('created')
-    // console.log(this.item)
-  },
-  mounted: function(){
-    // this.item = _this.$parent.item.people;
-    // console.log(this.item)
-    // console.log('mounted')
-    // console.log(this.item)
-  },
-  updated: function(){
-    // console.log('updated')
-    // console.log(this.item)
-  }
+  created: function() {},
+  mounted: function(){},
+  updated: function(){}
 }
 
 const secondChild = {
@@ -171,18 +150,17 @@ const thirdChild = {
     save: function(){
       let _this = this;
       // starting label for the save button
-      var txt = $('#save').text();
+      const txt = $('#save').text();
       // temporary message that shows
       $('#save').text('Saving...');
-      console.log(_this.item.name)
       this.$http.post('/postHousehold/', _this.item)
         .then(function(resp){
-          console.log(resp)
+          // console.log('item', _this.item)
           setTimeout(function(){ 
             // revert the label of the save button
             $('#save').text(txt);
             // redirect to the summary tab
-            _this.$router.replace({ name:'admin-household', params: {household_id: _this.household_id} });
+            _this.$router.replace({ name:'admin-household', params: {household_id: _this.item._id} });
           }, 200);      
         }, function(error){
           console.log('error', error);
@@ -190,6 +168,7 @@ const thirdChild = {
       );
     },
     remove: function(){
+      let _this = this;
       var people = _this.$parent.item.people;
       for(i=0; i < people.length; i++){
         // people[i]._deleted = true;
@@ -215,12 +194,14 @@ const adminHousehold = {
       error: ''
     }
   },
-  created: function(){},
+  created: function(){
+  },
   mounted: function(){
     // grab the household data
     this.get();
   },
   updated: function(){
+    $('.dropdown-button').dropdown();        
     let _this = this;
     // console.log('parent updated')
     setTimeout(function(){ 
@@ -250,7 +231,17 @@ const adminHousehold = {
   }
 };
 
-
+const newHousehold = {
+  template: '#new-household',
+  data: function(){
+    return {
+      item: getNewHousehold()
+    }
+  },
+  mounted: function(){
+    $('.dropdown-trigger').dropdown();    
+  }
+};
 
 const firstChild_old = {
   template: '#first-child',
