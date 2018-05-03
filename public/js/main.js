@@ -1,6 +1,32 @@
+/*
+x new household
+admin controls
+  better search like /list - 3 chars
+  make add household a 'more-vert' option, better heading
+remove household
+  deleting household should delete people
+  where should delete household take the user? now it returns the user to admin-household, but after deletion it is undefined
+    answer: add error messaging to adminHousehold
+home updates to right rail
+form validation
+
+list
+  tabs
+    per status
+  download
+    per status
+    per household
+
+add datestamps to adds and edits
+- ISO string format '2018-05-02T13:53:24.118Z' which you get from `new Date().toISOString()`
+- millseconds since 1970 -`1525269204118` which you get from `new Date().getTime()`
+
+*/
+
 //Page init
 $(function () {
   $('.dropdown-trigger').dropdown();
+  $('.dropdown-button').dropdown(); // chris do we need both of these?
   $('.modal').modal();
   $('.tooltipped').tooltip();
   //>>MaterializeCSS 1.0.0 features
@@ -15,15 +41,472 @@ $(function () {
 
 });
 
-// 1. Define route components.
-// These can be imported from other files
-var editPerson = {
-  template: '#admin-person-edit',
+const home = {
+  template: '#home'
+}
+
+
+/*
+
+>>>>>>>>>>>> ADMIN COMPONENTS
+
+*/
+
+const firstChild = {
+  template: '#first-child',
+  props: ['item'], // gotta use props to grab data from the parent
   data: function(){
-    item: {}
+    return {
+    }
+  },
+  created: function() {},
+  mounted: function(){},
+  updated: function(){}
+}
+
+const secondChild = {
+  template: '#second-child',
+  props: ['household_id', 'person_id', 'loading', 'error'],
+  data: function(){
+    return {
+      person: {},
+      statuses: getStatuses(),
+      genders: getGenders(),
+      title: {}
+    }
+  },
+  created: function(){},
+  mounted: function(){
+    // frob the process meter
+    // the parent update method will turn it off when it completes
+    this.$parent.loading = true;
+
+    // for new people in the household
+    if(this.person_id == 'new' ){
+      this.title = {
+        icon: "person_add",
+        content: "Add a person to this household"
+      };
+      this.person = getPersonObject();
+      // assign the new person to the household
+      this.person.household_id = this.household_id;      
+    } 
+    // for editing people who are already in the household
+    else {
+      this.title = {
+        icon: "edit",
+        content: "Edit this person's entry"
+      };
+    // grab the person's data from the database
+    this.get();
+    }
+  },
+  updated: function(){},
+  methods: {
+    get: function(){
+      let _this = this;
+      this.$http.get('/getPerson/', 
+      {
+        id: _this.person_id
+      })
+      .then(function(resp){
+          _this.person = resp.data;
+        }, function(error){
+          _this.$parent.error = error.data.error;
+        }
+      );        
+    },
+    save: function(){
+      let _this = this;
+      // starting label for the save button
+      var txt = $('#save').text();
+      // temporary message that shows
+      $('#save').text('Saving...');
+      this.$http.post('/postPerson/', _this.person)
+        .then(function(resp){
+          setTimeout(function(){ 
+            // revert the label of the save button
+            $('#save').text(txt);
+            // redirect to the summary tab
+            _this.$router.replace({ name:'admin-household', params: {household_id: _this.household_id} });
+          }, 200);      
+        }, function(error){
+          console.log('error', error);
+        }
+      );
+    },
+    removePerson: function(){
+      let _this = this;
+      // Vue.set(_this.item, '_deleted', true);
+      _this.person._deleted = true;
+    }
   }
 }
 
+const thirdChild = {
+  template: '#third-child',
+  props: ['household_id', 'loading', 'error', 'item'],
+  data: function(){
+    return {
+      title: {},
+    }
+  },
+  created: function(){},
+  mounted: function(){
+    // if the route has a household_id, then this must be the edit view
+    if(this.household_id){
+      this.title = {
+        icon: "edit",
+        content: "Edit this household contact info"
+      };
+    } else {
+      this.title = {
+        icon: "add",
+        content: "Add a household"
+      };      
+    }
+  },
+  updated: function(){},
+  methods: {
+    save: function(){
+      let _this = this;
+      // starting label for the save button
+      const txt = $('#save').text();
+      // temporary message that shows
+      $('#save').text('Saving...');
+      this.$http.post('/postHousehold/', _this.item)
+        .then(function(resp){
+          // console.log('item', _this.item)
+          setTimeout(function(){ 
+            // revert the label of the save button
+            $('#save').text(txt);
+            // redirect to the summary tab
+            _this.$router.replace({ name:'admin-household', params: {household_id: _this.item._id} });
+          }, 200);      
+        }, function(error){
+          console.log('error', error);
+        }
+      );
+    },
+    remove: function(){
+      let _this = this;
+      var people = _this.$parent.item.people;
+      for(i=0; i < people.length; i++){
+        // people[i]._deleted = true;
+        if(people[i]._deleted){
+          delete people[i]._deleted;
+        } else {
+          Vue.set(people[i], '_deleted', true);
+        }
+      }
+      Vue.set(_this.item, '_deleted', true);
+      // _this.item._deleted = true;
+    }
+  }
+}
+
+const adminHousehold = {
+  template: '#admin-household',
+  props: ['household_id'],
+  data: function(){
+    return {
+      item: {},
+      loading: true,
+      error: ''
+    }
+  },
+  created: function(){
+  },
+  mounted: function(){
+    // grab the household data
+    this.get();
+  },
+  updated: function(){
+    $('.dropdown-button').dropdown();        
+    let _this = this;
+    // console.log('parent updated')
+    setTimeout(function(){ 
+      _this.loading = false;
+    }, 200);      
+  },
+  watch: {
+    '$route': function(to, from){ 
+      let _this = this;
+      if(from.name == 'editPerson' || from.name == 'editHousehold'){
+        // after editing a person or household, update the household and the people
+        _this.get();
+      }
+    }
+  },
+  methods: {
+    get: function() {
+      let _this = this; // need `_this` to cast and set `this` into the API call
+      this.$http.get('/getHousehold/', {
+        id: _this.household_id // can this be cast in via props?
+      }).then(function(resp){
+        _this.item = resp.data;
+      }, function(error){
+        _this.error = error.data.error;
+      });
+    }
+  }
+};
+
+const newHousehold = {
+  template: '#new-household',
+  data: function(){
+    return {
+      item: getNewHousehold()
+    }
+  },
+  mounted: function(){
+    $('.dropdown-trigger').dropdown();    
+  }
+};
+
+const firstChild_old = {
+  template: '#first-child',
+  data: function(){
+    return {
+      item: {},
+      error: '',
+      loading: true
+    }
+  },
+  created: function() {
+    _this = this;
+  },
+  mounted: function(){
+    _this.item = _this.$parent.item;
+  },
+  updated: function(){
+    _this.loading = false;
+  }
+}
+
+const secondChild_old = {
+  template: '#second-child',
+  data: function(){
+    return {
+      item: {},
+      loading: true,
+      statuses: getStatuses(),
+      genders: getGenders(),
+      title: {},
+      error: ''
+    }
+  },
+  created: function(){
+    _this = this;
+  },
+  mounted: function(){
+    // for new people in the household
+    if(this.$route.params.person_id && this.$route.params.person_id == 'new' ){
+      _this.title = {
+        icon: "person_add",
+        content: "Add a person to this household"
+      };
+      _this.item = getPersonObject();
+      // assign the new person to the household
+      _this.item.household_id = _this.$route.params.household_id;      
+    } 
+    // for editing people who are already in the household
+    else {
+      _this.title = {
+        icon: "edit",
+        content: "Edit this person's entry"
+      };
+      var people = _this.$parent.item.people;
+      for(i=0; i < people.length; i++){
+        if(people[i]._id == _this.$route.params.person_id){
+          _this.item = people[i];
+        } 
+      }
+    }
+    if(Object.keys(_this.item).length == 0){
+      _this.error = "Sorry, we don't have a person by that name."
+    }
+  },
+  updated: function(){
+    _this.loading = false;  
+  },
+  methods: {
+    save: function(){
+      // starting label for the save button
+      var txt = $('#save').text();
+      // temporary message that shows
+      $('#save').text('Saving...');
+      this.$http.post('/postPerson/', _this.item)
+        .then(function(resp){
+          setTimeout(function(){ 
+            // revert the label of the save button
+            $('#save').text(txt);
+            // redirect to the summary tab
+            _this.$router.replace({ path: '/admin/household/' + _this.item.household_id });
+          }, 200);      
+        }, function(error){
+          console.log('error', error);
+        }
+      );
+    },
+    removePerson: function(){
+      // Vue.set(_this.item, '_deleted', true);
+      _this.item._deleted = true;
+    }
+  }
+}
+
+const thirdChild_old = {
+  template: '#third-child',
+  data: function(){
+    return {
+      item: {},
+      loading: true,
+      title: {},
+      error: ''
+    }
+  },
+  created: function(){
+    _this = this;
+  },
+  mounted: function(){
+    _this.title = {
+      icon: "edit",
+      content: "Edit this household contact info"
+    };
+    _this.item = _this.$parent.item;
+  },
+  updated: function(){
+    _this.loading = false;  
+  },
+  methods: {
+    save: function(){
+      // starting label for the save button
+      var txt = $('#save').text();
+      // temporary message that shows
+      $('#save').text('Saving...');
+      this.$http.post('/postHousehold/', _this.item)
+        .then(function(resp){
+          setTimeout(function(){ 
+            // revert the label of the save button
+            $('#save').text(txt);
+            // redirect to the summary tab
+            _this.$router.replace({ path: '/admin/household/' + _this.item.household_id });
+          }, 200);      
+        }, function(error){
+          console.log('error', error);
+        }
+      );
+    },
+    remove: function(){
+      var people = _this.$parent.item.people;
+      for(i=0; i < people.length; i++){
+        // people[i]._deleted = true;
+        if(people[i]._deleted){
+          delete people[i]._deleted;
+        } else {
+          Vue.set(people[i], '_deleted', true);
+        }
+      }
+      Vue.set(_this.item, '_deleted', true);
+      // _this.item._deleted = true;
+    }
+  }
+}
+
+
+var adminHousehold_old = {
+  template: '#admin-household',
+  props: ['item'],
+  data: function(){
+    return {
+      item: {},
+      error: '',
+      loading: true
+    }
+  },
+  created: function() {
+    _this = this;
+    console.log('created');
+/*
+    this.$http.get('/getHousehold/', 
+    {
+      id: this.$route.params.household_id
+    })
+    .then(function(resp){
+        console.log('data')
+        _this.item = resp.data;
+      }, function(error){
+        _this.error = error;
+      }
+    );
+*/
+    _this.item = {
+      "_id": "household-140",
+      "_rev": "5-a38659e4274d63c91dad83c6ac9292f8",
+      "name": "Bancroft",
+      "label_name": "Bancroft",
+      "street1": "24 Pinewood Village",
+      "street2": "",
+      "city": "West Lebanon",
+      "state": "NH",
+      "zip": "03784",
+      "phone": "802-496-9562",
+      "mail_news": true,
+      "mail_list": true,
+      "list_on_website": "yes",
+      "type": "household",
+      "people": [
+          {
+              "_id": "person-118",
+              "_rev": "27-77b4036bebad3376c0919f09caa06ff6",
+              "last": "Bancroft",
+              "first": "Monk",
+              "status": "deceased",
+              "household_id": "household-140",
+              "phone": "",
+              "email": "monkb@madriver.com",
+              "work_phone": "",
+              "gender": "Male",
+              "type": "person",
+              "dob": ""
+          },
+          {
+              "_id": "person-120",
+              "_rev": "15-97c155a6a43849fd7a503b207307132b",
+              "last": "Bancroft",
+              "first": "Janes",
+              "status": "non-member",
+              "household_id": "household-140",
+              "phone": "",
+              "email": "jnbancroft@madriver.com",
+              "work_phone": "",
+              "gender": "Female",
+              "type": "person"
+          }
+      ]
+  };
+//    _this.start();
+  },
+  mounted: function(){
+    console.log('mounted');
+    _this.start();
+  },
+  updated: function(){
+    console.log('updated');    
+  },
+  methods: {
+    start: function() {
+      console.log('start')
+    }
+  },
+  watch: {
+    '$route' (to, from) {
+      console.log('$route', to, from)
+      _this.start();
+    }
+  }
+};
 
 var editHousehold = {
   template: '#edit-household',
@@ -35,8 +518,8 @@ var editHousehold = {
       open: 'summary'
     }
   },
-  created: function () {
-    if (this.$route.params.id == "new") {
+  created: function() {
+    if(this.$route.params.household_id == "new"){
       var newHousehold = getNewHousehold();
       // https://vuejs.org/2016/02/06/common-gotchas/
       // https://stackoverflow.com/questions/40713905/deeply-nested-data-objects-in-vuejs
@@ -52,14 +535,16 @@ var editHousehold = {
   },
   computed: {},
   methods: {
-    setPageTitle: function () {
+/*
+    setPageTitle: function(){
       document.title = (this.item.name) ? this.item.name : 'Edit Household';
     },
-    start: function () {
+*/
+    start: function() {
       _this = this;
       this.$http.get('/getHousehold/',
         {
-          id: this.$route.params.id
+          id: this.$route.params.household_id
         })
         .then(function (resp) {
           // console.log('start', resp)        
@@ -68,10 +553,10 @@ var editHousehold = {
             _this.addPerson();
           }
           // change legacy values to use materialize switch
-          _this.item.mail_news = (_this.item.mail_news == 'yes' || _this.item.mail_news == true) ? true : false;
-          _this.item.mail_list = (_this.item.mail_list == 'yes' || _this.item.mail_list == true) ? true : false;
-          _this.setPageTitle();
-        }, function (error) {
+          _this.item.mail_news = (_this.item.mail_news == 'yes' || _this.item.mail_news == true ) ? true : false;
+          _this.item.mail_list = (_this.item.mail_list == 'yes' || _this.item.mail_list == true ) ? true : false;
+//          _this.setPageTitle();
+          }, function(error){
           _this.item = {
             name: 'sorry!'
           }
@@ -656,40 +1141,8 @@ function formatBytes(bytes, decimals) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// 2. Define some routes
-// Each route should map to a component. The "component" can
-// either be an actual component constructor created via
-// `Vue.extend()`, or just a component options object.
-// We'll talk about nested routes later.
-const routes = [
-  {
-    path: '/list',
-    component: list,
-    alias: '/'
-  },
-  {
-    path: '/list/:id',
-    components: {
-      default: viewHousehold
-    },
-    props: true
-  },
-  { path: '/logout', component: logout },
-  { path: '/admin', component: admin },
-  { path: '/admin/household/:id', component: editHousehold, props: true },
-  { path: '/admin/household/edit/:id', component: editHousehold, props: true },
-  { path: '/admin/member/edit/:id', component: editPerson, props: true },
-  { path: '/emails', component: emails },
-  { path: '/list/turn-off/:id', component: editHousehold, props: true },
-  { path: '/resources/:id?', component: resources },
-]
+// routes were here
 
-// 3. Create the router instance and pass the `routes` option
-// You can pass in additional options here, but let's
-// keep it simple for now.
-const router = new VueRouter({
-  routes // short for `routes: routes`
-});
 
 Vue.component('location', {
   template: '#view-location',
@@ -716,10 +1169,18 @@ Vue.component('person-contact-info', {
   props: ['item']
 });
 
-var vm = new Vue({
-  el: '#app',
-  router
+Vue.component('error', {
+  template: '#error',
+  props: ['error']
 });
+
+Vue.component('loading', {
+  template: '#loading',
+  props: ['status']
+});
+
+
+
 
 new Vue({
   el: 'title',

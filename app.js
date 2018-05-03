@@ -166,6 +166,8 @@ app.get('/list',
         var docs = mapped(resp);
         var households = {};
         var people = [];
+        var finalArray = [];
+
         for (i = 0; i < docs.length; i++) {
           if (docs[i].type == 'person' && docs[i].first && docs[i].last && docs[i].status != 'deceased' && docs[i].status != 'non-member') {
             // build an object that holds objects that hold arrays of people
@@ -173,14 +175,16 @@ app.get('/list',
           } else if (docs[i].type == 'household') {
             households[docs[i]._id] = docs[i];
           }
-          // console.log(people);
         }
+        // connect the household info to the person
+        // only if there's a household to connect a person to
         for (i = 0; i < people.length; i++) {
-          // connect the household info to the person
-          people[i].household = households[people[i].household_id]
+          if(households[people[i].household_id]){
+            people[i].household = households[people[i].household_id]
+            finalArray.push(people[i]);
+          }
         }
-        // console.log(docs[1]);
-        res.send(people);
+        res.send(finalArray);
       }
     });
   }
@@ -255,6 +259,30 @@ app.get('/getPeopleForCSV',
   }
 );
 
+app.get('/getPerson/',
+  users.auth,
+  function (req, res) {
+    var role = req.user.role[0].value;
+    if (role === 'admin') {
+      // the factory passes the id of the document as a query parameter
+      var id = req.query.id;
+      db.get(id, function (err, doc) {
+        if (!err) {
+          res.send(doc);
+        } else {
+          return res.status(404).json(
+            { 
+              "error": "Sorry, we don't have a record of this person." 
+            }
+          );          
+        }
+      });
+    }
+  }
+);
+
+
+
 app.get('/getHousehold/',
   users.auth,
   function (req, res) {
@@ -287,6 +315,8 @@ app.get('/getHousehold/',
           );
           //console.log(doc);
           //res.send(doc);
+        } else {
+          return res.status(404).json({ "error": "Sorry, we don't have a household with that id." });          
         }
       });
     } else {
@@ -294,7 +324,56 @@ app.get('/getHousehold/',
     }
   });
 
+app.post('/postPerson',
+  users.auth,
+  jsonParser,
+  function (req, res) {
+    var role = req.user.role[0].value;
+    if (role === 'admin') {
+      var person = req.body;
+      db.insert(person, function (err, doc) {
+        if (!err) {
+          console.log('success updating person, will add people to response next');
+          console.log(doc);
+          res.send(doc);
+        }
+        else {
+          console.log('household:' + err.reason);
+        }
+      });
+    } else {
+      // console.log('not admin');
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
+    }
+  });
+  
 app.post('/postHousehold',
+  users.auth,
+  jsonParser,
+  function (req, res) {
+    var role = req.user.role[0].value;
+    if (role === 'admin') {
+
+      var household = req.body;
+
+        db.insert(household, function (err, doc) {
+          if (!err) {
+            console.log('success updating household, will add people to response next');
+            res.send(doc);
+          }
+          else {
+            console.log('household:' + err.reason);
+            res.status(401).json({ "error": err.reason });
+          }
+        });
+
+    } else {
+      // console.log('not admin');
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
+    }
+  });
+
+app.post('/postHouseholdOld',
   users.auth,
   jsonParser,
   function (req, res) {
