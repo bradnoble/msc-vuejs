@@ -1,0 +1,19 @@
+/*Element styles*/
+body .nav-wrapper a {
+  color: #333
+}
+
+body .navbar-fixed nav {}
+
+body {}
+
+body .container {}
+
+i.material-icons {
+  vertical-align: middle !important;
+}
+
+/*Class styles*/
+.cursor-pointer {
+  cursor: pointer;
+}

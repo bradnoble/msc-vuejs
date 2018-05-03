@@ -45,8 +45,20 @@ var getPersonObject = function(){
   return obj;
 };
 
-var getNewHousehold = function(){
-  var obj = docDefaults('household');
-  obj.people = [];
+const getNewHousehold = function(){
+  let obj = docDefaults('household');
+  let household = {
+    "name": "",
+    "label_name": "",
+    "street1": "",
+    "street2": "",
+    "city": "",
+    "state": "",
+    "zip": "",
+    "phone": "",
+    "mail_news": false,
+    "mail_list": false
+  };
+  Object.assign(obj, household);
   return obj;
 };

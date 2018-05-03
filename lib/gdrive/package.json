@@ -1,0 +1,10 @@
+{
+  "name": "gdrive",
+  "version": "1.0.0",
+  "description": "Google Drive API client",
+  "main": "gdrive.js",
+  "author": "Chris Pels",
+  "dependencies": {
+    "googleapis":"24.0.0"
+  }
+}
