@@ -75,7 +75,7 @@
         </div>
       </nav>
     </div>
-    <ul id="slide-out" class="side-nav">
+    <!-- <ul id="slide-out" class="side-nav">
       <li>
         <div class="user-view">
           <div class="background">
@@ -112,7 +112,7 @@
       <li>
         <router-link to="/logout">Logout</router-link>
       </li>
-    </ul>
+    </ul> -->
     <!-- sideNav -->
 
     <div class="container">
@@ -1102,10 +1102,10 @@ Parameters:
         </div>
       </div>
       <div class="row">
-        <div class="col s2">
+        <div class="col s12">
           <h5>Resources</h5>
         </div>
-        <div class="col s8">
+        <!-- <div class="col s8">
           <nav class="grey lighten-4">
             <div class="nav-wrapper">
               <form>
@@ -1117,7 +1117,7 @@ Parameters:
               </form>
             </div>
           </nav>
-        </div>
+        </div> -->
       </div>
       <div class="row">
         <div class="col s12">
@@ -1133,38 +1133,39 @@ Parameters:
           <div class="divider"></div>
         </div>
       </div>
-      <div class="row">
-        <div class="col s12">
-          <div class="row grey lighten-4">
-            <div class="col s5">Name</div>
-            <div class="col s1">Type</div>
-            <div class="col s2">Modified</div>
-            <div class="col s2">Size</div>
-            <div class="col s1"></div>
-            <div class="col s1"></div>
-          </div>
+      <div v-if="files.length==0">
+        <div class="row">
+            <div class="col s12"><i class="material-icons small">info_outline</i><span>&nbsp;No files in this folder</span></div>
+        </div>
       </div>
-      <div class="row">
-          <div class="col s12">
+      <div v-else>
+        <div class="row grey lighten-4">
+          <div class="col s5">Name</div>
+          <div class="col s1">Type</div>
+          <div class="col s2">Modified</div>
+          <div class="col s2">Size</div>
+          <div class="col s1"></div>
+          <div class="col s1"></div>
+        </div>
+        </div>
         <div class="row"  v-for="file in files" :key="file.id" v-if="file.type=='Folder'">
-        <div class="col s5" @click="onFolderView(file,$event)"><i class="material-icons small cursor-pointer">folder</i><span class="cursor-pointer">&nbsp;{{file.name}}</span></div>
-        <div class="col s1">&minus;</div>
-        <div class="col s2">&minus;</div>
-        <div class="col s2">&minus;</div>
-        <div class="col s1"></div>
-        <div class="col s1"></div>
-      </div>
-      <div class="row"  v-for="file in files" :key="file.id" v-if="file.type!='Folder'">
-        <div class="col s5"><i class="material-icons small">{{(file.type=='PDF'?'description':(file.type=='Spreadsheet'?'grid_on':'format_align_left'))}}</i><span>&nbsp;{{file.name}}</span></div>
-        <div class="col s1">{{file.type}}</div>
-        <div class="col s2">{{file.modifiedTimeFormatted}}</div>
-        <div class="col s2" v-html="file.sizeFormatted"></div>
-        <div class="col s1" @click="(file.canView?onFileView(file, $event):null)"><i class="material-icons small cursor-pointer" v-if="file.canView" >open_in_browser</i></div>
-        <div class="col s1"><i v-if="file.canDownload" class="material-icons small tooltipped cursor-pointer" data-position="bottom" data-delay="50" data-tooltip="Download PDF" @click="onFileDownload(file, $event)">file_download</i></div>
+          <div class="col s5" @click="onFolderView(file,$event)"><i class="material-icons small cursor-pointer">folder</i><span class="cursor-pointer">&nbsp;{{file.name}}</span></div>
+          <div class="col s1">&minus;</div>
+          <div class="col s2">&minus;</div>
+          <div class="col s2">&minus;</div>
+          <div class="col s1"></div>
+          <div class="col s1"></div>
+        </div>
+        <div class="row"  v-for="file in files" :key="file.id" v-if="file.type!='Folder'">
+          <div class="col s5"><i class="material-icons small">{{(file.type=='PDF'?'description':(file.type=='Spreadsheet'?'grid_on':'format_align_left'))}}</i><span>&nbsp;{{file.name}}</span></div>
+          <div class="col s1">{{file.type}}</div>
+          <div class="col s2">{{file.modifiedTimeFormatted}}</div>
+          <div class="col s2" v-html="file.sizeFormatted"></div>
+          <div class="col s1" @click="(file.canView?onFileView(file, $event):null)"><i class="material-icons small cursor-pointer" v-if="file.canView" >open_in_browser</i></div>
+          <div class="col s1"><i v-if="file.canDownload" class="material-icons small cursor-pointer" @click="onFileDownload(file, $event)">file_download</i></div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
   </script>
 
   <!--Resources: PDF viewer for Google Docs-->
