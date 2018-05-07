@@ -3,7 +3,7 @@
 
 <head>
   <title>Montclair Ski Club - {{ title }}</title>
-<!--
+  <!--
   <script src="/js/pouchdb-6.3.4.min.js"></script>
   <script src="/js/pouchdb.find.min.js"></script>
   <script src="/js/pouchdb.silverlining.min.js"></script>
@@ -11,7 +11,7 @@
     var db = new PouchDB('msc');
   </script>
 -->
-<script src="/js/vue.min.js"></script>
+  <script src="/js/vue.min.js"></script>
   <script src="/js/vue-resource.min.js"></script>
   <script src="/js/vue-router.js"></script>
   <!--Import Google Icon Font-->
@@ -164,7 +164,7 @@
       </div>
     </script>
 
-    <script type="text/x-template" id="emails">
+  <script type="text/x-template" id="emails">
       <div class="card-panel">
         <h6>
           <a href="/#list">Membership List</a> / Email addresses
@@ -267,7 +267,7 @@
       </span>
     </script>
 
-    <script type="text/x-template" id="view-person">
+  <script type="text/x-template" id="view-person">
       <li class="row collection-item">
         <div class="col m6"><person-name :item="item"></person-name></div>
         <div class="col m6"><person-contact-info :item="item"></person-contact-info></div>
@@ -372,7 +372,7 @@ Parameters:
       </blockquote>
     </div>
   </script>
-  
+
   <script type="text/x-template" id="loading">
     <div v-if="status" >
       <div class="progress">
@@ -1103,8 +1103,25 @@ Parameters:
       </div>
       <div class="row">
         <div class="col s12">
-          <h5>Resources&nbsp;<i class="material-icons small waves-effect waves-light btn modal-trigger" href="resourcesHelpmodal">help_outline</i></h5>
+          <h5>Resources&nbsp;<i class="material-icons small cursor-pointer" @click="onHelp($event)">help_outline</i></h5>
         </div>
+      </div>
+      <div id="resourcesHelp" class="row">
+        <div class="col s12">
+            <a class="waves-effect waves-light btn blue" @click="onHelp($event)"><i class="material-icons left">arrow_drop_up</i>Done</a>
+            <p>Resources are files, organized in folders, available for viewing and download.</p>
+            <ul>
+              <li><i class="material-icons">chevron_right</i>Select a folder to display the files and additional folders contained in it.</li>
+              <li><i class="material-icons">chevron_right</i>Select a PDF file to view the contents. Note: Only PDF files can be viewed.</li>
+              <li><i class="material-icons">chevron_right</i>Click the <i class="material-icons">file_download</i> icon to download a file.</li>
+              <li><i class="material-icons">chevron_right</i>Use the breadcrumbs move up in the folder hierarchy.</li>
+            </ul>
+        </div>
+      </div>
+            <!-- <div class="row"> -->
+        <!-- <div class="col s12">
+          <h5>Resources&nbsp;<i class="material-icons small waves-effect waves-light btn modal-trigger" href="resourcesHelpmodal">help_outline</i></h5>
+        </div> -->
         <!-- <div class="col s8">
           <nav class="grey lighten-4">
             <div class="nav-wrapper">
@@ -1118,16 +1135,14 @@ Parameters:
             </div>
           </nav>
         </div> -->
-      </div>
-      <div class="row">
-        <div class="col s12">
-          <nav class="blue darken-4 z-depth-0">
-            <div class="nav-wrapper">
-              <span v-for="folder in path" v-on:click="onBreadcrumb(folder.id, $event)" class="breadcrumb cursor-pointer">{{folder.name}}</span>
-            </div>
-          </nav>
+      <!-- </div> -->
+      <nav class="blue darken-2">
+        <div class="nav-wrapper">
+          <div class="col s12">
+            <span v-for="folder in path" @click="onBreadcrumb(folder.id, $event)" class="breadcrumb cursor-pointer">{{folder.name}}</span>
+          </div>
         </div>
-      </div>
+      </nav>
       <div class="row">
         <div class="col s12">
           <div class="divider"></div>
@@ -1155,17 +1170,24 @@ Parameters:
           <div class="col s1"></div>
         </div>
         <div class="row"  v-for="file in files" :key="file.id" v-if="file.type!='Folder'">
-          <div class="col s5" v-bind:class="{'cursor-pointer':file.type=='PDF'}" @click="(file.canView?onFileView(file, $event):null)"><i class="material-icons small">{{(file.type=='PDF'?'description':(file.type=='Spreadsheet'?'grid_on':'format_align_left'))}}</i><span>&nbsp;{{file.name + (!file.canView?'&nbsp;(Download only)':'')}}</span></div>
+          <div class="col s5" v-bind:class="{'cursor-pointer':file.type=='PDF','hoverable':file.type=='PDF'}" @click="(file.canView?onFileView(file, $event):null)"><i class="material-icons small">{{(file.type=='PDF'?'description':(file.type=='Spreadsheet'?'grid_on':'format_align_left'))}}</i><span>&nbsp;{{file.name + (!file.canView?'&nbsp;(Download only)':'')}}</span></div>
           <div class="col s1">{{file.type}}</div>
           <div class="col s2">{{file.modifiedTimeFormatted}}</div>
           <div class="col s2" v-html="file.sizeFormatted"></div>
-          <div class="col s1"><i v-if="file.canDownload" class="material-icons small cursor-pointer" @click="onFileDownload(file, $event)">file_download</i></div>
+          <div class="col s1"><i v-if="file.canDownload" class="material-icons small cursor-pointer hoverable" @click="onFileDownload(file, $event)">file_download</i></div>
         </div>
       </div>
     </div>
   </script>
 
   <!--Resources: Help-->
+  <div class="tap-target" data-target="menu">
+    <div class="tap-target-content">
+      <h5>Title</h5>
+      <p>A bunch of text</p>
+    </div>
+  </div>
+
   <div id="resourcesHelpmodal" class="modal">
     <div class="modal-content">
       <h4>Modal Header</h4>
