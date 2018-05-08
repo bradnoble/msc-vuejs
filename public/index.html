@@ -289,35 +289,36 @@
     </span>
   </script>
 
-  <script type="text/x-template" id="view-household">
+
+
+    <!-- membership list views -->
+
+    <script type="text/x-template" id="list">
       <div>
-        <h6>
-          <a href="#/list">Membership List</a> / {{ item.label_name }}
-        </h6>
-        <div class="card">
-          <div class="card-content">
-            <span class="card-title">
-              {{ item.label_name }}
-            </span>
-            <location v-bind:item="item"></location>
-            <ul class="collection">
-              <person 
-                v-for="person in item.people" 
-                v-bind:key="person._id" 
-                v-bind:item="person">
-              </person>
+        <div class="row">
+          <div class="col s12">
+            <ul class="">
+              <li class="tab col s3">
+                <router-link :to="{name: 'list'}">Search</router-link>
+              </li>
+              <li class="tab col s3">
+                <router-link :to="{name: 'emails'}">Email addresses</router-link>
+              </li>
+              <li class="tab col s3">
+                <router-link :to="{name: 'downloads'}">Downloads</router-link>
+              </li>
             </ul>
           </div>
-          <div class="card-action blue-grey darken-1">
-              <a href="#/list">&larr; List</a>
-            </div>
-            <pre class="hide">{{ item }}</pre>
         </div>
+
+        <router-view></router-view>
+
       </div>
     </script>
 
-  <script type="text/x-template" id="list">
+    <script type="text/x-template" id="search">
       <div>
+
         <div v-if="!loading">
           <ul class="collection">
             <li class="collection-item grey lighten-4 row">
@@ -353,7 +354,44 @@
       </div>
     </script>
 
-  <script type="text/x-template" id="error">
+    <script type="text/x-template" id="view-household">
+      <div>
+        <h6>
+          <a href="#/list">Membership List</a> / {{ item.label_name }}
+        </h6>
+        <div class="card">
+          <div class="card-content">
+            <span class="card-title">
+              {{ item.label_name }}
+            </span>
+            <location v-bind:item="item"></location>
+            <ul class="collection">
+              <person 
+                v-for="person in item.people" 
+                v-bind:key="person._id" 
+                v-bind:item="person">
+              </person>
+            </ul>
+          </div>
+          <div class="card-action blue-grey darken-1">
+              <a href="#/list">&larr; List</a>
+            </div>
+            <pre class="hide">{{ item }}</pre>
+        </div>
+      </div>
+    </script>
+    
+    <script type="text/x-template" id="downloads">
+      <div>
+        Downloads go here
+      </div>
+    </script>
+  
+
+
+    <!-- admin views -->
+
+    <script type="text/x-template" id="error">
     <div v-if="error">
       <div class="alert error card">
         <div class="card-content red white-text">
@@ -373,6 +411,7 @@ Parameters:
     </div>
   </script>
   
+
   <script type="text/x-template" id="loading">
     <div v-if="status" >
       <div class="progress">
@@ -647,7 +686,6 @@ Parameters:
 
     </div>
   </script>
-
 
   <script type="text/x-template" id="new-household">
     <div>        
