@@ -67,7 +67,7 @@ const search = {
       // if the user deletes the search string, reset the list
       if (!str) {
         this.start();
-      } else if (str.length >= 3) {
+      } else if (str.length >= 1) {
         // console.log(str)
 
         for (i = 0; i < this.items.length; i++) {
@@ -306,6 +306,14 @@ const admin = {
     this.loading = true;
     this.start();
   },
+  mounted: function (){
+    $('.dropdown-button').dropdown();     
+    // console.log("mounted on admin")   
+  },
+  updated: function (){
+    $('.dropdown-button').dropdown();     
+    // console.log("updated on admin")   
+  },
   methods: {
     start: function () {
       _this = this;
@@ -376,7 +384,7 @@ const newHousehold = {
     }
   },
   mounted: function(){
-    $('.dropdown-trigger').dropdown();    
+    $('.dropdown-button').dropdown();        
   }
 };
 
@@ -450,7 +458,8 @@ const secondChild = {
       person: {},
       statuses: getStatuses(),
       genders: getGenders(),
-      title: {}
+      title: {},
+      errors: []
     }
   },
   created: function(){},
@@ -496,6 +505,11 @@ const secondChild = {
     },
     save: function(){
       let _this = this;
+      
+      // TODO get required fields
+      // if conditions aren't met, add errors to the errors array
+      //return _this.errors.push('this is an error');
+
       // starting label for the save button
       var txt = $('#save').text();
       // temporary message that shows
