@@ -1,5 +1,9 @@
 .env
 node_modules
 *.dump
+.vscode
 .credentials
 client_secret*.*
+public/dist/materialize
+public/dist/pdfjs
+public/fonts
