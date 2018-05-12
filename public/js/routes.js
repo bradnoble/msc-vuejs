@@ -6,8 +6,27 @@ const routes = [
     },
     { 
       path: '/list', 
-      name: 'list',
-      component: list
+      component: list,
+      children: [
+        {
+          path: '',
+          name: 'list',
+          component: search,
+          props: true
+        },
+        {
+          path: 'emails',
+          name: 'emails',
+          component: emails,
+          props: true
+        },
+        {
+          path: 'downloads',
+          name: 'downloads',
+          component: downloads,
+          props: true
+        }
+      ]
     },
     { 
       name: 'list-household',

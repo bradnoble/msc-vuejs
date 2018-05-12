@@ -85,6 +85,7 @@ app.get('/logout', function (req, res) {
   res.send('You are logged out.');
 });
 
+// TODO: ADD ADMIN ONLY AUTH HERE
 app.get('/admin',
   users.auth,
   function (req, res) {
@@ -277,17 +278,18 @@ app.get('/getPerson/',
           );          
         }
       });
+    } else {
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   }
 );
-
-
 
 app.get('/getHousehold/',
   users.auth,
   function (req, res) {
     var role = req.user.role[0].value;
-    if (role === 'admin') {
+    // both admins and members can see these results
+    if (role) {
       // the factory passes the id of the document as a query parameter
       var id = req.query.id;
       db.get(id, function (err, doc) {
