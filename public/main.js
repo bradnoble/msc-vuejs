@@ -35,7 +35,7 @@ const search = {
     }
   },
   created: function () {
-    document.title = 'List';
+    document.title = 'Members - MSC';
     this.loading = true;
     this.start();
   },
@@ -190,7 +190,7 @@ const emails = {
   },
   created: function () {
     this.start();
-    document.title = 'emails';
+    document.title = 'Members - MSC';
   },
   methods: {
     start: function () {
@@ -253,7 +253,10 @@ const emails = {
 };
 
 const downloads = {
-  template: '#downloads'
+  template: '#downloads',
+  created: function () {
+    document.title = 'Members - MSC';
+  }
 }
 
 

@@ -1,7 +1,7 @@
 {
   "name": "msc-vuejs",
-  "version": "1.0.0",
-  "description": "Moving from Angularjs 1.x to Vuejs",
+  "version": "2.0.0",
+  "description": "Montclair Ski Club website",
   "main": "app.js",
   "engines": {
     "node": "^7.0.0"
@@ -20,6 +20,7 @@
     "express-session": "1.15.6",
     "gdrive": "file:lib/gdrive",
     "http": "0.0.0",
+    "jquery": "^3.3.1",
     "json2csv": "3.10.0",
     "materialize-css": "^1.0.0-rc.1",
     "memory-streams": "0.1.3",
