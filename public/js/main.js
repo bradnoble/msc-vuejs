@@ -4,8 +4,10 @@ $(function () {
   $('.dropdown-button').dropdown(); // chris do we need both of these?
   $('.modal').modal();
   $('.tooltipped').tooltip();
+  $('.collapsible').collapsible();
+
   //>>MaterializeCSS 1.0.0 features
-  // $('.tap-target').featureDiscovery();
+  // $('.tap-target').tapTarget();
 
   // Initialize collapse button
   // $(".button-collapse").sideNav({
@@ -598,12 +600,6 @@ const thirdChild = {
   }
 }
 
-
-
-
-
-
-
 /*
 * Resources: module (Google Drive)
 */
@@ -617,6 +613,10 @@ var resources = {
   },
   created() {
     document.title = 'Resources - MSC';
+  },
+  mounted: function () {
+    //Hide help text by default
+    $('#resourcesHelp').hide();
     this.init();
     this.start();
   },
@@ -718,6 +718,9 @@ var resources = {
     onSearch: function (event) {
       let searchText = $(event.target).val().trim();
       alert(searchText);
+    },
+    onHelp: function (event) {
+      $('#resourcesHelp').toggle(600);
     }
   }
 }
@@ -733,10 +736,6 @@ function formatBytes(bytes, decimals) {
     i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
-
-
-
-
 
 /*
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REUSABLE COMPONENTS
@@ -776,8 +775,6 @@ Vue.component('loading', {
   template: '#loading',
   props: ['status']
 });
-
-
 
 // TODO handle page titles
 new Vue({
