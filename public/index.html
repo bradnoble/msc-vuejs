@@ -183,9 +183,11 @@
             <person-contact-info :item="item"></person-contact-info>
           </div>
           <div class="col m4">
-            <router-link :to="{ path: /list/ + item.household_id }">
-              <span v-if="item.household.label_name"><b>{{ item.household.label_name}}</b></span>
-            </router-link>
+            <span class="secondary-content">
+              <router-link :to="{ name: 'list-household', params: {id: item.household_id} }" title="view household">
+                <i class="material-icons">chevron_right</i>
+              </router-link>  
+            </span>
             <location v-bind:item="item.household"></location>
           </div>
         </li>

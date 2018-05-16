@@ -36,7 +36,9 @@ const routes = [
       }, 
       props: true 
     },
+
     // ADMIN ROUTES
+
     { 
       path: '/admin', 
       name: 'admin',

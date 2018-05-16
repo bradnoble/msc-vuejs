@@ -36,7 +36,7 @@ const search = {
       loading: false
     }
   },
-  created: function () {
+  mounted: function () {
     document.title = 'Members - MSC';
     this.loading = true;
     this.start();
@@ -94,44 +94,6 @@ const search = {
           } else {
             this.items[i].hide = true;
           }
-        }
-      }
-    },
-    viewHousehold: function (household_id) {
-      var container = household_id;
-      console.log(container);
-      $('.' + container).html('')
-    },
-    search_old: function () {
-      var str = this.searchStr.trim();
-      var array = str.split(' ');
-
-      // if the user deletes the search string, reset the list
-      if (!str) {
-        this.start();
-      };
-
-      console.log(str)
-
-      for (i = 0; i < this.items.length; i++) {
-        // each item has its own counter
-        var counter = 0;
-
-        // if search terms have hits in the search string, increment the counter
-        for (j = 0; j < array.length; j++) {
-          if (this.items[i].str.toLowerCase().trim().indexOf(array[j].toLowerCase().trim()) > -1) {
-            counter++
-          }
-        }
-
-        // if these conditions are met, show the item
-        // 1. is the counter more than zero, where it started?
-        // 2. does counter equal the length of array of search terms?
-        // (on 2 -- if true, every search term has a hit)
-        if (counter > 0 && counter == array.length) {
-          delete this.items[i].hide;
-        } else {
-          this.items[i].hide = true;
         }
       }
     }
