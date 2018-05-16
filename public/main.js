@@ -1,7 +1,6 @@
 //Page init
 $(function () {
   $('.dropdown-trigger').dropdown();
-  $('.dropdown-button').dropdown(); // chris do we need both of these?
   $('.modal').modal();
   $('.tooltipped').tooltip();
   $('.collapsible').collapsible();
@@ -21,10 +20,13 @@ $(function () {
 const home = {
   template: '#home'
 }
+
+// parent controller of search, emails, downloads
 const list = {
   template: '#list'
 }
 
+// first child of list
 const search = {
   template: '#search',
   data: function () {
@@ -177,6 +179,7 @@ const viewHousehold = {
   }
 };
 
+// second child of list
 const emails = {
   template: '#emails',
   data: function () {
@@ -252,6 +255,7 @@ const emails = {
   }
 };
 
+// third child of list
 const downloads = {
   template: '#downloads',
   created: function () {
@@ -312,11 +316,11 @@ const admin = {
     this.start();
   },
   mounted: function (){
-    $('.dropdown-button').dropdown();     
+    $('.dropdown-trigger').dropdown();     
     // console.log("mounted on admin")   
   },
   updated: function (){
-    $('.dropdown-button').dropdown();     
+    $('.dropdown-trigger').dropdown();     
     // console.log("updated on admin")   
   },
   methods: {
@@ -389,7 +393,7 @@ const newHousehold = {
     }
   },
   mounted: function(){
-    $('.dropdown-button').dropdown();        
+    $('.dropdown-trigger').dropdown();        
   }
 };
 
@@ -411,8 +415,8 @@ const adminHousehold = {
     this.get();
   },
   updated: function(){
-    $('.dropdown-button').dropdown();        
     let _this = this;
+    $('.dropdown-trigger').dropdown();        
     // console.log('parent updated')
     setTimeout(function(){ 
       _this.loading = false;
@@ -421,8 +425,8 @@ const adminHousehold = {
   watch: {
     '$route': function(to, from){ 
       let _this = this;
-      if(from.name == 'editPerson' || from.name == 'editHousehold'){
-        // after editing a person or household, update the household and the people
+      // after editing a person or household, update the household and the people
+      if(from.name == 'editPerson' || from.name == 'newPerson' || from.name == 'editHousehold'){
         _this.get();
       }
     }
@@ -474,7 +478,7 @@ const secondChild = {
     this.$parent.loading = true;
 
     // for new people in the household
-    if(this.person_id == 'new' ){
+    if(this.$route.name == 'newPerson' ){
       this.title = {
         icon: "person_add",
         content: "Add a person to this household"
@@ -508,34 +512,44 @@ const secondChild = {
         }
       );        
     },
-    save: function(){
+    checkform: function(){
+      this.errors = [];
+      if(this.person.last.length > 0 && this.person.first.length > 0){
+        return true;
+      } 
+      if(this.person.last == '' || this.person.first == ''){
+        this.errors.push('Please provide a first and last name.')
+      }
+    },
+    save: function(e){
       let _this = this;
-      
-      // TODO get required fields
-      // if conditions aren't met, add errors to the errors array
-      //return _this.errors.push('this is an error');
 
-      // starting label for the save button
-      var txt = $('#save').text();
-      // temporary message that shows
-      $('#save').text('Saving...');
-      this.$http.post('/postPerson/', _this.person)
-        .then(function(resp){
-          setTimeout(function(){ 
-            // revert the label of the save button
-            $('#save').text(txt);
-            // redirect to the summary tab
-            _this.$router.replace({ name:'admin-household', params: {household_id: _this.household_id} });
-          }, 200);      
-        }, function(error){
-          console.log('error', error);
-        }
-      );
+      if(this.checkform()){
+
+        // starting label for the save button
+        var txt = $('#save').text();
+        // temporary message that shows
+        $('#save').text('Saving...');        
+
+        this.$http.post('/postPerson/', _this.person)
+          .then(function(resp){
+            setTimeout(function(){ 
+              // revert the label of the save button
+              $('#save').text(txt);
+              // redirect to the summary tab
+              _this.$router.replace({ name:'admin-household', params: {household_id: _this.household_id} });
+            }, 200);      
+          }, function(error){
+            console.log('error', error);
+          }
+        );
+
+      }
+      e.preventDefault();
     },
     removePerson: function(){
       let _this = this;
-      // Vue.set(_this.item, '_deleted', true);
-      _this.person._deleted = true;
+      Vue.set(_this.person, '_deleted', true);
     }
   }
 }
@@ -547,6 +561,7 @@ const thirdChild = {
   data: function(){
     return {
       title: {},
+      errors: []
     }
   },
   created: function(){},
@@ -555,50 +570,76 @@ const thirdChild = {
     if(this.household_id){
       this.title = {
         icon: "edit",
-        content: "Edit this household contact info"
+        content: "Edit household contact info"
       };
     } else {
       this.title = {
         icon: "add",
-        content: "Add a household"
+        content: "Household contact info"
       };      
     }
   },
   updated: function(){},
   methods: {
-    save: function(){
-      let _this = this;
-      // starting label for the save button
-      const txt = $('#save').text();
-      // temporary message that shows
-      $('#save').text('Saving...');
-      this.$http.post('/postHousehold/', _this.item)
-        .then(function(resp){
-          // console.log('item', _this.item)
-          setTimeout(function(){ 
-            // revert the label of the save button
-            $('#save').text(txt);
-            // redirect to the summary tab
-            _this.$router.replace({ name:'admin-household', params: {household_id: _this.item._id} });
-          }, 200);      
-        }, function(error){
-          console.log('error', error);
-        }
-      );
+    checkform: function(){
+      this.errors = [];
+      if(this.item.name.length > 0 && this.item.city.length > 0 && this.item.state.length > 0 && this.item.zip.length > 0){
+        return true;
+      } 
+      if(this.item.name == '') this.errors.push('Please provide a name for this household.')
+      if(this.item.city == '') this.errors.push('Please provide a city for this household.')
+      if(this.item.state == '') this.errors.push('Please provide a state for this household.')
+      if(this.item.zip == '') this.errors.push('Please provide a zip for this household.')
     },
-    remove: function(){
+    save: function(e){
       let _this = this;
-      var people = _this.$parent.item.people;
-      for(i=0; i < people.length; i++){
-        // people[i]._deleted = true;
-        if(people[i]._deleted){
-          delete people[i]._deleted;
-        } else {
+
+      if(this.checkform()){
+
+        // starting label for the save button
+        const txt = $('#save').text();
+        var people = _this.item.people;
+        // temporary message that shows
+        $('#save').text('Saving...');
+
+        this.$http.post('/postHousehold/', _this.item)
+          .then(function(resp){
+            // console.log('item', _this.item)
+            setTimeout(function(){ 
+              // revert the label of the save button
+              $('#save').text(txt);
+              console.log(resp)
+              // redirect to the summary tab
+              _this.$router.replace({ name:'admin-household', params: {household_id: _this.item._id} });
+            }, 200);      
+          }, function(error){
+            console.log('error', error);
+          }
+        );
+      }
+      e.preventDefault();
+    },
+    remove: function(e){
+      let _this = this;
+      var people = _this.item.people;
+      
+      console.log(people.length)
+      console.log(people[0]._deleted)
+
+      for(var i=0; i < people.length; i++){
+        if(!people[i]._deleted){
           Vue.set(people[i], '_deleted', true);
+        } else {
+          Vue.set(people[i], '_deleted', false);          
         }
       }
-      Vue.set(_this.item, '_deleted', true);
-      // _this.item._deleted = true;
+
+      if(!_this.item._deleted){
+        Vue.set(_this.item, '_deleted', true);
+      } else {
+        //delete _this.item._deleted; // Vue.set(_this.item, '_deleted', true);        
+      }
+      // e.preventDefault();
     }
   }
 }
@@ -779,10 +820,19 @@ Vue.component('loading', {
   props: ['status']
 });
 
+Vue.component('form-errors', {
+  template: '#form-errors',
+  props: ['errors']
+});
+
 // TODO handle page titles
 new Vue({
   el: 'title',
   data: {
-    title: 'My Title'
+    title: 'Montclair Ski Club'
+  },
+  created(){},
+  mounted(){
+    // let title = document.title;
   }
 })

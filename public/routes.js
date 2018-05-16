@@ -73,6 +73,12 @@ const routes = [
           props: true
         },
         {
+          path: 'new-person',
+          name: 'newPerson',
+          component: secondChild,
+          props: true
+        },
+        {
           path: 'edit',
           name: 'editHousehold',
           component: thirdChild,
