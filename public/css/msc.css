@@ -17,3 +17,10 @@ i.material-icons {
 .cursor-pointer {
   cursor: pointer;
 }
+
+nav .router-link-active {
+  background-color: #eee;
+}
+.tabs .router-link-exact-active {
+  background-color: #ffebee
+}

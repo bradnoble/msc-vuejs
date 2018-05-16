@@ -36,7 +36,9 @@ const routes = [
       }, 
       props: true 
     },
+
     // ADMIN ROUTES
+
     { 
       path: '/admin', 
       name: 'admin',
@@ -69,6 +71,12 @@ const routes = [
         {
           path: 'person/:person_id',
           name: 'editPerson',
+          component: secondChild,
+          props: true
+        },
+        {
+          path: 'new-person',
+          name: 'newPerson',
           component: secondChild,
           props: true
         },

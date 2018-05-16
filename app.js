@@ -61,7 +61,7 @@ app.use(passport.session());
 
 passport.use(users.passportStrategy());
 
-/* Resoures setup */
+/* BEGIN Resoures setup */
 
 //Google Drive module
 var gdrive = require('gdrive');
@@ -70,7 +70,7 @@ gdrive.oauthclient.init();
 //Google Drive API
 gdrive.api.init();
 
-/* Resoures setup */
+/* END Resoures setup */
 
 app.get('/logout', function (req, res) {
   // console.log('session', req.session);
@@ -125,33 +125,7 @@ app.get('/admin',
   }
 );
 
-app.get('/getEmails',
-  users.auth,
-  function (req, res) {
-
-    var params = (req.query.statuses) ? req.query.statuses : null;
-    var opts = {};
-    if (params) {
-      console.log(params);
-      console.log(params.split(','));
-      console.log('params length', params.length);
-      opts.keys = params.split(',');
-    }
-
-    // get the results of the API call
-    db.view('app', 'emails', opts, function (err, resp) {
-      if (!err) {
-        // console.log(resp);
-        res.send(resp);
-      }
-      else {
-        console.log('error', err)
-        res.send(err);
-      }
-    });
-  }
-);
-
+// ------------------------------------------- LIST
 app.get('/list',
   users.auth,
   function (req, res) {
@@ -191,6 +165,34 @@ app.get('/list',
   }
 );
 
+app.get('/getEmails',
+  users.auth,
+  function (req, res) {
+
+    var params = (req.query.statuses) ? req.query.statuses : null;
+    var opts = {};
+    if (params) {
+      console.log(params);
+      console.log(params.split(','));
+      console.log('params length', params.length);
+      opts.keys = params.split(',');
+    }
+
+    // get the results of the API call
+    db.view('app', 'emails', opts, function (err, resp) {
+      if (!err) {
+        // console.log(resp);
+        res.send(resp);
+      }
+      else {
+        console.log('error', err)
+        res.send(err);
+      }
+    });
+  }
+);
+
+        
 app.get('/getPeopleForCSV',
   function (req, res) {
 
@@ -324,7 +326,9 @@ app.get('/getHousehold/',
     } else {
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-  });
+});
+
+// ------------------------------------------- ADMIN
 
 app.post('/postPerson',
   users.auth,
@@ -347,8 +351,8 @@ app.post('/postPerson',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-  });
-  
+});
+
 app.post('/postHousehold',
   users.auth,
   jsonParser,
@@ -358,22 +362,43 @@ app.post('/postHousehold',
 
       var household = req.body;
 
-        db.insert(household, function (err, doc) {
-          if (!err) {
-            console.log('success updating household, will add people to response next');
-            res.send(doc);
-          }
-          else {
-            console.log('household:' + err.reason);
-            res.status(401).json({ "error": err.reason });
-          }
-        });
+      // if the household is being deleted,
+      // delete the people inside it, too
+      if(household._deleted == true){
+        if (household.people.length > 0) {
+          // update people in bulk
+          db.bulk({ docs: household.people }, function (err, docs) {
+            //db.insert(household.people[1], function(err, docs){
+            if (!err) {
+              console.log('success deleting people, will delete household next', household.people.length);
+            } else {
+              console.log('error deleting people', err.reason);
+            }
+          });
+        }          
+      }
+
+      if(household.people && household.people.length > 0){
+        console.log('deleting this many people:', household.people.length);
+        delete household.people;
+      }
+
+      db.insert(household, function (err, doc) {
+        if (!err) {
+          console.log('success updating household');
+          res.send(doc);
+        }
+        else {
+          console.log('household:' + err.reason);
+          res.status(401).json({ "error": err.reason });
+        }
+      });
 
     } else {
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-  });
+});
 
 app.post('/postHouseholdOld',
   users.auth,
@@ -421,8 +446,9 @@ app.post('/postHouseholdOld',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-  });
+});
 
+// ------------------------------------------- SIGNUPS
 app.get('/getSignups',
   users.auth,
   function (req, res) {
@@ -438,7 +464,7 @@ app.get('/getSignups',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-  });
+});
 
 app.get('/getSignupChairs',
   users.auth,
@@ -455,7 +481,7 @@ app.get('/getSignupChairs',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-  });
+});
 
 app.get('/getSignup/',
   users.auth,
@@ -474,7 +500,7 @@ app.get('/getSignup/',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-  });
+});
 
 app.get('/editSignup/',
   users.auth,
@@ -493,7 +519,7 @@ app.get('/editSignup/',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-  });
+});
 
 app.get('/getPeople',
   function (req, res) {

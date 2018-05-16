@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Montclair Ski Club - {{ title }}</title>
+  <title>{{ title }}</title>
   <!--
   <script src="/js/pouchdb-6.3.4.min.js"></script>
   <script src="/js/pouchdb.find.min.js"></script>
@@ -36,7 +36,7 @@
           </a>
           <ul id="nav-mobile" class="right hide-on-med-and-down">
             <li>
-              <router-link :to="{name:'list'}">Members</router-link>
+              <router-link :to="{name:'list'}">Membership Info</router-link>
             </li>
             <li>
               <router-link to="/resources">Resources</router-link>
@@ -59,6 +59,7 @@
   <!-- 
     BEGIN TEMPLATES
   -->
+
   <script type="text/x-template" id="home">
       <div>
         <h1>
@@ -90,11 +91,144 @@
       </div>
     </script>
 
+  <script type="text/x-template" id="adminPouch">
+      <div>
+        ADMIN
+        {{ items }}
+        <button v-on:click="destroy()">destroy</button>
+      </div>
+    </script>
+
+  <script type="text/x-template" id="view-location">
+      <span>
+        <!-- <i class="material-icons small">home</i> -->
+        <!-- <span v-if="item.label_name"><b>{{ item.label_name}}</b><br /></span> -->
+        <span v-if="item.street1">{{ item.street1 }}, </span>
+        <span v-if="item.street2">{{ item.street2 }}, </span>
+        <span v-if="item.city">{{ item.city }}, </span> 
+        <span v-if="item.state">{{ item.state }}, </span> 
+        <span v-if="item.zip">{{ item.zip }}</span> 
+        <div v-if="item.phone" class=""><i class="material-icons tiny">home</i> {{ item.phone }}</div> 
+      </span>
+    </script>
+
+  <script type="text/x-template" id="view-person">
+      <li class="row collection-item">
+        <div class="col m6"><person-name :item="item"></person-name></div>
+        <div class="col m6"><person-contact-info :item="item"></person-contact-info></div>
+      </li>
+    </script>
+
+  <script type="text/x-template" id="view-person-name">
+      <span>
+        <b>{{ item.last }}, {{ item.first }}</b>
+        <span class="person-status">{{ item.status }}</span>
+      </span>
+    </script>
+
+  <script type="text/x-template" id="view-person-contact-info">
+    <span>
+      <span v-if="item.email" class="chip"><i class="material-icons tiny">email</i>&nbsp;{{ item.email }}</span>
+      <span v-if="item.phone" class="chip"><i class="material-icons tiny">phone_iphone</i>&nbsp;{{ item.phone }}</span>
+      <span v-if="item.work_phone" class="chip"><i class="material-icons tiny">work</i>&nbsp;{{ item.work_phone }}</span>
+    </span>
+  </script>
+
+
+
+  <!-- MEMBERSHIP LIST VIEWS -->
+
+  <!-- parent list view -->
+  <script type="text/x-template" id="list">
+    <div>
+      <div class="row">
+        <div class="col s12">
+          <ul class="tabs">
+            <li class="tab col s3">
+              <router-link :to="{name: 'list'}" exact><i class="material-icons">search</i> Search</router-link>
+            </li>
+            <li class="tab col s3">
+              <router-link :to="{name: 'emails'}"><i class="material-icons">email</i> Email addresses</router-link>
+            </li>
+            <li class="tab col s3">
+              <router-link :to="{name: 'downloads'}"><i class="material-icons">file_download</i> Downloads</router-link>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <router-view></router-view>
+    </div>
+  </script>
+
+<!-- first child of list view -->
+<script type="text/x-template" id="search">
+  <div>
+    <div v-if="!loading">
+      <ul class="collection">
+        <li class="collection-item grey lighten-4 row">
+          <div class="input-field col m12 s12">
+            <span class="prefix">
+              <i class="material-icons" v-if="searchStr" v-on:click="clearSearchStr()" title="clear the search input">clear</i>
+              <i class="material-icons" v-if="!searchStr" title="search">search</i>
+            </span>
+            <input id="search" v-model="searchStr" @keyup="search()" placeholder="First or last name..." />
+            <label for="search" class="active">Search by name</label>
+          </div>      
+        </li>
+        <li v-bind:id="item._id" v-for="item in items" v-if="!item.hide" class="collection-item row">
+          <div class="col m3">
+            <person-name :item="item"></person-name>
+          </div>
+          <div class="col m5">
+            <person-contact-info :item="item"></person-contact-info>
+          </div>
+          <div class="col m4">
+            <span class="secondary-content">
+              <router-link :to="{ name: 'list-household', params: {id: item.household_id} }" title="view household">
+                <i class="material-icons">chevron_right</i>
+              </router-link>  
+            </span>
+            <location v-bind:item="item.household"></location>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div v-else class="progress">
+        <div class="indeterminate"></div>
+    </div>
+  </div>
+</script>
+
+  <script type="text/x-template" id="view-household">
+      <div>
+        <h6>
+          <a href="#/list">Membership List</a> / {{ item.label_name }}
+        </h6>
+        <div class="card">
+          <div class="card-content">
+            <span class="card-title">
+              {{ item.label_name }}
+            </span>
+            <location v-bind:item="item"></location>
+            <ul class="collection">
+              <person 
+                v-for="person in item.people" 
+                v-bind:key="person._id" 
+                v-bind:item="person">
+              </person>
+            </ul>
+          </div>
+          <div class="card-action blue-grey darken-1">
+              <a href="#/list">&larr; List</a>
+            </div>
+            <pre class="hide">{{ item }}</pre>
+        </div>
+      </div>
+    </script>
+
+  <!-- second child of list view -->
   <script type="text/x-template" id="emails">
       <div class="card-panel">
-        <h6>
-          <a href="/#list">Membership List</a> / Email addresses
-        </h6>
         <div class="row">
           <div class="col m3">
             <h5>Filters</h5>
@@ -128,197 +262,7 @@
       </div>
     </script>
 
-  <script type="text/x-template" id="adminPouch">
-      <div>
-        ADMIN
-        {{ items }}
-        <button v-on:click="destroy()">destroy</button>
-      </div>
-    </script>
-
-  <script type="text/x-template" id="admin">
-      <div>
-        <p>
-          Admin
-          <router-link :to="{name:'new-household'}">Add household</router-link>
-        </p>
-        <div v-if="!loading">
-          <ul class="collection">
-            <li class="collection-item grey lighten-4 row">
-              <div class="input-field col m12 s12">
-                <i class="material-icons prefix">search</i>
-                <input id="search" v-model="searchStr" @keyup="search()" placeholder="First of last name..." />
-                <label for="search" class="active">Search by name</label>
-              </div>            
-            </li>
-            <li v-for="(item, index) in items" :key="item._id" class="collection-item">
-              <h5>
-                {{ item.name }}
-                <!-- Dropdown Trigger -->
-                <span class="secondary-content">
-                    <a class="dropdown-button" href="#" data-constrainwidth="false" data-alignment="right" :data-activates="item._id" title="click to see options">
-                      <i class="material-icons">more_vert</i>
-                    </a>
-                  </span>
-                  <!-- Dropdown Structure -->
-                  <ul :id="item._id" class="dropdown-content">
-                    <li>
-                      <router-link :to="{ name: 'editPerson', params: { household_id: item._id, person_id: 'new' }}" title="Add a person to this household">
-                        <i class="material-icons">person_add</i> Add a person
-                      </router-link>
-                    </li>
-                    <li>
-                      <router-link :to="{ name: 'editHousehold', params: { household_id: item._id }}" title="Edit household">
-                        <i class="material-icons">edit</i> Edit household
-                      </router-link>
-                    </li>
-                  </ul>
-                </h5>
-              <div class="row">
-                <div class="col m3">
-                  <location :item="item"></location>
-                </div>
-                <div class="col m9">
-                  <ul class="collection">
-                      <admin-person 
-                      v-for="person in item.people" 
-                      v-bind:key="person._id" 
-                      v-bind:item="person">
-                    </admin-person>
-                  </ul>
-                </div>
-              </div><!--row-->
-            </li>
-          </ul>
-        </div>
-        <div v-else class="progress">
-            <div class="indeterminate"></div>
-        </div>
-      </div>
-    </script>
-
-  <script type="text/x-template" id="view-location">
-      <span>
-        <!-- <i class="material-icons small">home</i> -->
-        <!-- <span v-if="item.label_name"><b>{{ item.label_name}}</b><br /></span> -->
-        <span v-if="item.street1">{{ item.street1 }}, </span>
-        <span v-if="item.street2">{{ item.street2 }}, </span>
-        <span v-if="item.city">{{ item.city }}, </span> 
-        <span v-if="item.state">{{ item.state }}, </span> 
-        <span v-if="item.zip">{{ item.zip }}</span> 
-        <span v-if="item.phone"> <i class="material-icons tiny">phone</i> {{ item.phone }}</span> 
-        <pre class="hide">{{ item }}</pre>
-      </span>
-    </script>
-
-  <script type="text/x-template" id="view-person">
-      <li class="row collection-item">
-        <div class="col m6"><person-name :item="item"></person-name></div>
-        <div class="col m6"><person-contact-info :item="item"></person-contact-info></div>
-      </li>
-    </script>
-
-  <script type="text/x-template" id="view-person-name">
-      <span>
-        <b>{{ item.last }}, {{ item.first }}</b>
-        <span class="person-status">{{ item.status }}</span>
-      </span>
-    </script>
-
-  <script type="text/x-template" id="view-person-contact-info">
-    <span>
-      <span v-if="item.email" class="chip"><i class="material-icons tiny">email</i>&nbsp;{{ item.email }}</span>
-      <span v-if="item.phone" class="chip"><i class="material-icons tiny">phone_iphone</i>&nbsp;{{ item.phone }}</span>
-      <span v-if="item.work_phone" class="chip"><i class="material-icons tiny">work</i>&nbsp;{{ item.work_phone }}</span>
-    </span>
-  </script>
-
-  <!-- membership list views -->
-  <script type="text/x-template" id="list">
-    <div>
-      <div class="row">
-        <div class="col s12">
-          <ul class="">
-            <li class="tab col s3">
-              <router-link :to="{name: 'list'}"><i class="material-icons">search</i> Search</router-link>
-            </li>
-            <li class="tab col s3">
-              <router-link :to="{name: 'emails'}"><i class="material-icons">email</i> Email addresses</router-link>
-            </li>
-            <li class="tab col s3">
-              <router-link :to="{name: 'downloads'}"><i class="material-icons">file_download</i> Downloads</router-link>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <router-view></router-view>
-    </div>
-  </script>
-
-  <script type="text/x-template" id="search">
-      <div>
-        <div v-if="!loading">
-          <ul class="collection">
-            <li class="collection-item grey lighten-4 row">
-              <div class="input-field col m12 s12">
-                <span class="prefix">
-                  <i class="material-icons" v-if="searchStr" v-on:click="clearSearchStr()" title="clear the search input">clear</i>
-                  <i class="material-icons" v-if="!searchStr" title="search">search</i>
-                </span>
-                <input id="search" v-model="searchStr" @keyup="search()" placeholder="First or last name..." />
-                <label for="search" class="active">Search by name</label>
-              </div>      
-            </li>
-            <li v-bind:id="item._id" v-for="item in items" v-if="!item.hide" class="collection-item row">
-              <!-- {{ item }} -->
-              <div class="col m3">
-                  <person-name :item="item"></person-name>
-                </div>
-              <div class="col m5">
-                <person-contact-info :item="item"></person-contact-info>
-              </div>
-              <div class="col m4">
-                <router-link :to="{ path: /list/ + item.household_id }">
-                  <span v-if="item.household.label_name"><b>{{ item.household.label_name}}</b></span>
-                </router-link>
-                <location v-bind:item="item.household"></location>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <div v-else class="progress">
-            <div class="indeterminate"></div>
-        </div>
-      </div>
-    </script>
-
-  <script type="text/x-template" id="view-household">
-      <div>
-        <h6>
-          <a href="#/list">Membership List</a> / {{ item.label_name }}
-        </h6>
-        <div class="card">
-          <div class="card-content">
-            <span class="card-title">
-              {{ item.label_name }}
-            </span>
-            <location v-bind:item="item"></location>
-            <ul class="collection">
-              <person 
-                v-for="person in item.people" 
-                v-bind:key="person._id" 
-                v-bind:item="person">
-              </person>
-            </ul>
-          </div>
-          <div class="card-action blue-grey darken-1">
-              <a href="#/list">&larr; List</a>
-            </div>
-            <pre class="hide">{{ item }}</pre>
-        </div>
-      </div>
-    </script>
-
+  <!-- third child of list view -->
   <script type="text/x-template" id="downloads">
       <div>
         <p>
@@ -328,7 +272,10 @@
       </div>
     </script>
 
-  <!-- admin views -->
+
+    
+  <!-- ADMIN VIEWS -->
+
   <script type="text/x-template" id="error">
     <div v-if="error">
       <div class="alert error card">
@@ -372,6 +319,81 @@ Parameters:
     </div>
   </script>
 
+  <script type="text/x-template" id="admin">
+    <div>
+      <h6>
+        Admin
+      </h6>
+      <div v-if="!loading">
+        <ul class="collection">
+          <li class="collection-item grey lighten-4 row">
+            <div class="input-field col m8 s12">
+              <i class="material-icons prefix">search</i>
+              <input id="search" v-model="searchStr" @keyup="search()" placeholder="First or last name..." />
+              <label for="search" class="active">Search for a household</label>
+            </div>            
+            <div class="col m4">
+              <router-link :to="{name:'new-household'}" class="btn right">
+                <i class="material-icons">add_location</i> Add household
+              </router-link>
+            </div>
+          </li>
+          <li v-for="(item, index) in items" :key="item._id" v-if="!item.hide" class="collection-item">
+            <h5>
+              {{ item.name }}
+              <!-- Dropdown Trigger -->
+              <span class="secondary-content">
+                <a class="dropdown-trigger" href="#" :data-target="item._id" data-constrainwidth="false" data-alignment="right" title="click to see options">
+                  <i class="material-icons small">more_horiz</i>
+                </a>
+              </span>
+              <!-- Dropdown Structure -->
+              <ul :id="item._id" class="dropdown-content">
+                <li>
+                  <router-link :to="{ name: 'newPerson', params: { household_id: item._id }}" title="Add a person to this household">
+                    <i class="material-icons">person_add</i> Add a person
+                  </router-link>
+                </li>
+                <li>
+                  <router-link :to="{ name: 'editHousehold', params: { household_id: item._id }}" title="Edit household">
+                    <i class="material-icons">edit</i> Edit household
+                  </router-link>
+                </li>
+              </ul>
+            </h5>
+            <div class="row">
+              <div class="col m3">
+                <location :item="item"></location>
+              </div>
+              <div class="col m9">
+                <ul class="collection">
+                    <admin-person 
+                    v-for="person in item.people" 
+                    v-bind:key="person._id" 
+                    v-bind:item="person">
+                  </admin-person>
+                </ul>
+              </div>
+            </div><!--row-->
+          </li>
+        </ul>
+      </div>
+      <div v-else class="progress">
+          <div class="indeterminate"></div>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-template" id="form-errors">
+    <div v-if="errors.length > 0">
+      <ul class="errors">
+        <li v-for="error in errors" class="red-text text-darken-2">
+          <i class="material-icons red-text text-darken-2">error</i> {{ error }}
+        </li>
+      </ul>
+    </div>
+  </script>
+
   <!-- a list of people in the household -->
   <script type="text/x-template" id="first-child">
     <div>
@@ -382,8 +404,11 @@ Parameters:
           v-bind:item="person">
         </admin-person>                
       </ul>
-      <div v-if="item.people.length == 0">
-        <router-link :to="{name: 'editPerson', params: {household_id: item._id, person_id: 'new'}}">Add a person</router-link>
+      <p v-if="item.people.length == 0">
+        <router-link :to="{ name: 'newPerson', params: { household_id: item._id }}" class="btn">
+          <i class="material-icons">person_add</i> Add a person
+        </router-link>
+      </p>
     </div>
   </script>
 
@@ -391,22 +416,23 @@ Parameters:
   <script type="text/x-template" id="second-child">
     <div>
 
-        <div class="card-content blue lighten-5">
+        <form id="form-edit-person" name="form-edit-person" v-on:submit="save" action="#" method="post">
+          <div class="card-content blue lighten-5">
+      
+            <span class="card-title">{{ title.content }}</span>
 
-          <ul class="errors" v-if="">
-            <li v-for="error in errors">
-            </li>
-          </ul>
+            <form-errors :errors="errors"></form-errors>
 
-          <span class="card-title">{{ title.content }}</span>
             <div class="row">
               <div class="input-field col m6 s12">              
                 <input type="text" id="item_first" v-model="person.first" type="text" class="validate" />
                 <label for="item_first" class="active">First name</label>
+                <span class="helper-text red-text text-darken-2">Required</span>
               </div>
               <div class="input-field col m6 s12">              
                 <input type="text" id="item_last" v-model="person.last" type="text" class="validate" />
                 <label for="item_last" class="active">Last name</label>
+                <span class="helper-text red-text text-darken-2">Required</span>
               </div>
             </div>
             <div class="row">
@@ -416,55 +442,71 @@ Parameters:
               </div>
             </div>
             <div class="row">
-                <div class="input-field col s6">              
-                  <input type="text" id="item_phone" v-model="person.phone" type="text" class="validate" />
-                  <label for="item_phone" class="active">Mobile phone</label>
-                </div>
-                <div class="input-field col s6">              
-                  <input type="text" id="item_work_phone" v-model="person.work_phone" type="text" class="validate" />
-                  <label for="item_work_phone" class="active">Work phone</label>
-                </div>
+              <div class="input-field col s6">              
+                <input type="text" id="item_phone" v-model="person.phone" type="text" class="validate" />
+                <label for="item_phone" class="active">Mobile phone</label>
               </div>
-              <div class="row">
-                <div class="col m6 s12">              
-                  <label>Membership status</label>
-                  <p v-for="(value, idx) in statuses">
+              <div class="input-field col s6">              
+                <input type="text" id="item_work_phone" v-model="person.work_phone" type="text" class="validate" />
+                <label for="item_work_phone" class="active">Work phone</label>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col m6 s12">              
+                <p>
+                  Membership status
+                </p>
+                <p v-for="(value, idx) in statuses">
+                  <label v-bind:for="person._id + '-' + idx">
                     <input 
                       type="radio" 
                       :name="person._id + '-' + idx" 
                       :id="person._id + '-' + idx" 
                       :value="value" 
-                      v-model="person.status" />
-                    <label v-bind:for="person._id + '-' + idx">{{ value }}</label>
-                  </p>                
-                </div>
-                <div class="col m6 s12">              
-                  <label>Gender</label>
-                  <p v-for="(value, index) in genders">
+                      v-model="person.status" 
+                      class="with-gap"
+                    />
+                    <span>{{ value }}</span>
+                  </label>
+                </p>                
+              </div>
+              <div class="col m6 s12">              
+                <p>Gender</p>
+                <p v-for="(value, index) in genders">
+                  <label :for="person._id + '-gender-' + index">
                     <input type="radio" 
                       :name="person._id + '-gender-' + index" 
                       :id="person._id + '-gender-' + index" 
                       :value="value" 
-                      v-model="person.gender" />
-                    <label :for="person._id + '-gender-' + index">{{ value }}</label>
-                  </p>                
-                </div>
-              </div><!-- row -->        
-            </div><!--card-content-->
-              <div v-if="$route.params.person_id != 'new'" class="card-content">
-                <p>
-                  <input type="checkbox" v-bind:id="person._id" v-model="person._deleted" v-on:click="removePerson()" />
-                  <label v-bind:for="person._id" class="red-text text-darken-2">Remove this person</label>
-                </p>
-                <p>
-                  Only remove someone who has been added in error. This can not be undone.
-                </p>
+                      v-model="person.gender" 
+                      class="with-gap"
+                    />
+                    <span>{{ value }}</span>
+                  </label>
+                </p>                
+              </div>
+            </div><!-- row -->    
+
+          </div><!--card-content-->
+          <div v-if="$route.name != 'newPerson'" class="card-content red lighten-4">
+            <p>
+              <label v-on:click="removePerson()" class="red-text text-darken-2">
+                <input type="checkbox" v-bind:id="person._id" v-model="person._deleted" />
+                <span>Remove this person</span>
+              </label>
+            </p>
+            <p>
+              Only remove someone who has been added in error. This can not be undone.
+            </p>
           </div><!-- card-content -->
+
           <div class="card-action grey lighten-4">
             <input type="hidden" v-model="person.household_id"  />
-            <button v-on:click="save()" id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
-            <router-link :to="{name: 'admin-household', params: {household_id: person.household_id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel<router-link>
+            <button id="save" class="btn btn-large waves-effect waves-light" type="submit">Submit</button>
+            <router-link :to="{name: 'admin-household', params: {household_id: person.household_id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</router-link>
           </div>
+
+        </form>
 
     </div>
   </script>
@@ -472,92 +514,105 @@ Parameters:
   <!-- a form to edit a household -->
   <script type="text/x-template" id="third-child">
     <div>
-        <!-- <pre>{{ item }}</pre> -->
-        <div class="card-content blue lighten-5">
-            <span class="card-title">{{ title.content }}</span>
-   
-            <div class="row">
-              <div class="input-field col m4 s12">
-                <input type="text" id="household_name" v-model="item.name"  />
-                <label for="household_name" class="active">Household name</label>
-              </div>
-              <div class="input-field col m8 s12">
-                <input type="text" id="household_label_name" v-model="item.label_name"  />
-                <label for="household_label_name" class="active">Mailing label name</label>
-              </div>
-            </div>
 
-            <div class="row">
-              <div class="input-field col m8 s12">
-                <input type="text" id="household_street1" v-model="item.street1"  />
-                <label for="household_street1" class="active">Street 1</label>
-              </div>
-              <div class="input-field col m4 s12">
-                <input type="text" id="household_street2" v-model="item.street2"  />
-                <label for="household_street2" class="active">Street 2</label>
-              </div>
-            </div>
+      <form id="form-edit-household" name="form-edit-household" v-on:submit="save" action="#" method="post">
 
-            <div class="row">
-              <div class="input-field col m6 s12">
-                <input type="text" id="household_city" v-model="item.city"  />
-                <label for="household_city" class="active">City</label>
-              </div>
-              <div class="input-field col m2 s12">
-                <input type="text" id="household_state" v-model="item.state"  />
-                <label for="household_state" class="active">State</label>
-              </div>
-              <div class="input-field col m4 s12">
-                <input type="text" id="household_zip" v-model="item.zip"  />
-                <label for="household_zip" class="active">ZIP</label>
-              </div>
-            </div>
+        <div class="card-content grey lighten-4">
+          <span class="card-title">{{ title.content }}</span>
 
-            <div class="input-field">              
-              <input type="text" id="household_phone" v-model="item.phone"  />
-              <label for="household_phone" class="active">Household Phone</label>
-            </div>
+          <form-errors :errors="errors"></form-errors>
 
-            <div class="section">
-              <h5>
-                Hardcopies
-              </h5>
+          <div class="row">
+            <div class="input-field col m4 s12">
+              <input type="text" id="household_name" v-model="item.name" class="validate" />
+              <label for="household_name" class="active">Household name</label>
+              <span class="helper-text red-text text-darken-2">Required</span>
             </div>
-            <div class="row">              
-              <div class="col m6 s12 switch">
-                Mail a hardcopy of the newsletter?<br />
-                <label>
-                  No
-                  <input type="checkbox" id="mail_news" v-model="item.mail_news">
-                  <span class="lever"></span>
-                  Yes
-                </label>
-              </div>
-              <div class="col m6 s12 switch">
-                Mail a hardcopy of the membership list?<br />
-                <label>
-                  No
-                  <input type="checkbox" id="mail_list" v-model="item.mail_list">
-                  <span class="lever"></span>
-                  Yes
-                </label>
-              </div>
+            <div class="input-field col m8 s12">
+              <input type="text" id="household_label_name" v-model="item.label_name"  />
+              <label for="household_label_name" class="active">Mailing label name</label>
             </div>
-
-            <section v-if="$route.params.household_id">
-              <p>
-                <input type="checkbox" v-bind:id="item._id" v-model="item._deleted" v-on:click="remove()" />
-                <label v-bind:for="item._id" class="red-text text-darken-2">Remove this household</label>
-              </p>
-            </section>
-  
-          </div><!-- card-content -->
-          <div class="card-action grey lighten-4">
-            <input type="hidden" v-model="item.household_id"  />
-            <button v-on:click="save()" id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
-            <router-link :to="{name: 'admin-household', params: {id: item._id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel<router-link>
           </div>
+          <div class="row">
+            <div class="input-field col m8 s12">
+              <input type="text" id="household_street1" v-model="item.street1"  />
+              <label for="household_street1" class="active">Street 1</label>
+            </div>
+            <div class="input-field col m4 s12">
+              <input type="text" id="household_street2" v-model="item.street2"  />
+              <label for="household_street2" class="active">Street 2</label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-field col m6 s12">
+              <input type="text" id="household_city" v-model="item.city"  />
+              <label for="household_city" class="active">City</label>
+              <span class="helper-text red-text text-darken-2">Required</span>
+            </div>
+            <div class="input-field col m2 s12">
+              <input type="text" id="household_state" v-model="item.state"  />
+              <label for="household_state" class="active">State</label>
+              <span class="helper-text red-text text-darken-2">Required</span>
+            </div>
+            <div class="input-field col m4 s12">
+              <input type="text" id="household_zip" v-model="item.zip"  />
+              <label for="household_zip" class="active">ZIP</label>
+              <span class="helper-text red-text text-darken-2">Required</span>
+            </div>
+          </div>
+
+          <div class="input-field">              
+            <input type="text" id="household_phone" v-model="item.phone"  />
+            <label for="household_phone" class="active">Household Phone</label>
+          </div>
+
+          <div class="section">
+            <h5>
+              Hardcopies
+            </h5>
+          </div>
+
+          <div class="row">              
+            <div class="col m6 s12 switch">
+              Mail a hardcopy of the newsletter?<br />
+              <label>
+                No
+                <input type="checkbox" id="mail_news" v-model="item.mail_news">
+                <span class="lever"></span>
+                Yes
+              </label>
+            </div>
+            <div class="col m6 s12 switch">
+              Mail a hardcopy of the membership list?<br />
+              <label>
+                No
+                <input type="checkbox" id="mail_list" v-model="item.mail_list">
+                <span class="lever"></span>
+                Yes
+              </label>
+            </div>
+          </div><!--row-->
+
+        </div><!--card content-->
+        <div class="card-content red lighten-4" v-if="$route.params.household_id">
+          <p>
+            <label  class="red-text text-darken-2">
+              <input type="checkbox" v-model="item._deleted" />
+              <span>Remove this household</span>
+            </label>
+          </p>
+          <p>
+            Only remove households that have been added in error. Deleting the household deletes the people in the household, too. This can not be undone.
+          </p>
+        </div><!-- card-content -->
+        <div class="card-action grey lighten-4">
+          <input type="hidden" v-model="item.household_id"  />
+          <button id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
+          <router-link v-if="$route.name == 'editHousehold'" :to="{name: 'admin-household', params: {id: item._id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</router-link>
+          <router-link v-if="$route.name == 'new-household'" :to="{name: 'admin'}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</router-link>
         </div>
+
+      </form>
 
     </div>
   </script>
@@ -586,11 +641,13 @@ Parameters:
   <!-- parent view for each household -->
   <script type="text/x-template" id="admin-household">
     <div>
+
       <loading :status="loading"></loading>
       <error :error="error"></error>
+
       <div v-if="!error">
         <h6>
-          <a href="#/admin">Admin</a> / {{ item.name }}
+          <router-link :to="{name: 'admin'}">Admin</router-link> / {{ item.name }}
         </h6>
         <div class="row">
           <div class="col s12 m10">
@@ -598,45 +655,45 @@ Parameters:
               <div class="card-content">
                 <span class="card-title">
                     {{ item.name }}
-                    <!-- Dropdown Trigger -->
-                    <span class="secondary-content">
-                      <a class="dropdown-button" href="#" data-constrainwidth="false" data-alignment="right" data-activates="dropdown1" title="click to see options">
-                        <i class="material-icons small">more_vert</i>
-                      </a>
-                    </span>
-                    <!-- Dropdown Structure -->
-                    <ul id='dropdown1' class='dropdown-content'>
-                      <li>
-                        <router-link :to="{ name: 'editPerson', params: { household_id: item._id, person_id: 'new' }}" title="Add a person to this household">
-                          <i class="material-icons">person_add</i> Add a person
-                        </router-link>
-                      </li>
-                      <li>
-                        <router-link :to="{ name: 'editHousehold', params: { household_id: item._id }}" title="Edit household">
-                          <i class="material-icons">edit</i> Edit household
-                        </router-link>
-                      </li>
-                    </ul>
-                </span>  
+                    <span v-if="$route.name != 'editPerson' && $route.name != 'newPerson' && $route.name != 'editHousehold'">
+                      <!-- Dropdown Trigger -->
+                      <span class="secondary-content">
+                        <a class="dropdown-trigger" href="#" data-target="dropdown1" data-constrainwidth="false" data-alignment="right" title="click to see options">
+                          <i class="material-icons small">more_horiz</i>
+                        </a>
+                      </span>
+                      <!-- Dropdown Structure -->
+                      <ul id="dropdown1" class="dropdown-content">
+                        <li>
+                          <router-link :to="{ name: 'newPerson', params: { household_id: item._id }}" title="Add a person to this household">
+                            <i class="material-icons">person_add</i> Add a person
+                          </router-link>
+                        </li>
+                        <li>
+                          <router-link :to="{ name: 'editHousehold', params: { household_id: item._id }}" title="Edit household">
+                            <i class="material-icons">edit</i> Edit household
+                          </router-link>
+                        </li>
+                      </ul>
+                    </span><!-- route guard -->
+                </span><!-- card title -->
                 <location v-bind:item="item"></location>
     
-                <router-view :item="item" :loading="loading"></router-view>
-              </div>
-              <div class="card-action blue-grey darken-1">
-                <a href="#/admin">&larr; Back to Admin</a>
+                <router-view :item="item"></router-view>
               </div>
             </div><!-- card -->
           </div><!-- col -->          
         </div><!--row-->
       </div><!--!error-->
+      <a href="#/admin">&larr; Back to Admin</a>
     </div><!-- container -->
   </script>
 
   <script type="text/x-template" id="logout">
-      <span>
-        <h1>{{ item }}</h1>
-      </span>
-    </script>
+    <span>
+      <p>{{ item }}</p>
+    </span>
+  </script>
 
   <!--Resources (Google Drive)-->
   <script type="text/x-template" id="resources">
