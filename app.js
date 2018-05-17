@@ -362,27 +362,48 @@ app.post('/postHousehold',
 
       var household = req.body;
 
-      // if the household is being deleted,
-      // delete the people inside it, too
+      // if we're deleting a household, we should first delete the people
       if(household._deleted == true){
-        if (household.people.length > 0) {
-          // update people in bulk
-          db.bulk({ docs: household.people }, function (err, docs) {
-            //db.insert(household.people[1], function(err, docs){
-            if (!err) {
-              console.log('success deleting people, will delete household next', household.people.length);
-            } else {
-              console.log('error deleting people', err.reason);
+        // using cloudant query means we don't have to pre-build our indexes
+        // which means I don't have to worry about keeping mapreduce code in sync 
+        // across the dev and prod database(s), and can instead just update views here
+        db.find(
+          { 
+            "selector": {
+                "household_id": {
+                  "$eq": household._id
+                }
+            },
+            "fields": [
+              "_id",
+              "_rev"
+            ]
+          }, function(err, data) {
+            if (err) {
+              throw err;
             }
-          });
-        }          
+            var people = [];
+
+            console.log('Found %d people in this household', data.docs.length);
+
+            for (var i = 0; i < data.docs.length; i++) {
+              data.docs[i]._deleted = true;
+              people.push(data.docs[i]);
+            }
+
+            if(people.length > 0){  
+              db.bulk({ docs:people }, function (err, docs) {
+                if (!err) {
+                  console.log('deleted this many people', people.length);
+                } else {
+                  console.log('error deleting people', err.reason);
+                }
+              });                  
+            }
+        });
       }
 
-      if(household.people && household.people.length > 0){
-        console.log('deleting this many people:', household.people.length);
-        delete household.people;
-      }
-
+      // update the household      
       db.insert(household, function (err, doc) {
         if (!err) {
           console.log('success updating household');

@@ -555,12 +555,15 @@ const thirdChild = {
     },
     save: function(e){
       let _this = this;
+      
+      if(_this.item.people){
+        delete _this.item.people;
+      };
 
       if(this.checkform()){
 
         // starting label for the save button
         const txt = $('#save').text();
-        var people = _this.item.people;
         // temporary message that shows
         $('#save').text('Saving...');
 
