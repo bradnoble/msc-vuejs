@@ -5,7 +5,8 @@ var cfenv = require("cfenv"),
   session = require('express-session'),
   bodyParser = require('body-parser'),
   jsonParser = bodyParser.json(),
-  json2csv = require('json2csv'),
+  Json2csvParser = require('json2csv').Parser,
+  Combinatorics = require('js-combinatorics'),
   opts = (process.env.VCAP_SERVICES) ? { vcapServices: JSON.parse(process.env.VCAP_SERVICES) } : { url: process.env.url },
   env = (process.env.mode) ? process.env.mode : 'prod' // are we in dev mode?
   ;
@@ -126,6 +127,177 @@ app.get('/admin',
 );
 
 // ------------------------------------------- LIST
+app.get('/search',
+  users.auth,
+  function (req, res) {
+
+    var q = req.query.q,
+      q_array = (q) ? q.split(' ') : null,
+      status = req.query.status,
+      cmb, 
+      a,
+      selector = {}
+      ;
+
+    if(status && status != 'all'){
+      selector = {
+        "status": {
+          "$eq": status
+        }
+      };
+    } else if (status && status == 'all'){
+      selector = {
+        "type": {"$eq": "person"},
+        "$nor": [
+          { "status": "deceased" },
+          { "status": "guest" },
+          { "status": "non-member" }
+        ]
+      };
+    } else if (q){
+      console.log(q_array)
+      if(q_array.length == 1){
+        selector = {
+          "$or": [
+            {
+              "first": {
+                "$regex": "^(?i)" + q_array[0] + ".*"
+              }
+            },
+            {
+              "last": {
+                "$regex": "^(?i)" + q_array[0] + ".*"
+              }
+            }    
+          ]
+        };
+      }
+    }
+
+    db.find(
+      { 
+        "selector": selector,
+        "fields": []
+      }, function(err, data) {
+        if (err) {
+          throw err;
+        }
+        res.send(data)
+      }
+    );
+
+
+
+    /*
+    var query_builder = function(arr){
+      if(arr.length == 1){
+        or.push(
+          {
+            "first": {
+              "$regex": "^(?i)" + arr[0] + ".*"
+            }
+          },
+          {
+            "last": {
+              "$regex": "^(?i)" + arr[0] + ".*"
+            }
+          }    
+        );
+      } else if (arr.length > 1){
+        or.push(
+          {
+            "$and": [
+              {
+                "first": {
+                  "$regex": "^(?i)" + arr[0] + ".*"
+                }
+              },
+              {
+                "last": {
+                  "$regex": "^(?i)" + arr[arr.length-1] + ".*"
+                }
+              }    
+            ]
+          }
+        );            
+      }
+      //return obj;
+    };
+
+    // use js-combinatorics to create array combinations for the query
+    cmb = Combinatorics.permutationCombination(q_array);
+    var combos = cmb.toArray();
+    for(var i=0; i< combos.length; i++){
+      // console.log(combos[i]);
+      or.push(query_builder(combos[i]));
+    }
+    
+    console.log(JSON.stringify(or));
+/*
+    cmb = Combinatorics.power(q_array);
+    cmb.forEach(
+      function(a){ 
+        // console.log(a.length);
+        if(a.length > 0){
+          if(a.length === 1){
+            or.push(
+              query_builder(a)
+            );                  
+          }
+          console.log(a) 
+          console.log(a[0]);
+          console.log(a[1]);
+        }
+      }
+    );    
+*/
+
+//    console.log(q);
+
+/*
+    for(var i=0; i < q_array.length; i++){
+      //str += ""
+      or.push(
+        {
+          "first": {
+            "$regex": "^(?i)" + q_array[i] + ".*"
+          }
+        },
+        {
+          "last": {
+            "$regex": "^(?i)" + q_array[i] + ".*"
+          }
+        }        
+      );
+    }
+    console.log(or);
+
+    db.find(
+      { 
+        "selector": {
+          "$or": or
+        },
+        "fields": [
+          "_id",
+          "_rev",
+          "first",
+          "last"
+        ]
+      }, function(err, data) {
+        if (err) {
+          throw err;
+        }
+        //console.log(data);
+        res.send(data)
+      }
+    );
+
+    */
+
+
+  }
+);
+
 app.get('/list',
   users.auth,
   function (req, res) {
@@ -192,73 +364,116 @@ app.get('/getEmails',
   }
 );
 
-        
+
 app.get('/getPeopleForCSV',
+  users.auth,
   function (req, res) {
 
-    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
-      if (!err) {
+    var households = {},
+      people = [],
+      datetime = new Date().toISOString(),
+      fields = [
+        "_id",
+        "household_id",
+        "first",
+        "last",
+        "status",
+        "type",
+        "email",
+        "phone",
+        "street1",
+        "street2",
+        "city",
+        "state",
+        "zip"
+      ],
+      blacklist = [
+        "_id",
+        "household_id",
+        "type"
+      ],
+      status = req.query.status,
+      selector_array = [
+        {"status": {"$ne": "deceased"}},
+        {"status": {"$ne": "non-member"}},
+        {"status": {"$ne": "guest"}}
+      ];
 
-        var households = {};
-        var people = [];
-        var rows = [];
-        var z = 0;
-        var people_fields = [];
-        var household_fields = [];
-        var whitelist = ['_id', '_rev', 'type'];
+      if(status){
+        selector_array.push({"status": {"$eq": status}});
+      }
 
-        var mapped = function (data) {
-          return data.rows.map(function (row) {
-            if (row.doc.type == 'household') {
-              // see 'household_phone' comment below
-              row.doc.household_phone = row.doc.phone;
-              households[row.doc._id] = row.doc;
+    db.find(
+      { 
+        "selector": {
+          "$or": [
+            {
+               "$and": [
+                  {
+                     "type": {
+                        "$eq": "person"
+                     }
+                  },
+                  {
+                     "$and": selector_array
+                  }
+               ]
+            },
+            {
+               "type": {
+                  "$eq": "household"
+               }
             }
-            if (row.doc.type == 'person' && row.doc.status != 'deceased' && row.doc.status != 'non-member' && row.doc.status != 'guest' && row.doc.status != '') {
-              people[z] = row.doc;
-              if (people_fields.length == 0 && row.doc.household_id) {
-                people_fields = Object.keys(row.doc);
-                // console.log(people_fields);
-              }
-              z++;
-            }
-            return row.doc;
-          });
-        };
-
-        var data = mapped(resp);
-        var household_fields = ['name', 'label_name', 'street1', 'street2', 'city', 'state', 'zip', 'household_phone', 'mail_list', 'mail_news'];
-        // household_phone
-        // note that I'm using 'household_phone' here in household_fields
-        // people and households both have 'phone' fields and as such was presenting people phones as household phones
-        // at line 160 I work in 'household_phone' to replace 'phone' for households
-
-        var fields = people_fields.concat(household_fields);
-
-        // associate the households to the person
-        for (i = 0; i < people.length; i++) {
-          rows[i] = people[i];
-          var household = households[people[i].household_id];
-          if (household) {
-            for (j in household_fields) {
-              rows[i][household_fields[j]] = household[household_fields[j]];
-            }
+         ]
+           },
+        "limit": 600,
+        "fields": fields
+      }, function(err, data) {
+        if (err) {
+          throw err;
+        }
+        // build an array of people, and a dictionary of households
+        for(var i=0; i< data.docs.length; i++){
+          if (data.docs[i].type == 'household') {
+            data.docs[i].household_phone = data.docs[i].phone;
+            households[data.docs[i]._id] = data.docs[i];
+          } else if (data.docs[i].type == 'person'){
+           people.push(data.docs[i]);
           }
         }
 
-        console.log(fields);
-        //          console.log(rows);
+        // associate households from the dictionary to each person in the people array
+        for (var i = 0; i < people.length; i++) {
+          let household = households[people[i].household_id];
+          if (household) {
+            Object.assign(people[i],household);
+          }
+        }
 
-        // http://stackoverflow.com/questions/35138765/download-csv-file-node-js/35140031
-        json2csv({ data: rows, fields: fields }, function (err, csv) {
-          res.set('Content-disposition', 'attachment; filename=people.csv');
-          res.set('Content-Type', 'text/csv');
-          res.status(200).send(csv);
-        });
-      } else {
-        console.log(err);
-      }
-    });
+        // remove unnecessary fields to make the spreadsheet pretty
+        for (var i = 0; i < blacklist.length; i++) {
+          var index = fields.indexOf(blacklist[i]);
+          if (index !== -1) {
+            fields.splice(index, 1);          
+          }
+        }
+
+        filename = 'MSC-Membership-List-' + new Date().toISOString();
+        
+        // leading zeros get trimmed by Numbers/Excel when importing CSVs
+        // the zeros are there in the CSV, though
+        // here's how to fix it, from inside Numbers/Excel:
+        // https://discussions.apple.com/thread/5303970?answerId=5303970021#5303970021
+        const json2csvParser = new Json2csvParser({ fields });
+        const csv = json2csvParser.parse(people);
+      
+        res.set('Content-disposition', 'attachment; filename=' + filename + '.csv');
+        res.set('Content-Type', 'text/csv');
+        res.status(200).send(csv);
+
+      }      
+    );
+
   }
 );
 
@@ -718,95 +933,3 @@ app.get('/resources/view/:id', (req, res) => {
   }
 
 });
-
-/*
- * API endpoints 
- */
-
-/*
-TESTS
-
-cloudant.db.list(function(err, allDbs) {
-  console.log('All my databases: %s', allDbs.join(', '))
-});
-
-app.get('/allDatabases', function(req, res){
-  cloudant.db.list(function(err, data) {
-    res.send(data);
-  });
-});
-
-var ddoc = 'app',
-  id = '_design/' + ddoc,
-  views = {
-    "householdsAndPeople": {
-        "map": "function (doc) {\n    if (doc.type == \"household\"){\n      emit([doc.type, doc.name, doc._id], 1);\n    }\n    if(doc.type == \"person\"){\n      emit([doc.type, doc.household_id, doc.first], 1);\n    }\n  }"
-    },
-    "join_people_to_household": {
-        "map": "function (doc) {\n    if (doc.type == \"person\" && doc.household_id){\n      emit(doc.household_id, 1);\n    }\n  }"
-    },
-    "signups": {
-        "map": "function (doc){\n    var split = doc.arrive.split(\"T\");\n    split = split[0].split(\"-\");\n\n    // take out leading zeros from month and day here before parseInt\n    // http://stackoverflow.com/questions/8763396/javascript-parseint-with-leading-zeros\n\n    var arrive = [\n      parseInt(split[0], 10),\n      parseInt(split[1], 10),\n      parseInt(split[2], 10)\n      ];\n    if(doc.type == 'signup'){\n      emit(arrive, 1);\n    }\n  }"
-    },
-    "people": {
-        "map": "function (doc) {\n    if (doc.type == \"person\"){\n      emit(doc._id, 1);\n    }\n  }"
-    },
-    "emails": {
-           "map": "function(doc){ if(doc.type == \"person\" && doc.email && doc.status && doc.first && doc.last){ emit(doc.status, [doc.email, doc.first + ' ' + doc.last]) } }"    }
-  };
-
-var compareViews = function(){
-  var stringBodyViews = '', // this will hold the views that are in the db
-    stringViews = ''; // this will hold the views that are in this file
-
-  // steps
-  // 1. make sure we're in dev mode (ie, working locally)
-  // dev mode is set in the .env file as `dev=true`
-  // in production, `dev` will not exist in the env vars
-  // note: @ top of file, `dev` is set depending on what's in .env
-  if(!dev)
-    return true;
-  // 2. compare the views in this file with the views in the db
-  // 3. if they're different, update the views in the db and...
-  // 4. retry the endpoint
-
-
-    // 2. compare the views in the db with the views in this doc
-    // first get the view
-    db.get('_design/app', {}, function(err, body) {
-      if(!err){
-
-        // in order to compare,
-        // turn both view objects to strings and then remove all whitespace
-        // body.views first
-        stringBodyViews = JSON.stringify(body.views);
-        stringBodyViews.replace(/\s/g,'');
-
-        // views second
-        stringViews = JSON.stringify(views);
-        stringViews.replace(/\s/g,'');
-
-        // if they don't match... 
-        if(stringBodyViews != stringViews){
-          console.log('views are NOT equal');
-          body.views = views;
-          // 3. update the db
-          db.insert(body, function(err, body){
-            if(!err){
-              console.log('views updated!', body);
-              return false;
-            }
-          });
-        } 
-        else {
-          console.log('views are equal');
-          return true;
-        }
-
-      }
-    });
-};
-
-
-
-*/

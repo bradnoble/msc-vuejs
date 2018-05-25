@@ -100,6 +100,90 @@ const search = {
   }
 }
 
+const facets = {
+  template: '#results',
+  data: function () {
+    return {
+      items: [],
+      loading: false
+    }
+  },
+  mounted: function(){
+    this.loading = true;
+    this.facetedSearch();
+  },
+  updated: function(){
+  },
+  watch: {
+    '$route'(to, from) {
+      this.loading = true;
+      this.facetedSearch();
+    }
+  },
+  methods: {
+    facetedSearch: function(){
+      let _this = this;
+      _this.items = [];
+
+      var params = {};
+      params.status = _this.$route.params.status;
+
+      this.$http.get('/search', params)
+        .then(
+          function (resp) {
+            _this.items = resp.data.docs;
+            _this.loading = false;
+          }
+        );
+    }
+  }
+};
+
+// EXPERIMENT ON CLOUDANT QUERY SEARCH
+const search2 = {
+  template: '#search2',
+  data: function () {
+    return {
+      items: [],
+      searchStr: '',
+      timer: null,
+      statuses: getStatuses(),
+      selected: ''
+    }
+  },
+  updated: function(){},
+  methods: {
+    search: function () {
+      let _this = this;
+      _this.items = [];
+
+      if (this.timer) {
+        clearTimeout(this.timer);
+        this.timer = null;
+      }
+      this.timer = setTimeout(() => {
+        var params = {};
+        params.q = _this.searchStr;
+  
+        this.$http.get('/search', params)
+          .then(
+            function (resp) {
+              console.log(resp)
+              _this.items = resp;
+            }
+          );
+        }, 800);
+
+    },
+    clearSearchStr: function () {
+      this.searchStr = '';
+      this.start();
+    }
+  }
+}
+
+
+
 const viewHousehold = {
   template: '#view-household',
   data: function () {
@@ -216,14 +300,6 @@ const emails = {
     }
   }
 };
-
-// third child of list
-const downloads = {
-  template: '#downloads',
-  created: function () {
-    document.title = 'Members - MSC';
-  }
-}
 
 
 const logout = {

@@ -36,7 +36,7 @@
           </a>
           <ul id="nav-mobile" class="right hide-on-med-and-down">
             <li>
-              <router-link :to="{name:'list'}">Membership Info</router-link>
+              <router-link :to="{name:'list'}">Membership List</router-link>
             </li>
             <li>
               <router-link to="/resources">Resources</router-link>
@@ -128,9 +128,9 @@
 
   <script type="text/x-template" id="view-person-contact-info">
     <span>
-      <span v-if="item.email" class="chip"><i class="material-icons tiny">email</i>&nbsp;{{ item.email }}</span>
-      <span v-if="item.phone" class="chip"><i class="material-icons tiny">phone_iphone</i>&nbsp;{{ item.phone }}</span>
-      <span v-if="item.work_phone" class="chip"><i class="material-icons tiny">work</i>&nbsp;{{ item.work_phone }}</span>
+      <div v-if="item.email" class="nowrap"><i class="material-icons tiny">email</i>&nbsp;{{ item.email }}</div>
+      <div v-if="item.phone" class="nowrap"><i class="material-icons tiny">phone_iphone</i>&nbsp;{{ item.phone }}</div>
+      <div v-if="item.work_phone" class="nowrap"><i class="material-icons tiny">work</i>&nbsp;{{ item.work_phone }}</div>
     </span>
   </script>
 
@@ -144,14 +144,11 @@
       <div class="row">
         <div class="col s12">
           <ul class="tabs">
-            <li class="tab col s3">
-              <router-link :to="{name: 'list'}" exact><i class="material-icons">search</i> Search</router-link>
+            <li class="tab col s3" :class="{active: $route.name == 'faceted-results'}">
+              <router-link :to="{name: 'list'}" :class="{active: $route.name == 'faceted-results'}"><i class="material-icons">search</i> Search</router-link>
             </li>
             <li class="tab col s3">
-              <router-link :to="{name: 'emails'}"><i class="material-icons">email</i> Email addresses</router-link>
-            </li>
-            <li class="tab col s3">
-              <router-link :to="{name: 'downloads'}"><i class="material-icons">file_download</i> Downloads</router-link>
+              <router-link :to="{name: 'emails'}" :class="{active: $route.name == 'emails'}"><i class="material-icons">email</i> Email addresses</router-link>
             </li>
           </ul>
         </div>
@@ -160,7 +157,82 @@
     </div>
   </script>
 
+<!--membership list search results-->
+<script type="text/x-template" id="results">
+  <div>
+    <loading :status="loading"></loading>
+
+    <p v-if="!loading">
+      {{ items.length }} {{ $route.params.status }}(s) 
+      <a class="right" v-bind:href="'/getPeopleForCSV?status=' + $route.params.status">
+        <i class="material-icons">file_download</i> Download
+      </a>
+    </p>
+
+    <ul class="collection" v-if="!loading">
+      <li class="collection-item row" v-for="item in items" v-bind:id="item._id">
+
+        <div class="col m5">
+          <person-name :item="item"></person-name>
+        </div>
+        <div class="col m6">
+          <person-contact-info :item="item"></person-contact-info>
+        </div>
+        <div class="col m1">
+          <span class="secondary-content">
+            <router-link :to="{ name: 'list-household', params: {id: item.household_id} }" title="view household">
+              <i class="material-icons">chevron_right</i>
+            </router-link>  
+          </span>
+          <!-- <location v-bind:item="item.household"></location> -->
+        </div>
+      </li>
+    </ul>
+
+  </div>
+</script>
+
 <!-- first child of list view -->
+<script type="text/x-template" id="search2">
+  <div>
+    <div class="input-field">
+      <span class="prefix">
+        <i class="material-icons" v-if="searchStr" v-on:click="clearSearchStr()" title="clear the search input">clear</i>
+        <i class="material-icons" v-if="!searchStr" title="search">search</i>
+      </span>
+      <input id="search" v-model="searchStr" @keyup="search()" placeholder="First or last name..." />
+      <label for="search" class="active">Search by name</label>
+    </div>
+    <div class="row">
+      <div class="col m3">
+        <p>
+          Filters
+        </p>
+        <div class="collection facets">
+            <router-link :to="{name:'faceted-results', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
+                all
+                <span class="secondary-content" v-if="$route.params.status == 'all'">
+                    <i class="material-icons">chevron_right</i>
+                  </span>
+                </router-link>              
+            <router-link :to="{name:'faceted-results', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
+              {{ status }}
+              <span class="secondary-content" v-if="$route.params.status == status">
+                <i class="material-icons">chevron_right</i>
+              </span>
+            </router-link>
+          </div>
+      </div>
+      <div class="col m9">
+          <router-view></router-view>
+
+      </div>
+    </div>      
+  </div>
+</script>
+
+
+  <!-- first child of list view -->
 <script type="text/x-template" id="search">
   <div>
     <div v-if="!loading">
@@ -261,17 +333,6 @@
         <router-link to="/list">Back to the list</router-link>
       </div>
     </script>
-
-  <!-- third child of list view -->
-  <script type="text/x-template" id="downloads">
-      <div>
-        <p>
-          This will download a CSV to your computer of everyone in our database. More download options coming soon.
-        </p>
-        <a href="/getPeopleForCSV" class="btn"><i class="material-icons">file_download</i> Download List</a>
-      </div>
-    </script>
-
 
     
   <!-- ADMIN VIEWS -->

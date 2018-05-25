@@ -8,22 +8,33 @@ const routes = [
       path: '/list', 
       component: list,
       children: [
+/*
+        {
+          path: '',
+          name: 'search',
+          component: search,
+          props: true
+        },
+*/
         {
           path: '',
           name: 'list',
-          component: search,
-          props: true
+          component: search2,
+          props: true,
+          redirect: 'search/all',
+          children: [
+            {
+              path: 'search/:status',
+              name: 'faceted-results',
+              component: facets,
+              props: true
+            }
+          ]
         },
         {
           path: 'emails',
           name: 'emails',
           component: emails,
-          props: true
-        },
-        {
-          path: 'downloads',
-          name: 'downloads',
-          component: downloads,
           props: true
         }
       ]
