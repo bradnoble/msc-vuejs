@@ -1,10 +1,12 @@
 //Page init
 $(function () {
+  /*
   $('.dropdown-trigger').dropdown();
   $('.modal').modal();
   $('.tooltipped').tooltip();
   $('.collapsible').collapsible();
-
+  */
+  M.AutoInit();
   //>>MaterializeCSS 1.0.0 features
   // $('.tap-target').tapTarget();
 
@@ -23,132 +25,129 @@ const home = {
 
 // parent controller of search, emails, downloads
 const list = {
-  template: '#list'
+  template: '#list',
+  data: function () {
+    return {
+      searchstring: '',
+      timer: null,
+      statuses: []
+    }
+  },
+  created: function(){    
+    var blacklist = ['deceased'];
+    this.statuses = getStatuses(blacklist);
+  },
+  methods: {
+    search: function (event) {
+      // console.log('hi from the child', event);
+      this.searchstring = event;
+      if(this.searchstring.length > 0){
+        this.$router.push({name: 'text-results', params:{}, query:{ q: this.searchstring }});
+      } else {
+        this.$router.push({name: 'faceted-results', params:{ status: 'all' }});
+      }
+    }
+  }  
 }
 
 // first child of list
-const search = {
-  template: '#search',
-  data: function () {
-    return {
-      items: [],
-      searchStr: '',
-      loading: false
-    }
-  },
-  mounted: function () {
-    document.title = 'Members - MSC';
-    this.loading = true;
-    this.start();
-  },
+const listIntro = {
+  template: '#list-intro',
+  props: [
+    'searchstring',
+    'timer',
+    'statuses'
+  ],
   methods: {
-    start: function () {
-      _this = this;
-      this.$http.get('/list')
-        .then(
-          function (resp) {
-            var data = resp.data;
-            // create a string to search against
-            for (i = 0; i < data.length; i++) {
-              data[i].str = '';
-              var array = [data[i].first, data[i].last, data[i].household.name, data[i].household.label_name];
-              data[i].str = array.join(' ');
-            }
-            // update the view with the result
-            _this.items = data;
-            _this.loading = false;
-          }
-        );
-    },
-    clearSearchStr: function () {
-      this.searchStr = '';
-      this.start();
-    },
-    search: function () {
-      var str = this.searchStr.trim();
-      var array = str.split(' ');
-
-      // if the user deletes the search string, reset the list
-      if (!str) {
-        this.start();
-      } else if (str.length >= 1) {
-        // console.log(str)
-
-        for (i = 0; i < this.items.length; i++) {
-          // each item has its own counter
-          var counter = 0;
-
-          // if search terms have hits in the search string, increment the counter
-          for (j = 0; j < array.length; j++) {
-            if (this.items[i].str.toLowerCase().trim().indexOf(array[j].toLowerCase().trim()) > -1) {
-              counter++
-            }
-          }
-
-          // if these conditions are met, show the item
-          // 1. is the counter more than zero, where it started?
-          // 2. does counter equal the length of array of search terms?
-          // (on 2 -- if true, every search term has a hit)
-          if (counter > 0 && counter == array.length) {
-            delete this.items[i].hide;
-          } else {
-            this.items[i].hide = true;
-          }
-        }
-      }
+    // this was helpful for talking from a child to a parent
+    // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
+    // also this https://laracasts.com/discuss/channels/vue/how-to-catch-a-childs-emit-in-the-parent-with-vue/replies/289920
+    searchfromchild: function(e){
+      this.$emit('searched', this.searchstring)
+      e.preventDefault();
     }
   }
 }
 
-const viewHousehold = {
-  template: '#view-household',
+// second child of list
+const facets = {
+  template: '#results',
+  props: [
+    'searchstring',
+    'timer',
+    'statuses'
+  ],
   data: function () {
     return {
-      item: {}
+      items: [],
+      loading: false
     }
   },
-  created: function () {
-    this.start();
+  mounted: function(){
+    this.loading = true;
+    this.facetedSearch();
   },
-  methods: {
-    setPageTitle: function () {
-      document.title = (this.item.name) ? this.item.name : 'View Household';
-    },
-    start: function () {
-      _this = this;
-      this.$http.get('/getHousehold/',
-        {
-          id: this.$route.params.id
-        })
-        .then(function (resp) {
-          // console.log('start', resp)        
-          _this.item = resp.data;
-          _this.setPageTitle();
-        },
-          function (error) {
-            _this.item = {
-              name: 'sorry!'
-            }
-          }
-        );
-    }
+  updated: function(){
+    M.updateTextFields();
   },
   watch: {
     '$route'(to, from) {
-      console.log('$route', to, from)
-      this.start();
+      this.loading = true;
+      this.facetedSearch();
+    }
+  },
+  methods: {
+    clearfromchild: function(){
+      this.searchstring = '';
+      this.$router.push({name: 'faceted-results', params:{ status: 'all' }});
+    },
+    searchfromchild: function(e){
+      let _this = this;
+      _this.items = [];
+
+      if (this.timer) {
+        clearTimeout(this.timer);
+        this.timer = null;
+      }
+      this.timer = setTimeout(() => {
+        this.$emit('searched', _this.searchstring)
+      }, 500);
+
+      e.preventDefault();
+    },
+    facetedSearch: function(){
+      let _this = this;
+      _this.items = [];
+
+      var params = {};
+      if(_this.$route.params.status){
+        params.status = _this.$route.params.status;
+        _this.searchstring = '';
+      } else if (_this.$route.query.q){
+        params.q = _this.$route.query.q;
+      }
+
+      this.$http.get('/search', params)
+        .then(
+          function (resp) {
+            _this.items = resp.data.docs;
+            _this.loading = false;
+          }
+        );
     }
   }
 };
 
-// second child of list
+// third child of list
 const emails = {
   template: '#emails',
+  props: [
+    'statuses'
+  ],
   data: function () {
     return {
       items: [],
       loading: true,
-      statuses: getStatuses(),
       selected: {},
       emailsSelected: 'Select emails'
     }
@@ -157,9 +156,12 @@ const emails = {
     this.start();
     document.title = 'Members - MSC';
   },
+  updated: function(){
+    M.textareaAutoResize($('#textarea-emails'));    
+  },
   methods: {
     start: function () {
-      _this = this;
+      let _this = this;
       _this.loading = true;
       var params = {},
         // get keys out of the selected object
@@ -180,7 +182,6 @@ const emails = {
             // update the view with the result
             _this.items = blob;
             _this.loading = false;
-            $('#emails').trigger('autoresize');
           }
         );
     },
@@ -217,13 +218,68 @@ const emails = {
   }
 };
 
-// third child of list
-const downloads = {
-  template: '#downloads',
-  created: function () {
-    document.title = 'Members - MSC';
+const viewHousehold = {
+  template: '#view-household',
+  data: function () {
+    return {
+      item: {},
+      back: ''
+    }
+  },
+  beforeRouteEnter: function(to, from, next){
+    // conditional back button
+    // helpful reference about how to use next(): 
+    // https://medium.com/@allenhwkim/resolving-before-route-vuejs-d319b27576c3
+    next(vm => {
+      if(from.fullPath == '/'){
+        vm.back = {
+          name:'list'
+        };
+      } else {
+        vm.back = {
+          name: from.name,
+          params: from.params,
+          query: from.query
+        };
+      }
+    });
+  },
+  mounted: function(){
+    this.start();
+  },
+  updated: function(){
+    console.log(this.back)
+  },
+  methods: {
+    setPageTitle: function () {
+      document.title = (this.item.name) ? this.item.name : 'View Household';
+    },
+    start: function () {
+      _this = this;
+      this.$http.get('/getHousehold/',
+        {
+          id: this.$route.params.id
+        })
+        .then(function (resp) {
+          // console.log('start', resp)        
+          _this.item = resp.data;
+          _this.setPageTitle();
+        },
+          function (error) {
+            _this.item = {
+              name: 'sorry!'
+            }
+          }
+        );
+    }
+  },
+  watch: {
+    '$route'(to, from) {
+      console.log('$route', to, from)
+      this.start();
+    }
   }
-}
+};
 
 
 const logout = {

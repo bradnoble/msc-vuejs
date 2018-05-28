@@ -7,23 +7,30 @@ const routes = [
     { 
       path: '/list', 
       component: list,
+      props: true,
       children: [
         {
           path: '',
           name: 'list',
-          component: search,
+          component: listIntro,
           props: true
         },
+        {
+          path: 'search/status/:status',
+          name: 'faceted-results',
+          component: facets,
+          props: true
+        },
+        {
+          path: 'search',
+          name: 'text-results',
+          component: facets,
+          props: true
+        },            
         {
           path: 'emails',
           name: 'emails',
           component: emails,
-          props: true
-        },
-        {
-          path: 'downloads',
-          name: 'downloads',
-          component: downloads,
           props: true
         }
       ]
@@ -98,7 +105,9 @@ const routes = [
   // You can pass in additional options here, but let's
   // keep it simple for now.
   const router = new VueRouter({
-    routes // short for `routes: routes`
+    routes, // short for `routes: routes`
+    linkActiveClass: 'active',
+    linkExactActiveClass: 'active'
   });
 
 var vm = new Vue({

@@ -18,9 +18,14 @@ i.material-icons {
   cursor: pointer;
 }
 
-nav .router-link-active {
-  background-color: #eee;
-}
+/*
 .tabs .router-link-exact-active {
   background-color: #ffebee
+}
+*/
+.facets {
+  text-transform: capitalize
+}
+.nowrap {
+  white-space: nowrap;
 }
