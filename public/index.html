@@ -35,17 +35,18 @@
             <img src="img/MSC_Logo_60X60.png">
           </a>
           <ul id="nav-mobile" class="right hide-on-med-and-down">
-            <li>
-              <router-link :to="{name:'list'}">Membership List</router-link>
-            </li>
-            <li>
-              <router-link to="/resources">Resources</router-link>
-            </li>
-            <li>
-              <router-link :to="{name:'admin'}">Admin</router-link>
-            </li>
-            <li>
-              <router-link to="/logout">Logout</router-link>
+            <router-link :to="{name:'list'}" tag="li">
+              <a>Membership List</a>
+            </router-link>
+            <router-link to="/resources" tag="li">
+              <a>Resources</a>
+            </router-link>
+            <router-link :to="{name:'admin'}" tag="li">
+              <a>Admin</a>
+            </router-link>
+            <router-link to="/logout" tag="li">
+              <a>Logout</a>
+            </router-link>
             </li>
           </ul>
         </div>
@@ -91,14 +92,6 @@
       </div>
     </script>
 
-  <script type="text/x-template" id="adminPouch">
-      <div>
-        ADMIN
-        {{ items }}
-        <button v-on:click="destroy()">destroy</button>
-      </div>
-    </script>
-
   <script type="text/x-template" id="view-location">
       <span>
         <!-- <i class="material-icons small">home</i> -->
@@ -141,198 +134,183 @@
   <!-- parent list view -->
   <script type="text/x-template" id="list">
     <div>
-      <div class="row">
-        <div class="col s12">
-          <ul class="tabs">
-            <li class="tab col s3" :class="{active: $route.name == 'faceted-results'}">
-              <router-link :to="{name: 'list'}" :class="{active: $route.name == 'faceted-results'}"><i class="material-icons">search</i> Search</router-link>
-            </li>
-            <li class="tab col s3">
-              <router-link :to="{name: 'emails'}" :class="{active: $route.name == 'emails'}"><i class="material-icons">email</i> Email addresses</router-link>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <router-view></router-view>
+      <router-view @searched="search" :statuses="statuses" :searchstring="searchstring"></router-view>
     </div>
   </script>
 
-<!--membership list search results-->
-<script type="text/x-template" id="results">
-  <div>
-    <loading :status="loading"></loading>
-
-    <p v-if="!loading">
-      {{ items.length }} {{ $route.params.status }}(s) 
-      <a class="right" v-bind:href="'/getPeopleForCSV?status=' + $route.params.status">
-        <i class="material-icons">file_download</i> Download
-      </a>
-    </p>
-
-    <ul class="collection" v-if="!loading">
-      <li class="collection-item row" v-for="item in items" v-bind:id="item._id">
-
-        <div class="col m5">
-          <person-name :item="item"></person-name>
-        </div>
-        <div class="col m6">
-          <person-contact-info :item="item"></person-contact-info>
-        </div>
-        <div class="col m1">
-          <span class="secondary-content">
-            <router-link :to="{ name: 'list-household', params: {id: item.household_id} }" title="view household">
-              <i class="material-icons">chevron_right</i>
-            </router-link>  
+  <script type="text/x-template" id="list-intro">
+    <div>
+      <h5>
+        The MSC Membership List
+      </h5>
+      <form action="#" @submit="searchfromchild">
+        <div class="input-field">
+          <span class="prefix">
+            <i class="material-icons" title="search">search</i>
           </span>
-          <!-- <location v-bind:item="item.household"></location> -->
+          <input id="search" v-model="searchstring" type="text" />
+          <label for="search">Search by name</label>
         </div>
-      </li>
-    </ul>
+      </form>
+      <p>
+        Search by type:
+      </p>
+      <div class="row">
+        <router-link :to="{name:'faceted-results', params:{ status:status }}" v-for="status in statuses" class="btn col m3 s12 center">
+          {{ status }}
+        </router-link>
+      </div>
+      <p>
+        Or, <router-link :to="{name:'emails'}">grab email addresses</router-link> to blast email groups of people.
+      </p>
+    </div>
+  </script>
 
-  </div>
-</script>
-
-<!-- first child of list view -->
-<script type="text/x-template" id="search2">
+  <!--search results, child of list-->
+  <script type="text/x-template" id="results">
   <div>
+    <h6>
+      <router-link :to="{name: 'list'}">Membership List</router-link> / Search
+    </h6>
     <div class="input-field">
       <span class="prefix">
-        <i class="material-icons" v-if="searchStr" v-on:click="clearSearchStr()" title="clear the search input">clear</i>
-        <i class="material-icons" v-if="!searchStr" title="search">search</i>
+        <i class="material-icons" v-if="searchstring" v-on:click="clearfromchild" title="clear the search input">clear</i>
+        <i class="material-icons" v-if="!searchstring" title="search">search</i>
       </span>
-      <input id="search" v-model="searchStr" @keyup="search()" placeholder="First or last name..." />
-      <label for="search" class="active">Search by name</label>
+      <input id="search" v-model="searchstring" @keyup="searchfromchild" type="text" />
+      <label for="search">Search by name</label>
     </div>
+
     <div class="row">
       <div class="col m3">
         <p>
           Filters
         </p>
         <div class="collection facets">
-            <router-link :to="{name:'faceted-results', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
-                all
-                <span class="secondary-content" v-if="$route.params.status == 'all'">
-                    <i class="material-icons">chevron_right</i>
-                  </span>
-                </router-link>              
-            <router-link :to="{name:'faceted-results', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
-              {{ status }}
-              <span class="secondary-content" v-if="$route.params.status == status">
-                <i class="material-icons">chevron_right</i>
-              </span>
-            </router-link>
-          </div>
-      </div>
-      <div class="col m9">
-          <router-view></router-view>
-
-      </div>
-    </div>      
-  </div>
-</script>
-
-
-  <!-- first child of list view -->
-<script type="text/x-template" id="search">
-  <div>
-    <div v-if="!loading">
-      <ul class="collection">
-        <li class="collection-item grey lighten-4 row">
-          <div class="input-field col m12 s12">
-            <span class="prefix">
-              <i class="material-icons" v-if="searchStr" v-on:click="clearSearchStr()" title="clear the search input">clear</i>
-              <i class="material-icons" v-if="!searchStr" title="search">search</i>
+          <router-link :to="{name:'faceted-results', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
+            all
+            <span class="secondary-content" v-if="$route.params.status == 'all'">
+              <i class="material-icons">chevron_right</i>
             </span>
-            <input id="search" v-model="searchStr" @keyup="search()" placeholder="First or last name..." />
-            <label for="search" class="active">Search by name</label>
-          </div>      
-        </li>
-        <li v-bind:id="item._id" v-for="item in items" v-if="!item.hide" class="collection-item row">
-          <div class="col m3">
-            <person-name :item="item"></person-name>
-          </div>
-          <div class="col m5">
-            <person-contact-info :item="item"></person-contact-info>
-          </div>
-          <div class="col m4">
-            <span class="secondary-content">
-              <router-link :to="{ name: 'list-household', params: {id: item.household_id} }" title="view household">
-                <i class="material-icons">chevron_right</i>
-              </router-link>  
+          </router-link>              
+          <router-link :to="{name:'faceted-results', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
+            {{ status }}
+            <span class="secondary-content" v-if="$route.params.status == status">
+              <i class="material-icons">chevron_right</i>
             </span>
-            <location v-bind:item="item.household"></location>
-          </div>
-        </li>
-      </ul>
-    </div>
-    <div v-else class="progress">
-        <div class="indeterminate"></div>
-    </div>
-  </div>
-</script>
-
-  <script type="text/x-template" id="view-household">
-      <div>
-        <h6>
-          <a href="#/list">Membership List</a> / {{ item.label_name }}
-        </h6>
-        <div class="card">
-          <div class="card-content">
-            <span class="card-title">
-              {{ item.label_name }}
-            </span>
-            <location v-bind:item="item"></location>
-            <ul class="collection">
-              <person 
-                v-for="person in item.people" 
-                v-bind:key="person._id" 
-                v-bind:item="person">
-              </person>
-            </ul>
-          </div>
-          <div class="card-action blue-grey darken-1">
-              <a href="#/list">&larr; List</a>
-            </div>
-            <pre class="hide">{{ item }}</pre>
+          </router-link>
         </div>
       </div>
-    </script>
+      <div class="col m9">
+        <loading :status="loading"></loading>
+
+        <div v-if="!loading">
+          <p v-if="$route.params.status">
+            {{ items.length }} {{ $route.params.status }}(s) 
+            <a class="right btn-small" v-bind:href="'/getPeopleForCSV?status=' + $route.params.status">
+              <i class="material-icons">file_download</i> Download (CSV)
+            </a>
+          </p>
+          <p v-if="$route.query.q">
+            {{ items.length }} result(s) 
+          </p>
+        </div>
+
+        <ul class="collection" v-if="!loading">
+          <li class="collection-item row" v-for="item in items" v-bind:id="item._id">
+
+            <div class="col m5">
+              <person-name :item="item"></person-name>
+            </div>
+            <div class="col m6">
+              <person-contact-info :item="item"></person-contact-info>
+            </div>
+            <div class="col m1">
+              <span class="secondary-content">
+                <router-link :to="{ name: 'list-household', params: {id: item.household_id} }" title="view household" class="btn btn-small">
+                  <i class="material-icons tiny">home</i>
+                </router-link>  
+              </span>
+              <!-- <location v-bind:item="item.household"></location> -->
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  </script>
 
   <!-- second child of list view -->
   <script type="text/x-template" id="emails">
-      <div class="card-panel">
-        <div class="row">
-          <div class="col m3">
-            <h5>Filters</h5>
-            <p>Select types</p>
-            <ul class="collection">
-              <a class="collection-item" :class="{'active': Object.keys(selected).length === 0 }" v-on:click="toggleStatus()">All</a>
-              <a class="collection-item" v-for="status in statuses" :class="{'active': selected[status] == true }" v-on:click="toggleStatus(status)">
-                  <i class="material-icons tiny" v-if="selected[status]">check_box</i>
-                  <i class="material-icons tiny" v-else>check_box_outline_blank</i> 
-                  {{ status }}
-              </a>
-            </ul>
+    <div>
+      <h6>
+        <router-link :to="{name: 'list'}">Membership List</router-link> / Emails
+      </h6>      
+      <div class="">
+          <div class="row">
+            <div class="col m3">
+              <p>
+                Lists
+              </p>
+              <ul class="collection">
+                <a class="collection-item" :class="{'active': Object.keys(selected).length === 0 }" v-on:click="toggleStatus()">All</a>
+                <a class="collection-item" v-for="status in statuses" :class="{'active': selected[status] == true }" v-on:click="toggleStatus(status)">
+                    <i class="material-icons tiny" v-if="selected[status]">check_box</i>
+                    <i class="material-icons tiny" v-else>check_box_outline_blank</i> 
+                    {{ status }}
+                </a>
+              </ul>
+            </div>
+
+            <div class="col m9">
+              <p>
+                Email addresses
+                <!-- <small><a v-on:click="selectEmails()">Select all</a></small> -->
+              </p>
+              <div v-if="!loading">
+                <form>
+                  <div class="input-field">
+                    <textarea id="textarea-emails" v-model="items" class="materialize-textarea">{{items}}</textarea>
+                  </div>
+                </form>
+              </div>
+              <div v-else class="progress">
+                <div class="indeterminate"></div>
+              </div>
+
+            </div><!-- col -->
+          </div><!-- row -->
+          <router-link to="/list">Back to the list</router-link>
+        </div><!--card panel-->    
+
+    </div>
+  </script>
+
+  <script type="text/x-template" id="view-household">
+        <div>
+          <h6>
+            <router-link :to="{name: 'list'}">Membership List</router-link> / {{ item.label_name }}
+          </h6>
+          <div class="card">
+            <div class="card-content">
+              <span class="card-title">
+                {{ item.label_name }}
+              </span>
+              <location v-bind:item="item"></location>
+              <ul class="collection">
+                <person 
+                  v-for="person in item.people" 
+                  v-bind:key="person._id" 
+                  v-bind:item="person">
+                </person>
+              </ul>
+            </div>
           </div>
-
-          <div class="col m9">
-            <h5>Email addresses
-              <!-- <small><a v-on:click="selectEmails()">Select all</a></small> -->
-            </h5>
-            <div v-if="!loading">
-                <div id="emails" class="card-panel">{{ items }}</div>
-                <!-- <textarea id="emails-old" class="materialize-textarea">{{ items }}</textarea>
-                <label for="emails" class="active">Emails</label> -->
-            </div>
-            <div v-else class="progress">
-              <div class="indeterminate"></div>
-            </div>
-
-          </div><!-- col -->
-        </div><!-- row -->
-        <router-link to="/list">Back to the list</router-link>
-      </div>
-    </script>
+          <div class="">
+            <router-link :to="back">&larr; Back</router-link>
+          </div>
+        </div>
+  </script>
 
     
   <!-- ADMIN VIEWS -->

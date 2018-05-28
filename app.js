@@ -171,6 +171,23 @@ app.get('/search',
             }    
           ]
         };
+      } else {
+        selector = {
+          "$or": [
+            {
+              "$and": [
+                {"first": {"$regex": "^(?i)" + q_array[0] + ".*"}},
+                {"last": {"$regex": "^(?i)" + q_array[q_array.length - 1] + ".*"}}    
+              ]                  
+            },
+            {
+              "$and": [
+                {"first": {"$regex": "^(?i)" + q_array[q_array.length - 1] + ".*"}},
+                {"last": {"$regex": "^(?i)" + q_array[0] + ".*"}}    
+              ]                  
+            }            
+          ]
+        };  
       }
     }
 
@@ -186,115 +203,11 @@ app.get('/search',
       }
     );
 
-
-
-    /*
-    var query_builder = function(arr){
-      if(arr.length == 1){
-        or.push(
-          {
-            "first": {
-              "$regex": "^(?i)" + arr[0] + ".*"
-            }
-          },
-          {
-            "last": {
-              "$regex": "^(?i)" + arr[0] + ".*"
-            }
-          }    
-        );
-      } else if (arr.length > 1){
-        or.push(
-          {
-            "$and": [
-              {
-                "first": {
-                  "$regex": "^(?i)" + arr[0] + ".*"
-                }
-              },
-              {
-                "last": {
-                  "$regex": "^(?i)" + arr[arr.length-1] + ".*"
-                }
-              }    
-            ]
-          }
-        );            
-      }
-      //return obj;
-    };
-
+    /*/
     // use js-combinatorics to create array combinations for the query
     cmb = Combinatorics.permutationCombination(q_array);
     var combos = cmb.toArray();
-    for(var i=0; i< combos.length; i++){
-      // console.log(combos[i]);
-      or.push(query_builder(combos[i]));
-    }
-    
-    console.log(JSON.stringify(or));
-/*
-    cmb = Combinatorics.power(q_array);
-    cmb.forEach(
-      function(a){ 
-        // console.log(a.length);
-        if(a.length > 0){
-          if(a.length === 1){
-            or.push(
-              query_builder(a)
-            );                  
-          }
-          console.log(a) 
-          console.log(a[0]);
-          console.log(a[1]);
-        }
-      }
-    );    
-*/
-
-//    console.log(q);
-
-/*
-    for(var i=0; i < q_array.length; i++){
-      //str += ""
-      or.push(
-        {
-          "first": {
-            "$regex": "^(?i)" + q_array[i] + ".*"
-          }
-        },
-        {
-          "last": {
-            "$regex": "^(?i)" + q_array[i] + ".*"
-          }
-        }        
-      );
-    }
-    console.log(or);
-
-    db.find(
-      { 
-        "selector": {
-          "$or": or
-        },
-        "fields": [
-          "_id",
-          "_rev",
-          "first",
-          "last"
-        ]
-      }, function(err, data) {
-        if (err) {
-          throw err;
-        }
-        //console.log(data);
-        res.send(data)
-      }
-    );
-
-    */
-
-
+    /*/
   }
 );
 
@@ -363,7 +276,6 @@ app.get('/getEmails',
     });
   }
 );
-
 
 app.get('/getPeopleForCSV',
   users.auth,
@@ -473,7 +385,6 @@ app.get('/getPeopleForCSV',
 
       }      
     );
-
   }
 );
 

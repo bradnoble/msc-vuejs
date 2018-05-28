@@ -1,6 +1,16 @@
 // each person can be one of these
-var getStatuses = function(){
-  return ['active','inactive','life','junior','child','non-member','applicant','honorary','deceased']; 
+var getStatuses = function(blacklist){
+  var statuses = ['active','inactive','life','junior','child','non-member','applicant','honorary','deceased'];  
+  if(blacklist){
+    // remove unnecessary fields
+    for (var i = 0; i < blacklist.length; i++) {
+      var index = statuses.indexOf(blacklist[i]);
+      if (index !== -1) {
+        statuses.splice(index, 1);          
+      }
+    }
+  }
+  return statuses; 
 }
 
 // each person can be one of these
