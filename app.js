@@ -311,7 +311,7 @@ app.get('/getPeopleForCSV',
         {"status": {"$ne": "guest"}}
       ];
 
-      if(status){
+      if(status && status != 'all'){
         selector_array.push({"status": {"$eq": status}});
       }
 
