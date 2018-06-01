@@ -280,111 +280,114 @@ app.get('/getEmails',
 app.get('/getPeopleForCSV',
   users.auth,
   function (req, res) {
+    var role = req.user.role[0].value;
+    if (role === 'admin') {
+      var households = {},
+        people = [],
+        filename = '',
+        datetime = new Date().toISOString(),
+        fields = [
+          "_id",
+          "household_id",
+          "first",
+          "last",
+          "status",
+          "type",
+          "email",
+          "phone",
+          "street1",
+          "street2",
+          "city",
+          "state",
+          "zip"
+        ],
+        blacklist = [
+          "_id",
+          "household_id",
+          "type"
+        ],
+        status = req.query.status,
+        selector_array = [
+          {"status": {"$ne": "deceased"}},
+          {"status": {"$ne": "non-member"}},
+          {"status": {"$ne": "guest"}}
+        ];
 
-    var households = {},
-      people = [],
-      datetime = new Date().toISOString(),
-      fields = [
-        "_id",
-        "household_id",
-        "first",
-        "last",
-        "status",
-        "type",
-        "email",
-        "phone",
-        "street1",
-        "street2",
-        "city",
-        "state",
-        "zip"
-      ],
-      blacklist = [
-        "_id",
-        "household_id",
-        "type"
-      ],
-      status = req.query.status,
-      selector_array = [
-        {"status": {"$ne": "deceased"}},
-        {"status": {"$ne": "non-member"}},
-        {"status": {"$ne": "guest"}}
-      ];
+        if(status && status != 'all'){
+          selector_array.push({"status": {"$eq": status}});
+        }
 
-      if(status && status != 'all'){
-        selector_array.push({"status": {"$eq": status}});
-      }
-
-    db.find(
-      { 
-        "selector": {
-          "$or": [
-            {
-               "$and": [
-                  {
-                     "type": {
-                        "$eq": "person"
-                     }
-                  },
-                  {
-                     "$and": selector_array
-                  }
-               ]
+      db.find(
+        { 
+          "selector": {
+            "$or": [
+              {
+                "$and": [
+                    {
+                      "type": {
+                          "$eq": "person"
+                      }
+                    },
+                    {
+                      "$and": selector_array
+                    }
+                ]
+              },
+              {
+                "type": {
+                    "$eq": "household"
+                }
+              }
+          ]
             },
-            {
-               "type": {
-                  "$eq": "household"
-               }
+          "limit": 600,
+          "fields": fields
+        }, function(err, data) {
+          if (err) {
+            throw err;
+          }
+          // build an array of people, and a dictionary of households
+          for(var i=0; i< data.docs.length; i++){
+            if (data.docs[i].type == 'household') {
+              data.docs[i].household_phone = data.docs[i].phone;
+              households[data.docs[i]._id] = data.docs[i];
+            } else if (data.docs[i].type == 'person'){
+            people.push(data.docs[i]);
             }
-         ]
-           },
-        "limit": 600,
-        "fields": fields
-      }, function(err, data) {
-        if (err) {
-          throw err;
-        }
-        // build an array of people, and a dictionary of households
-        for(var i=0; i< data.docs.length; i++){
-          if (data.docs[i].type == 'household') {
-            data.docs[i].household_phone = data.docs[i].phone;
-            households[data.docs[i]._id] = data.docs[i];
-          } else if (data.docs[i].type == 'person'){
-           people.push(data.docs[i]);
           }
-        }
 
-        // associate households from the dictionary to each person in the people array
-        for (var i = 0; i < people.length; i++) {
-          let household = households[people[i].household_id];
-          if (household) {
-            Object.assign(people[i],household);
+          // associate households from the dictionary to each person in the people array
+          for (var i = 0; i < people.length; i++) {
+            let household = households[people[i].household_id];
+            if (household) {
+              Object.assign(people[i],household);
+            }
           }
-        }
 
-        // remove unnecessary fields to make the spreadsheet pretty
-        for (var i = 0; i < blacklist.length; i++) {
-          var index = fields.indexOf(blacklist[i]);
-          if (index !== -1) {
-            fields.splice(index, 1);          
+          // remove unnecessary fields to make the spreadsheet pretty
+          for (var i = 0; i < blacklist.length; i++) {
+            var index = fields.indexOf(blacklist[i]);
+            if (index !== -1) {
+              fields.splice(index, 1);          
+            }
           }
-        }
 
-        filename = 'MSC-Membership-List-' + new Date().toISOString();
+          filename = 'MSC-Membership-List-' + status + '-' + datetime;
+          
+          // leading zeros get trimmed by Numbers/Excel when importing CSVs
+          // the zeros are there in the CSV, though
+          // here's how to fix it, from inside Numbers/Excel:
+          // https://discussions.apple.com/thread/5303970?answerId=5303970021#5303970021
+          const json2csvParser = new Json2csvParser({ fields });
+          const csv = json2csvParser.parse(people);
         
-        // leading zeros get trimmed by Numbers/Excel when importing CSVs
-        // the zeros are there in the CSV, though
-        // here's how to fix it, from inside Numbers/Excel:
-        // https://discussions.apple.com/thread/5303970?answerId=5303970021#5303970021
-        const json2csvParser = new Json2csvParser({ fields });
-        const csv = json2csvParser.parse(people);
-      
-        res.set('Content-disposition', 'attachment; filename=' + filename + '.csv');
-        res.set('Content-Type', 'text/csv');
-        res.status(200).send(csv);
+          res.set('Content-disposition', 'attachment; filename=' + filename + '.csv');
+          res.set('Content-Type', 'text/csv');
+          res.status(200).send(csv);
 
-      }      
-    );
+        }      
+      );
+    } 
   }
 );
 
