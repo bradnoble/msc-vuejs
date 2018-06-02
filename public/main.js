@@ -33,7 +33,7 @@ const list = {
       statuses: []
     }
   },
-  created: function(){    
+  created: function () {
     var blacklist = ['deceased'];
     this.statuses = getStatuses(blacklist);
   },
@@ -41,13 +41,13 @@ const list = {
     search: function (event) {
       // console.log('hi from the child', event);
       this.searchstring = event;
-      if(this.searchstring.length > 0){
-        this.$router.push({name: 'text-results', params:{}, query:{ q: this.searchstring }});
+      if (this.searchstring.length > 0) {
+        this.$router.push({ name: 'text-results', params: {}, query: { q: this.searchstring } });
       } else {
-        this.$router.push({name: 'faceted-results', params:{ status: 'all' }});
+        this.$router.push({ name: 'faceted-results', params: { status: 'all' } });
       }
     }
-  }  
+  }
 }
 
 // first child of list
@@ -62,7 +62,7 @@ const listIntro = {
     // this was helpful for talking from a child to a parent
     // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
     // also this https://laracasts.com/discuss/channels/vue/how-to-catch-a-childs-emit-in-the-parent-with-vue/replies/289920
-    searchfromchild: function(e){
+    searchfromchild: function (e) {
       this.$emit('searched', this.searchstring)
       e.preventDefault();
     }
@@ -83,11 +83,11 @@ const facets = {
       loading: false
     }
   },
-  mounted: function(){
+  mounted: function () {
     this.loading = true;
     this.facetedSearch();
   },
-  updated: function(){
+  updated: function () {
     M.updateTextFields();
   },
   watch: {
@@ -97,11 +97,11 @@ const facets = {
     }
   },
   methods: {
-    clearfromchild: function(){
+    clearfromchild: function () {
       this.searchstring = '';
-      this.$router.push({name: 'faceted-results', params:{ status: 'all' }});
+      this.$router.push({ name: 'faceted-results', params: { status: 'all' } });
     },
-    searchfromchild: function(e){
+    searchfromchild: function (e) {
       let _this = this;
       _this.items = [];
 
@@ -115,15 +115,15 @@ const facets = {
 
       e.preventDefault();
     },
-    facetedSearch: function(){
+    facetedSearch: function () {
       let _this = this;
       _this.items = [];
 
       var params = {};
-      if(_this.$route.params.status){
+      if (_this.$route.params.status) {
         params.status = _this.$route.params.status;
         _this.searchstring = '';
-      } else if (_this.$route.query.q){
+      } else if (_this.$route.query.q) {
         params.q = _this.$route.query.q;
       }
 
@@ -156,8 +156,8 @@ const emails = {
     this.start();
     document.title = 'Members - MSC';
   },
-  updated: function(){
-    M.textareaAutoResize($('#textarea-emails'));    
+  updated: function () {
+    M.textareaAutoResize($('#textarea-emails'));
   },
   methods: {
     start: function () {
@@ -226,14 +226,14 @@ const viewHousehold = {
       back: ''
     }
   },
-  beforeRouteEnter: function(to, from, next){
+  beforeRouteEnter: function (to, from, next) {
     // conditional back button
     // helpful reference about how to use next(): 
     // https://medium.com/@allenhwkim/resolving-before-route-vuejs-d319b27576c3
     next(vm => {
-      if(from.fullPath == '/'){
+      if (from.fullPath == '/') {
         vm.back = {
-          name:'list'
+          name: 'list'
         };
       } else {
         vm.back = {
@@ -244,10 +244,10 @@ const viewHousehold = {
       }
     });
   },
-  mounted: function(){
+  mounted: function () {
     this.start();
   },
-  updated: function(){
+  updated: function () {
     console.log(this.back)
   },
   methods: {
@@ -333,12 +333,12 @@ const admin = {
     this.loading = true;
     this.start();
   },
-  mounted: function (){
-    $('.dropdown-trigger').dropdown();     
+  mounted: function () {
+    $('.dropdown-trigger').dropdown();
     // console.log("mounted on admin")   
   },
-  updated: function (){
-    $('.dropdown-trigger').dropdown();     
+  updated: function () {
+    $('.dropdown-trigger').dropdown();
     // console.log("updated on admin")   
   },
   methods: {
@@ -405,13 +405,13 @@ const admin = {
 // not a child of adminHousehold
 const newHousehold = {
   template: '#new-household',
-  data: function(){
+  data: function () {
     return {
       item: getNewHousehold()
     }
   },
-  mounted: function(){
-    $('.dropdown-trigger').dropdown();        
+  mounted: function () {
+    $('.dropdown-trigger').dropdown();
   }
 };
 
@@ -419,44 +419,44 @@ const newHousehold = {
 const adminHousehold = {
   template: '#admin-household',
   props: ['household_id'],
-  data: function(){
+  data: function () {
     return {
       item: {},
       loading: true,
       error: ''
     }
   },
-  created: function(){
+  created: function () {
   },
-  mounted: function(){
+  mounted: function () {
     // grab the household data
     this.get();
   },
-  updated: function(){
+  updated: function () {
     let _this = this;
-    $('.dropdown-trigger').dropdown();        
+    $('.dropdown-trigger').dropdown();
     // console.log('parent updated')
-    setTimeout(function(){ 
+    setTimeout(function () {
       _this.loading = false;
-    }, 200);      
+    }, 200);
   },
   watch: {
-    '$route': function(to, from){ 
+    '$route': function (to, from) {
       let _this = this;
       // after editing a person or household, update the household and the people
-      if(from.name == 'editPerson' || from.name == 'newPerson' || from.name == 'editHousehold'){
+      if (from.name == 'editPerson' || from.name == 'newPerson' || from.name == 'editHousehold') {
         _this.get();
       }
     }
   },
   methods: {
-    get: function() {
+    get: function () {
       let _this = this; // need `_this` to cast and set `this` into the API call
       this.$http.get('/getHousehold/', {
         id: _this.household_id // can this be cast in via props?
-      }).then(function(resp){
+      }).then(function (resp) {
         _this.item = resp.data;
-      }, function(error){
+      }, function (error) {
         _this.error = error.data.error;
       });
     }
@@ -467,20 +467,20 @@ const adminHousehold = {
 const firstChild = {
   template: '#first-child',
   props: ['item'], // gotta use props to grab data from the parent
-  data: function(){
+  data: function () {
     return {
     }
   },
-  created: function() {},
-  mounted: function(){},
-  updated: function(){}
+  created: function () { },
+  mounted: function () { },
+  updated: function () { }
 }
 
 // edit a person, child of adminHousehold
 const secondChild = {
   template: '#second-child',
   props: ['household_id', 'person_id', 'loading', 'error'],
-  data: function(){
+  data: function () {
     return {
       person: {},
       statuses: getStatuses(),
@@ -489,83 +489,83 @@ const secondChild = {
       errors: []
     }
   },
-  created: function(){},
-  mounted: function(){
+  created: function () { },
+  mounted: function () {
     // frob the process meter
     // the parent update method will turn it off when it completes
     this.$parent.loading = true;
 
     // for new people in the household
-    if(this.$route.name == 'newPerson' ){
+    if (this.$route.name == 'newPerson') {
       this.title = {
         icon: "person_add",
         content: "Add a person to this household"
       };
       this.person = getPersonObject();
       // assign the new person to the household
-      this.person.household_id = this.household_id;      
-    } 
+      this.person.household_id = this.household_id;
+    }
     // for editing people who are already in the household
     else {
       this.title = {
         icon: "edit",
         content: "Edit this person's entry"
       };
-    // grab the person's data from the database
-    this.get();
+      // grab the person's data from the database
+      this.get();
     }
   },
-  updated: function(){},
+  updated: function () { },
   methods: {
-    get: function(){
+    get: function () {
       let _this = this;
-      this.$http.get('/getPerson/', 
-      {
-        id: _this.person_id
-      })
-      .then(function(resp){
+      this.$http.get('/getPerson/',
+        {
+          id: _this.person_id
+        })
+        .then(function (resp) {
           _this.person = resp.data;
-        }, function(error){
+        }, function (error) {
           _this.$parent.error = error.data.error;
         }
-      );        
+        );
     },
-    checkform: function(){
+    checkform: function () {
       this.errors = [];
-      if(this.person.last.length > 0 && this.person.first.length > 0){
+      if (this.person.last.length > 0 && this.person.first.length > 0) {
         return true;
-      } 
-      if(this.person.last == '' || this.person.first == ''){
+      }
+      if (this.person.last == '' || this.person.first == '') {
         this.errors.push('Please provide a first and last name.')
       }
     },
-    save: function(e){
+    save: function (e) {
       let _this = this;
 
-      if(this.checkform()){
+      if (this.checkform()) {
 
         // starting label for the save button
         var txt = $('#save').text();
         // temporary message that shows
-        $('#save').text('Saving...');        
+        $('#save').text('Saving...');
 
         this.$http.post('/postPerson/', _this.person)
-          .then(function(resp){
-            setTimeout(function(){ 
+          .then(function (resp) {
+            setTimeout(function () {
               // revert the label of the save button
               $('#save').text(txt);
               // redirect to the summary tab
-              _this.$router.replace({ name:'admin-household', params: {household_id: _this.household_id} });
-            }, 200);      
-          }, function(error){
+              _this.$router.replace({ name: 'admin-household', params: { household_id: _this.household_id } });
+            }, 200);
+          }, function (error) {
             console.log('error', error);
           }
-        );
+          );
 
       }
       e.preventDefault();
     },
-    removePerson: function(){
+    removePerson: function () {
       let _this = this;
       Vue.set(_this.person, '_deleted', true);
     }
@@ -576,16 +576,16 @@ const secondChild = {
 const thirdChild = {
   template: '#third-child',
   props: ['household_id', 'loading', 'error', 'item'],
-  data: function(){
+  data: function () {
     return {
       title: {},
       errors: []
     }
   },
-  created: function(){},
-  mounted: function(){
+  created: function () { },
+  mounted: function () {
     // if the route has a household_id, then this must be the edit view
-    if(this.household_id){
+    if (this.household_id) {
       this.title = {
         icon: "edit",
         content: "Edit household contact info"
@@ -594,29 +594,29 @@ const thirdChild = {
       this.title = {
         icon: "add",
         content: "Household contact info"
-      };      
+      };
     }
   },
-  updated: function(){},
+  updated: function () { },
   methods: {
-    checkform: function(){
+    checkform: function () {
       this.errors = [];
-      if(this.item.name.length > 0 && this.item.city.length > 0 && this.item.state.length > 0 && this.item.zip.length > 0){
+      if (this.item.name.length > 0 && this.item.city.length > 0 && this.item.state.length > 0 && this.item.zip.length > 0) {
         return true;
-      } 
-      if(this.item.name == '') this.errors.push('Please provide a name for this household.')
-      if(this.item.city == '') this.errors.push('Please provide a city for this household.')
-      if(this.item.state == '') this.errors.push('Please provide a state for this household.')
-      if(this.item.zip == '') this.errors.push('Please provide a zip for this household.')
+      }
+      if (this.item.name == '') this.errors.push('Please provide a name for this household.')
+      if (this.item.city == '') this.errors.push('Please provide a city for this household.')
+      if (this.item.state == '') this.errors.push('Please provide a state for this household.')
+      if (this.item.zip == '') this.errors.push('Please provide a zip for this household.')
     },
-    save: function(e){
+    save: function (e) {
       let _this = this;
-      
-      if(_this.item.people){
+
+      if (_this.item.people) {
         delete _this.item.people;
       };
 
-      if(this.checkform()){
+      if (this.checkform()) {
 
         // starting label for the save button
         const txt = $('#save').text();
@@ -624,38 +624,38 @@ const thirdChild = {
         $('#save').text('Saving...');
 
         this.$http.post('/postHousehold/', _this.item)
-          .then(function(resp){
+          .then(function (resp) {
             // console.log('item', _this.item)
-            setTimeout(function(){ 
+            setTimeout(function () {
               // revert the label of the save button
               $('#save').text(txt);
               console.log(resp)
               // redirect to the summary tab
-              _this.$router.replace({ name:'admin-household', params: {household_id: _this.item._id} });
-            }, 200);      
-          }, function(error){
+              _this.$router.replace({ name: 'admin-household', params: { household_id: _this.item._id } });
+            }, 200);
+          }, function (error) {
             console.log('error', error);
           }
-        );
+          );
       }
       e.preventDefault();
     },
-    remove: function(e){
+    remove: function (e) {
       let _this = this;
       var people = _this.item.people;
-      
+
       console.log(people.length)
       console.log(people[0]._deleted)
 
-      for(var i=0; i < people.length; i++){
-        if(!people[i]._deleted){
+      for (var i = 0; i < people.length; i++) {
+        if (!people[i]._deleted) {
           Vue.set(people[i], '_deleted', true);
         } else {
-          Vue.set(people[i], '_deleted', false);          
+          Vue.set(people[i], '_deleted', false);
         }
       }
 
-      if(!_this.item._deleted){
+      if (!_this.item._deleted) {
         Vue.set(_this.item, '_deleted', true);
       } else {
         //delete _this.item._deleted; // Vue.set(_this.item, '_deleted', true);        
@@ -673,7 +673,9 @@ var resources = {
   data() {
     return {
       path: [],
-      files: []
+      files: [],
+      isLoading: false,
+      folderId: -1
     }
   },
   created() {
@@ -690,19 +692,23 @@ var resources = {
       let _this = this;
     },
     start: function () {
-      this.$http.get('/resources')
-        .then((res) => {
-          this.path.push({ name: 'MSC Drive', id: '-1' });
-          this.files = res.data;
-        }
-        );
+      if (!this.isLoading) {
+        this.isLoading = true;
+        this.$http.get('/resources')
+          .then((res) => {
+            this.path.push({ name: 'MSC Drive', id: '-1' });
+            this.files = res.data;
+            this.isLoading = false;
+          });
+      }
     },
     onFolderView: function (file, event) {
 
       //Only process if a folder...
-      if (file.mimeType.includes('folder')) {
+      if (file.mimeType.includes('folder') && !this.isLoading && (this.folderId != file.id)) {
         const _this = this;
-
+        this.isLoading = true;
+        this.folderId = file.id;
         this.$http.get('/resources/' + file.id)
           .then((res) => {
             _this.path.push({ name: file.name, id: file.id });
@@ -713,6 +719,7 @@ var resources = {
               file.size = formatBytes(file.size);
             })
 
+            _this.isLoading = false;
           }
           );
       }
@@ -749,7 +756,7 @@ var resources = {
           // // var $window = $(pdfjsframe.contentWindow);
           // $('#pdfViewer').css('width', '100%'); //($window.height() * 0.85));
           // $('#pdfViewer').css('height', '1300px'); //($window.height() * 0.95));
-    
+
           //Open modal
           //>>MaterializeCSS 1.0.0 approach w/o jQuery
           // var elem = document.querySelector('.modal');
@@ -771,14 +778,18 @@ var resources = {
     onBreadcrumb: function (id, event) {
       const _this = this;
 
-      this.$http.get('/resources/' + id)
-        .then((res) => {
-          //Remove all folders below the selected one
-          const index = _this.path.map(function (x) { return x.id; }).indexOf(id);
-          _this.path.splice((index + 1));
-          _this.files = res.data;
-        }
-        );
+      if (!this.isLoading && (this.folderId != id)) {
+        this.isLoading = true;
+        this.folderId = id;
+        this.$http.get('/resources/' + id)
+          .then((res) => {
+            //Remove all folders below the selected one
+            const index = _this.path.map(function (x) { return x.id; }).indexOf(id);
+            _this.path.splice((index + 1));
+            _this.files = res.data;
+            _this.isLoading = false;
+          });
+      }
     },
     onSearch: function (event) {
       let searchText = $(event.target).val().trim();
@@ -852,8 +863,8 @@ new Vue({
   data: {
     title: 'Montclair Ski Club'
   },
-  created(){},
-  mounted(){
+  created() { },
+  mounted() {
     // let title = document.title;
   }
 })
