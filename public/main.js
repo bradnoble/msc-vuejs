@@ -149,26 +149,85 @@ const emails = {
       items: [],
       loading: true,
       selected: {},
-      emailsSelected: 'Select emails'
+      emailsSelected: 'Select emails',
+      newsletter: ['active','inactive','life'],
+      querystring: []
     }
   },
-  created: function () {
+  mounted: function(){
+    // this gets data when page loads
+    // start has logic to deal with the querystring
     this.start();
-    document.title = 'Members - MSC';
   },
   updated: function(){
     M.textareaAutoResize($('#textarea-emails'));    
   },
+  watch: {
+    '$route.query.status' (to, from) {
+      // when the querystring changes, do another search
+
+      // working on a way to turn the string into an array as a data object
+      // rather than having to do that in multiple methods
+      
+      this.start();
+    }
+  },
   methods: {
+    intercept: function(str){
+      var arr = [];
+      var status = str;
+      var querystring = this.$route.query;
+      var index = 0;
+
+      // no param means get all
+      if(!status){
+        this.$router.push({name: 'emails'});
+      } else {
+        // if there's no querystring, start the array
+        if(!querystring.status){
+          arr.push(status);
+        }
+        // in vuejs, if the querystring already has only one value, it's a string
+        // and we need to change it to an array so it can have other friends
+        if(querystring.status && typeof querystring.status == 'string'){
+          querystring.status = [querystring.status];
+        } 
+        // might not need this check here, b/c anything making it this far will be an object
+        if(typeof querystring.status == 'object') {
+          // if the status is already in the querystring, get it out
+          index = querystring.status.indexOf(status);
+          if (index > -1) {            
+            // create a new querystring array without it
+            for(var i=0; i < querystring.status.length; i++){
+              if(querystring.status[i] != status){
+                arr.push(querystring.status[i]);
+              }
+            }
+          } else {
+            // add the new status to the query array
+            arr.push(status);
+            console.log('arr', arr, 'querystring.status', querystring.status)
+            arr = arr.concat(querystring.status);
+            // console.log(arr)
+          }
+        }
+        this.$router.push( { query: { status: arr } })
+      }
+    },
     start: function () {
       let _this = this;
       _this.loading = true;
-      var params = {},
-        // get keys out of the selected object
-        keys = Object.keys(this.selected);
+      var params = {};
+      var querystring = this.$route.query.status;
 
-      // put the keys into a string, to send as params to the API
-      params.statuses = (keys.length > 0) ? keys.join(',') : null;
+      if(querystring && typeof querystring == 'string'){
+        params.statuses = [querystring];
+        // console.log('from string to array: ', params.statuses);
+      } else {
+        params.statuses = querystring;
+        // console.log('already an object:', params.statuses)
+      }
+
       this.$http.get('/getEmails', params)
         .then(
           function (resp) {
@@ -184,21 +243,6 @@ const emails = {
             _this.loading = false;
           }
         );
-    },
-    toggleStatus: function (status) {
-      if (status) {
-        if (!this.selected[status]) {
-          this.selected[status] = true;
-        } else {
-          delete this.selected[status]
-        }
-      } else {
-        this.selected = {};
-      }
-      // replace the entire object b/c we've deleted stuff
-      // https://vuejs.org/v2/guide/reactivity.html
-      this.selected = Object.assign({}, this.selected, this.selected);
-      this.start();
     },
     selectEmails: function () {
       var copyText = $('#emails').select();

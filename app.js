@@ -256,13 +256,20 @@ app.get('/getEmails',
 
     var params = (req.query.statuses) ? req.query.statuses : null;
     var opts = {};
+
+    console.log(req.query)
+
+    if(params){
+      opts.keys = params;
+    }
+/*
     if (params) {
       console.log(params);
       console.log(params.split(','));
       console.log('params length', params.length);
       opts.keys = params.split(',');
     }
-
+*/
     // get the results of the API call
     db.view('app', 'emails', opts, function (err, resp) {
       if (!err) {
