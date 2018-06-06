@@ -394,7 +394,9 @@ app.get('/getPeopleForCSV',
 
         }      
       );
-    } 
+    } else {
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
+    }
   }
 );
 
