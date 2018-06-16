@@ -12,7 +12,7 @@ var cfenv = require("cfenv"),
   ;
 
 // Initialize Cloudant
-var cloudant = require('cloudant')(opts);
+var cloudant = require('@cloudant/cloudant')(opts);
 var db = (env == 'dev') ? cloudant.db.use("msc-dev") : cloudant.db.use("msc");
 
 // Create a new Express application.
