@@ -95,7 +95,7 @@ const routes = [
         }
       ]
     },
-    { path: '/emails', component: emails },
+//    { path: '/emails', component: emails },
 //    { path: '/list/turn-off/:id', component: adminHousehold, props: true },
     { path: '/logout', component: logout },
     { path: '/resources/:id?', component: resources }

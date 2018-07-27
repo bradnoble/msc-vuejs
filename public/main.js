@@ -89,6 +89,7 @@ const facets = {
   },
   updated: function () {
     M.updateTextFields();
+    $('.dropdown-trigger').dropdown();
   },
   watch: {
     '$route'(to, from) {

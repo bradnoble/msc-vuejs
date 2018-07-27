@@ -141,7 +141,7 @@
   <script type="text/x-template" id="list-intro">
     <div>
       <h5>
-        The MSC Membership List
+        Membership List
       </h5>
       <form action="#" @submit="searchfromchild">
         <div class="input-field">
@@ -169,9 +169,9 @@
   <!--search results, child of list-->
   <script type="text/x-template" id="results">
   <div>
-    <h6>
+    <h5>
       <router-link :to="{name: 'list'}">Membership List</router-link> / Search
-    </h6>
+    </h5>
     <div class="input-field">
       <span class="prefix">
         <i class="material-icons" v-if="searchstring" v-on:click="clearfromchild" title="clear the search input">clear</i>
@@ -207,9 +207,28 @@
         <div v-if="!loading">
           <p v-if="$route.params.status">
             {{ items.length }} {{ $route.params.status }}(s) 
-            <a class="right btn-small waves-effect waves-teal btn-flat teal-text" v-bind:href="'/getPeopleForCSV?status=' + $route.params.status">
-              <i class="material-icons">file_download</i> Download (CSV)
-            </a>
+
+              <a class="dropdown-trigger" href="#" data-target="actions" data-constrainwidth="false" data-alignment="right" title="click to see options">
+                <i class="material-icons small">more_horiz</i>
+              </a>
+
+              <!-- Dropdown Structure -->
+            <ul id="actions" class="dropdown-content">
+              <li>
+                <a v-bind:href="'/getPeopleForCSV?status=' + $route.params.status">
+                  <i class="material-icons">file_download</i> Download (CSV)
+                </a>
+              </li>
+              <li>
+                <router-link :to="{name: 'emails', query: {status: $route.params.status }}" v-if="$route.params.status != 'all'">
+                  <i class="material-icons">email</i> Get emails for {{ $route.params.status }}(s)
+                </router-link>
+                <router-link v-else :to="{name: 'emails'}">
+                  <i class="material-icons">email</i> Get emails for all
+                </router-link>
+              </li>
+            </ul>
+
           </p>
           <p v-if="$route.query.q">
             {{ items.length }} result(s) 
@@ -226,12 +245,12 @@
               <person-contact-info :item="item"></person-contact-info>
             </div>
             <div class="col m1">
-              <span class="secondary-content">
-                <router-link :to="{ name: 'list-household', params: {id: item.household_id} }" title="view household" class="btn btn-flat btn-small waves-effect waves-teal teal-text">
+              <span class="secondary-content" v-if="item.household_id">
+                <!-- protected by v-if b/c https://github.com/vuejs/vue-router/issues/986 -->
+                <router-link :to="{ name: 'list-household', params: { id: item.household_id } }" title="view household" class="btn btn-flat btn-small waves-effect waves-teal teal-text">
                   <i class="material-icons tiny">home</i>
                 </router-link>  
               </span>
-              <!-- <location v-bind:item="item.household"></location> -->
             </div>
           </li>
         </ul>
@@ -265,14 +284,14 @@
                 <p>
                   Build a list by type
                 </p>
-                <ul class="collection">
+                <div class="collection">
                   <a class="collection-item" @click="intercept()" :class="{'active': !$route.query.status}">All</a>
                   <a class="collection-item" v-for="status in statuses" @click="intercept(status)" :class="{active: $route.query.status && $route.query.status.indexOf(status) > -1}">
                     <i class="material-icons tiny" v-if="$route.query.status && $route.query.status.indexOf(status) > -1">check_box</i>
                     <i class="material-icons tiny" v-else>check_box_outline_blank</i> 
                     {{ status }}
                   </a>
-                </ul>
+                </div>
               </div>
             </div>
 
