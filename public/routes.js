@@ -1,23 +1,25 @@
 function getVueRouter() {
 
   const routes = [
-    { 
+    {
       name: 'home',
-      path: '/', 
-      component: home
+      path: '/',
+      component: home,
+      meta: { requiresAuth: true }
     },
     {
-      name: 'memberhome',
-      path: '/memberhome',
-      component: memberHome
+      name: 'login',
+      path: '/login',
+      component: login
     },
     {
       name: 'logout',
       path: '/logout',
-      component: logout
+      component: logout,
+      meta: { requiresAuth: true }
     },
-    { 
-      path: '/list', 
+    {
+      path: '/list',
       component: list,
       props: true,
       children: [
@@ -38,38 +40,42 @@ function getVueRouter() {
           name: 'text-results',
           component: facets,
           props: true
-        },            
+        },
         {
           path: 'emails',
           name: 'emails',
           component: emails,
           props: true
         }
-      ]
+      ],
+      meta: { requiresAuth: true }
     },
-    { 
+    {
       name: 'list-household',
-      path: '/list/:id', 
+      path: '/list/:id',
       components: {
         default: viewHousehold
-      }, 
-      props: true 
+      },
+      props: true,
+      meta: { requiresAuth: true }
     },
     {
       name: 'resources',
       path: '/resources/:id?',
-      component: resources
+      component: resources,
+      meta: { requiresAuth: true }
     },
 
     // ADMIN ROUTES
 
-    { 
-      path: '/admin', 
+    {
+      path: '/admin',
       name: 'admin',
-      component: admin 
+      component: admin,
+      meta: { requiresAuth: true }
     },
     {
-      path: '/admin/household/new', 
+      path: '/admin/household/new',
       component: newHousehold,
       props: true,
       children: [
@@ -78,13 +84,14 @@ function getVueRouter() {
           name: 'new-household',
           component: thirdChild,
           props: true
-        }        
-      ]
+        }
+      ],
+      meta: { requiresAuth: true }
     },
-    { 
-      path: '/admin/household/:household_id', 
+    {
+      path: '/admin/household/:household_id',
       component: adminHousehold,
-      props: true, 
+      props: true,
       children: [
         {
           path: '',
@@ -110,16 +117,35 @@ function getVueRouter() {
           component: thirdChild,
           props: true
         }
-      ]
-    }
-//    { path: '/emails', component: emails },
-//    { path: '/list/turn-off/:id', component: adminHousehold, props: true },
+      ],
+      meta: { requiresAuth: true }
+    },
   ]
-  
-  return new VueRouter({
+  //    { path: '/emails', component: emails },
+  //    { path: '/list/turn-off/:id', component: adminHousehold, props: true },
+
+  const router = new VueRouter({
     routes: routes,
     linkActiveClass: 'active',
     linkExactActiveClass: 'active'
   });
-  
+
+  router.beforeEach((to, from, next) => {
+    if (to.matched.some(record => record.meta.requiresAuth)) {
+      if (true) {
+        next({
+          path: '/login',
+          query: {
+            redirect: to.fullPath,
+          },
+        });
+      } else {
+        next();
+      }
+    } else {
+      next();
+    }
+  })
+
+  return router;
 }

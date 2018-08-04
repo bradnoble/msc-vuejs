@@ -11,7 +11,7 @@ var cfenv = require("cfenv"),
   ;
 
 // Initialize Cloudant
-var cloudant = require('cloudant')(opts);
+var cloudant = require('@cloudant/cloudant')(opts);
 var db = (env == 'dev') ? cloudant.db.use("msc-dev") : cloudant.db.use("msc");
 
 // Create a new Express application.
@@ -33,6 +33,7 @@ app.use(express.static(__dirname + '/public'));
 /*
 * BEGIN Authentication setup
 */
+
 let session = require("express-session");
 let passport = require('passport');
 let LocalStrategy = require('passport-local').Strategy;
@@ -98,8 +99,8 @@ passport.deserializeUser(function (id, done) {
 
 app.post('/login',
   passport.authenticate('local', {
-    successRedirect: '/#/memberhome',
-    failureRedirect: '/#/',
+    successRedirect: '/#/',
+    failureRedirect: '/#/login',
     failureFlash: true
   })
 );
@@ -107,8 +108,15 @@ app.post('/login',
 app.get('/logout',
   function (req, res) {
     req.logout();
-    res.redirect('/');
+    res.redirect('/#/login');
   });
+
+//Home page (authenticated)
+app.get('/',
+  authentication.users.isAuthenticated,
+  (req, res) => {
+  }
+);
 
 /*
 * END Authentication setup
@@ -129,65 +137,10 @@ gdrive.api.init();
 * END Resoures setup
 */
 
-/**
- * Home page
-**/
-app.get('/',
-  (req, res) => {
-  }
-);
+/*
+* BEGIN List
+*/
 
-/**
- * Member home page
-**/
-app.get('/memberhome',
-  authentication.users.isAuthenticated,
-  (req, res) => {
-    alert(req.user);
-  }
-);
-
-// TODO: ADD ADMIN ONLY AUTH HERE
-app.get('/admin',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    //db.view(designname, viewname, [params], [callback])
-    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
-      if (!err) {
-        var mapped = function (data) {
-          return data.rows.map(function (row) {
-            return row.doc; // this is the entire payload
-          });
-        };
-        // add people to the household
-        var docs = mapped(resp);
-        var households = [];
-        var people = {};
-        for (i = 0; i < docs.length; i++) {
-          if (docs[i].type == 'person') {
-            // build an object that holds objects that hold arrays of people
-            if (!people[docs[i].household_id]) {
-              people[docs[i].household_id] = [];
-            }
-            people[docs[i].household_id].push(docs[i]);
-          } else if (docs[i].type == 'household') {
-            households[i] = docs[i];
-          }
-          // console.log(people);
-        }
-        for (i = 0; i < households.length; i++) {
-          var household_id = households[i]._id;
-          households[i].people = [];
-          households[i].people = people[household_id];
-        }
-        // console.log(docs[1]);
-        res.send(households);
-      }
-    });
-  }
-);
-
-// ------------------------------------------- LIST
 app.get('/search',
   authentication.users.isAuthenticated,
   function (req, res) {
@@ -195,29 +148,29 @@ app.get('/search',
     var q = req.query.q,
       q_array = (q) ? q.split(' ') : null,
       status = req.query.status,
-      cmb, 
+      cmb,
       a,
       selector = {}
       ;
 
-    if(status && status != 'all'){
+    if (status && status != 'all') {
       selector = {
         "status": {
           "$eq": status
         }
       };
-    } else if (status && status == 'all'){
+    } else if (status && status == 'all') {
       selector = {
-        "type": {"$eq": "person"},
+        "type": { "$eq": "person" },
         "$nor": [
           { "status": "deceased" },
           { "status": "guest" },
           { "status": "non-member" }
         ]
       };
-    } else if (q){
+    } else if (q) {
       console.log(q_array)
-      if(q_array.length == 1){
+      if (q_array.length == 1) {
         selector = {
           "$or": [
             {
@@ -229,7 +182,7 @@ app.get('/search',
               "last": {
                 "$regex": "^(?i)" + q_array[0] + ".*"
               }
-            }    
+            }
           ]
         };
       } else {
@@ -237,26 +190,26 @@ app.get('/search',
           "$or": [
             {
               "$and": [
-                {"first": {"$regex": "^(?i)" + q_array[0] + ".*"}},
-                {"last": {"$regex": "^(?i)" + q_array[q_array.length - 1] + ".*"}}    
-              ]                  
+                { "first": { "$regex": "^(?i)" + q_array[0] + ".*" } },
+                { "last": { "$regex": "^(?i)" + q_array[q_array.length - 1] + ".*" } }
+              ]
             },
             {
               "$and": [
-                {"first": {"$regex": "^(?i)" + q_array[q_array.length - 1] + ".*"}},
-                {"last": {"$regex": "^(?i)" + q_array[0] + ".*"}}    
-              ]                  
-            }            
+                { "first": { "$regex": "^(?i)" + q_array[q_array.length - 1] + ".*" } },
+                { "last": { "$regex": "^(?i)" + q_array[0] + ".*" } }
+              ]
+            }
           ]
-        };  
+        };
       }
     }
 
     db.find(
-      { 
+      {
         "selector": selector,
         "fields": []
-      }, function(err, data) {
+      }, function (err, data) {
         if (err) {
           throw err;
         }
@@ -300,7 +253,7 @@ app.get('/list',
         // connect the household info to the person
         // only if there's a household to connect a person to
         for (i = 0; i < people.length; i++) {
-          if(households[people[i].household_id]){
+          if (households[people[i].household_id]) {
             people[i].household = households[people[i].household_id]
             finalArray.push(people[i]);
           }
@@ -320,17 +273,17 @@ app.get('/getEmails',
 
     console.log(req.query)
 
-    if(params){
+    if (params) {
       opts.keys = params;
     }
-/*
-    if (params) {
-      console.log(params);
-      console.log(params.split(','));
-      console.log('params length', params.length);
-      opts.keys = params.split(',');
-    }
-*/
+    /*
+        if (params) {
+          console.log(params);
+          console.log(params.split(','));
+          console.log('params length', params.length);
+          opts.keys = params.split(',');
+        }
+    */
     // get the results of the API call
     db.view('app', 'emails', opts, function (err, resp) {
       if (!err) {
@@ -376,51 +329,51 @@ app.get('/getPeopleForCSV',
         ],
         status = req.query.status,
         selector_array = [
-          {"status": {"$ne": "deceased"}},
-          {"status": {"$ne": "non-member"}},
-          {"status": {"$ne": "guest"}}
+          { "status": { "$ne": "deceased" } },
+          { "status": { "$ne": "non-member" } },
+          { "status": { "$ne": "guest" } }
         ];
 
-        if(status && status != 'all'){
-          selector_array.push({"status": {"$eq": status}});
-        }
+      if (status && status != 'all') {
+        selector_array.push({ "status": { "$eq": status } });
+      }
 
       db.find(
-        { 
+        {
           "selector": {
             "$or": [
               {
                 "$and": [
-                    {
-                      "type": {
-                          "$eq": "person"
-                      }
-                    },
-                    {
-                      "$and": selector_array
+                  {
+                    "type": {
+                      "$eq": "person"
                     }
+                  },
+                  {
+                    "$and": selector_array
+                  }
                 ]
               },
               {
                 "type": {
-                    "$eq": "household"
+                  "$eq": "household"
                 }
               }
-          ]
-            },
+            ]
+          },
           "limit": 600,
           "fields": fields
-        }, function(err, data) {
+        }, function (err, data) {
           if (err) {
             throw err;
           }
           // build an array of people, and a dictionary of households
-          for(var i=0; i< data.docs.length; i++){
+          for (var i = 0; i < data.docs.length; i++) {
             if (data.docs[i].type == 'household') {
               data.docs[i].household_phone = data.docs[i].phone;
               households[data.docs[i]._id] = data.docs[i];
-            } else if (data.docs[i].type == 'person'){
-            people.push(data.docs[i]);
+            } else if (data.docs[i].type == 'person') {
+              people.push(data.docs[i]);
             }
           }
 
@@ -428,7 +381,7 @@ app.get('/getPeopleForCSV',
           for (var i = 0; i < people.length; i++) {
             let household = households[people[i].household_id];
             if (household) {
-              Object.assign(people[i],household);
+              Object.assign(people[i], household);
             }
           }
 
@@ -436,24 +389,24 @@ app.get('/getPeopleForCSV',
           for (var i = 0; i < blacklist.length; i++) {
             var index = fields.indexOf(blacklist[i]);
             if (index !== -1) {
-              fields.splice(index, 1);          
+              fields.splice(index, 1);
             }
           }
 
           filename = 'MSC-Membership-List-' + status + '-' + datetime;
-          
+
           // leading zeros get trimmed by Numbers/Excel when importing CSVs
           // the zeros are there in the CSV, though
           // here's how to fix it, from inside Numbers/Excel:
           // https://discussions.apple.com/thread/5303970?answerId=5303970021#5303970021
           const json2csvParser = new Json2csvParser({ fields });
           const csv = json2csvParser.parse(people);
-        
+
           res.set('Content-disposition', 'attachment; filename=' + filename + '.csv');
           res.set('Content-Type', 'text/csv');
           res.status(200).send(csv);
 
-        }      
+        }
       );
     } else {
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
@@ -473,10 +426,10 @@ app.get('/getPerson/',
           res.send(doc);
         } else {
           return res.status(404).json(
-            { 
-              "error": "Sorry, we don't have a record of this person." 
+            {
+              "error": "Sorry, we don't have a record of this person."
             }
-          );          
+          );
         }
       });
     } else {
@@ -519,15 +472,61 @@ app.get('/getHousehold/',
           //console.log(doc);
           //res.send(doc);
         } else {
-          return res.status(404).json({ "error": "Sorry, we don't have a household with that id." });          
+          return res.status(404).json({ "error": "Sorry, we don't have a household with that id." });
         }
       });
     } else {
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-});
+  });
 
-// ------------------------------------------- ADMIN
+/*
+* END List
+*/
+
+/*
+* BEGIN Admin
+*/
+
+// TODO: ADD ADMIN ONLY AUTH HERE
+app.get('/admin',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    //db.view(designname, viewname, [params], [callback])
+    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
+      if (!err) {
+        var mapped = function (data) {
+          return data.rows.map(function (row) {
+            return row.doc; // this is the entire payload
+          });
+        };
+        // add people to the household
+        var docs = mapped(resp);
+        var households = [];
+        var people = {};
+        for (i = 0; i < docs.length; i++) {
+          if (docs[i].type == 'person') {
+            // build an object that holds objects that hold arrays of people
+            if (!people[docs[i].household_id]) {
+              people[docs[i].household_id] = [];
+            }
+            people[docs[i].household_id].push(docs[i]);
+          } else if (docs[i].type == 'household') {
+            households[i] = docs[i];
+          }
+          // console.log(people);
+        }
+        for (i = 0; i < households.length; i++) {
+          var household_id = households[i]._id;
+          households[i].people = [];
+          households[i].people = people[household_id];
+        }
+        // console.log(docs[1]);
+        res.send(households);
+      }
+    });
+  }
+);
 
 app.post('/postPerson',
   authentication.users.isAuthenticated,
@@ -550,7 +549,7 @@ app.post('/postPerson',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-});
+  });
 
 app.post('/postHousehold',
   authentication.users.isAuthenticated,
@@ -562,22 +561,22 @@ app.post('/postHousehold',
       var household = req.body;
 
       // if we're deleting a household, we should first delete the people
-      if(household._deleted == true){
+      if (household._deleted == true) {
         // using cloudant query means we don't have to pre-build our indexes
         // which means I don't have to worry about keeping mapreduce code in sync 
         // across the dev and prod database(s), and can instead just update views here
         db.find(
-          { 
+          {
             "selector": {
-                "household_id": {
-                  "$eq": household._id
-                }
+              "household_id": {
+                "$eq": household._id
+              }
             },
             "fields": [
               "_id",
               "_rev"
             ]
-          }, function(err, data) {
+          }, function (err, data) {
             if (err) {
               throw err;
             }
@@ -590,16 +589,16 @@ app.post('/postHousehold',
               people.push(data.docs[i]);
             }
 
-            if(people.length > 0){  
-              db.bulk({ docs:people }, function (err, docs) {
+            if (people.length > 0) {
+              db.bulk({ docs: people }, function (err, docs) {
                 if (!err) {
                   console.log('deleted this many people', people.length);
                 } else {
                   console.log('error deleting people', err.reason);
                 }
-              });                  
+              });
             }
-        });
+          });
       }
 
       // update the household      
@@ -618,7 +617,7 @@ app.post('/postHousehold',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-});
+  });
 
 app.post('/postHouseholdOld',
   authentication.users.isAuthenticated,
@@ -666,9 +665,16 @@ app.post('/postHouseholdOld',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-});
+  });
 
-// ------------------------------------------- SIGNUPS
+/*
+* END Admin
+*/
+
+/*
+* BEGIN Signup
+*/
+
 app.get('/getSignups',
   authentication.users.isAuthenticated,
   function (req, res) {
@@ -684,7 +690,7 @@ app.get('/getSignups',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-});
+  });
 
 app.get('/getSignupChairs',
   authentication.users.isAuthenticated,
@@ -701,7 +707,7 @@ app.get('/getSignupChairs',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-});
+  });
 
 app.get('/getSignup/',
   authentication.users.isAuthenticated,
@@ -720,7 +726,7 @@ app.get('/getSignup/',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-});
+  });
 
 app.get('/editSignup/',
   authentication.users.isAuthenticated,
@@ -739,7 +745,7 @@ app.get('/editSignup/',
       // console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
-});
+  });
 
 app.get('/getPeople',
   function (req, res) {
@@ -778,9 +784,15 @@ app.post('/update', jsonParser, function (req, res) {
   });
 });
 
-/**
- * Displays root folders from MSC Google Drive
-**/
+/*
+* END Signup
+*/
+
+/*
+* BEGIN Resources
+*/
+
+//Displays root folders from MSC Google Drive
 app.get('/resources',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -790,9 +802,7 @@ app.get('/resources',
     });
   });
 
-/**
- * Download Google Drive file
- **/
+// Download Google Drive file
 app.get('/resources/download/:id',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -819,6 +829,7 @@ app.get('/resources/download/:id',
 
   });
 
+//Export file
 app.get('/resources/export/:id',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -853,13 +864,7 @@ app.get('/resources/export/:id',
 
   });
 
-/*
-* API endpoints
-*/
-
-/*
-* Resources: Endpoint for retrieving list of GDrive metadata for a folder
-*/
+// Resources: Endpoint for retrieving list of GDrive metadata for a folder
 app.get('/resources/:folderId', (req, res) => {
 
   gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
@@ -874,9 +879,7 @@ app.get('/resources/:folderId', (req, res) => {
 
 });
 
-/*
-* Resources: Endpoint for retrieving list of GDrive metadata based upon search text
-*/
+//Resources: Endpoint for retrieving list of GDrive metadata based upon search text
 app.get('/resources/search/:searchText', (req, res) => {
 
   gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
@@ -891,9 +894,7 @@ app.get('/resources/search/:searchText', (req, res) => {
 
 });
 
-/*
-* Resources: Endpoint for retrieving Base64 file content
-*/
+//Resources: Endpoint for retrieving Base64 file content
 app.get('/resources/view/:id', (req, res) => {
 
   gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
@@ -917,3 +918,7 @@ app.get('/resources/view/:id', (req, res) => {
   }
 
 });
+
+/*
+* END Resources
+*/

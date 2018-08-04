@@ -19,16 +19,6 @@ $(function () {
 
 });
 
-// Vue.component('app-layout', {
-//   template: '#layout',
-//   created: function() {
-//   },
-//   data: function () {
-//     return {
-//     }
-//   }
-// });
-
 Vue.component('app-navbar', {
   template: '#navbar-template',
   props: ['enabled'],
@@ -45,73 +35,129 @@ Vue.component('app-navbar', {
 * LOCAL components (registered w/ routes)
 */
 
-const home = {
-  template: '#home-template',
-  mounted: function () {
-    $('#username').focus();
-  }
-}
-
-const memberHome = {
-  template: '#member-home-template',
-  data() {
-    return {
-    }
-  },
-  created() {
-    document.title = 'MSC';
-  },
-  mounted: function () {
-  },
-  methods: {
-  }
-}
-
-// parent controller of search, emails, downloads
-const list = {
-  template: '#list',
-  data: function () {
-    return {
-      searchstring: '',
-      timer: null,
-      statuses: []
-    }
-  },
-  created: function () {
-    var blacklist = ['deceased'];
-    this.statuses = getStatuses(blacklist);
-  },
-  methods: {
-    search: function (event) {
-      // console.log('hi from the child', event);
-      this.searchstring = event;
-      if (this.searchstring.length > 0) {
-        this.$router.push({ name: 'text-results', params: {}, query: { q: this.searchstring } });
-      } else {
-        this.$router.push({ name: 'faceted-results', params: { status: 'all' } });
-      }
-    }
-  }
-}
-
-// first child of list
-const listIntro = {
-  template: '#list-intro',
+// third child of list
+const emails = {
+  template: '#emails',
   props: [
-    'searchstring',
-    'timer',
     'statuses'
   ],
+  data: function () {
+    return {
+      items: [],
+      loading: true,
+      selected: {},
+      emailsSelected: 'Select emails',
+      newsletter: ['active', 'inactive', 'life'],
+      querystring: []
+    }
+  },
+  mounted: function () {
+    // this gets data when page loads
+    // start has logic to deal with the querystring
+    this.start();
+  },
+  updated: function () {
+    M.textareaAutoResize($('#textarea-emails'));
+  },
+  watch: {
+    '$route.query.status'(to, from) {
+      // when the querystring changes, do another search
+
+      // working on a way to turn the string into an array as a data object
+      // rather than having to do that in multiple methods
+
+      this.start();
+    }
+  },
   methods: {
-    // this was helpful for talking from a child to a parent
-    // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
-    // also this https://laracasts.com/discuss/channels/vue/how-to-catch-a-childs-emit-in-the-parent-with-vue/replies/289920
-    searchfromchild: function (e) {
-      this.$emit('searched', this.searchstring)
-      e.preventDefault();
+    intercept: function (str) {
+      var arr = [];
+      var status = str;
+      var querystring = this.$route.query;
+      var index = 0;
+
+      // no param means get all
+      if (!status) {
+        this.$router.push({ name: 'emails' });
+      } else {
+        // if there's no querystring, start the array
+        if (!querystring.status) {
+          arr.push(status);
+        }
+        // in vuejs, if the querystring already has only one value, it's a string
+        // and we need to change it to an array so it can have other friends
+        if (querystring.status && typeof querystring.status == 'string') {
+          querystring.status = [querystring.status];
+        }
+        // might not need this check here, b/c anything making it this far will be an object
+        if (typeof querystring.status == 'object') {
+          // if the status is already in the querystring, get it out
+          index = querystring.status.indexOf(status);
+          if (index > -1) {
+            // create a new querystring array without it
+            for (var i = 0; i < querystring.status.length; i++) {
+              if (querystring.status[i] != status) {
+                arr.push(querystring.status[i]);
+              }
+            }
+          } else {
+            // add the new status to the query array
+            arr.push(status);
+            console.log('arr', arr, 'querystring.status', querystring.status)
+            arr = arr.concat(querystring.status);
+            // console.log(arr)
+          }
+        }
+        this.$router.push({ query: { status: arr } })
+      }
+    },
+    start: function () {
+      let _this = this;
+      _this.loading = true;
+      var params = {};
+      var querystring = this.$route.query.status;
+
+      if (querystring && typeof querystring == 'string') {
+        params.statuses = [querystring];
+        // console.log('from string to array: ', params.statuses);
+      } else {
+        params.statuses = querystring;
+        // console.log('already an object:', params.statuses)
+      }
+
+      this.$http.get('/getEmails', params)
+        .then(
+          function (resp) {
+            var data = resp.data.rows;
+            var blob = '';
+
+            var emails = data.map(function (row) {
+              return row.value[0];
+            })
+            blob = emails.join(', ');
+            // update the view with the result
+            _this.items = blob;
+            _this.loading = false;
+          }
+        );
+    },
+    selectEmails: function () {
+      var copyText = $('#emails').select();
+      //      this.emailsSelected = "Emails selected"
+      /* Get the text field */
+      // var copyText = document.getElementById("emails");
+
+      /* Select the text field */
+      // copyText.select();
+
+      /* Copy the text inside the text field */
+      document.execCommand("Copy");
+
+      /* Alert the copied text */
+      alert("Copied the text: " + copyText.value);
     }
   }
-}
+};
 
 // second child of list
 const facets = {
@@ -183,129 +229,229 @@ const facets = {
   }
 };
 
-// third child of list
-const emails = {
-  template: '#emails',
-  props: [
-    'statuses'
-  ],
-  data: function () {
+const home = {
+  template: '#home-template',
+  data() {
     return {
-      items: [],
-      loading: true,
-      selected: {},
-      emailsSelected: 'Select emails',
-      newsletter: ['active','inactive','life'],
-      querystring: []
     }
   },
-  mounted: function(){
-    // this gets data when page loads
-    // start has logic to deal with the querystring
-    this.start();
+  created() {
+    document.title = 'MSC';
   },
-  updated: function () {
-    M.textareaAutoResize($('#textarea-emails'));
-  },
-  watch: {
-    '$route.query.status' (to, from) {
-      // when the querystring changes, do another search
-
-      // working on a way to turn the string into an array as a data object
-      // rather than having to do that in multiple methods
-      
-      this.start();
-    }
+  mounted: function () {
   },
   methods: {
-    intercept: function(str){
-      var arr = [];
-      var status = str;
-      var querystring = this.$route.query;
-      var index = 0;
+  }
+}
 
-      // no param means get all
-      if(!status){
-        this.$router.push({name: 'emails'});
+// parent controller of search, emails, downloads
+const list = {
+  template: '#list',
+  data: function () {
+    return {
+      searchstring: '',
+      timer: null,
+      statuses: []
+    }
+  },
+  created: function () {
+    var blacklist = ['deceased'];
+    this.statuses = getStatuses(blacklist);
+  },
+  methods: {
+    search: function (event) {
+      // console.log('hi from the child', event);
+      this.searchstring = event;
+      if (this.searchstring.length > 0) {
+        this.$router.push({ name: 'text-results', params: {}, query: { q: this.searchstring } });
       } else {
-        // if there's no querystring, start the array
-        if(!querystring.status){
-          arr.push(status);
-        }
-        // in vuejs, if the querystring already has only one value, it's a string
-        // and we need to change it to an array so it can have other friends
-        if(querystring.status && typeof querystring.status == 'string'){
-          querystring.status = [querystring.status];
-        } 
-        // might not need this check here, b/c anything making it this far will be an object
-        if(typeof querystring.status == 'object') {
-          // if the status is already in the querystring, get it out
-          index = querystring.status.indexOf(status);
-          if (index > -1) {            
-            // create a new querystring array without it
-            for(var i=0; i < querystring.status.length; i++){
-              if(querystring.status[i] != status){
-                arr.push(querystring.status[i]);
-              }
-            }
-          } else {
-            // add the new status to the query array
-            arr.push(status);
-            console.log('arr', arr, 'querystring.status', querystring.status)
-            arr = arr.concat(querystring.status);
-            // console.log(arr)
-          }
-        }
-        this.$router.push( { query: { status: arr } })
+        this.$router.push({ name: 'faceted-results', params: { status: 'all' } });
       }
-    },
-    start: function () {
-      let _this = this;
-      _this.loading = true;
-      var params = {};
-      var querystring = this.$route.query.status;
+    }
+  }
+}
 
-      if(querystring && typeof querystring == 'string'){
-        params.statuses = [querystring];
-        // console.log('from string to array: ', params.statuses);
-      } else {
-        params.statuses = querystring;
-        // console.log('already an object:', params.statuses)
-      }
+// first child of list
+const listIntro = {
+  template: '#list-intro',
+  props: [
+    'searchstring',
+    'timer',
+    'statuses'
+  ],
+  methods: {
+    // this was helpful for talking from a child to a parent
+    // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
+    // also this https://laracasts.com/discuss/channels/vue/how-to-catch-a-childs-emit-in-the-parent-with-vue/replies/289920
+    searchfromchild: function (e) {
+      this.$emit('searched', this.searchstring)
+      e.preventDefault();
+    }
+  }
+}
 
-      this.$http.get('/getEmails', params)
-        .then(
-          function (resp) {
-            var data = resp.data.rows;
-            var blob = '';
+const login = {
+  template: '#login-template',
+  mounted: function () {
+    $('#username').focus();
+  }
+}
 
-            var emails = data.map(function (row) {
-              return row.value[0];
-            })
-            blob = emails.join(', ');
-            // update the view with the result
-            _this.items = blob;
-            _this.loading = false;
-          }
-        );
-    },
-    selectEmails: function () {
-      var copyText = $('#emails').select();
-      //      this.emailsSelected = "Emails selected"
-      /* Get the text field */
-      // var copyText = document.getElementById("emails");
-
-      /* Select the text field */
-      // copyText.select();
-
-      /* Copy the text inside the text field */
-      document.execCommand("Copy");
-
-      /* Alert the copied text */
-      alert("Copied the text: " + copyText.value);
+const logout = {
+  created: function () {
+    this.logout();
+  },
+  methods: {
+    logout: function () {
+      this.$router.push('/login')
     }
   }
 };
+
+/*
+* Resources: module (Google Drive)
+*/
+var resources = {
+  template: '#resources',
+  data() {
+    return {
+      path: [],
+      files: [],
+      isLoading: false,
+      folderId: -1
+    }
+  },
+  created() {
+    document.title = 'Resources - MSC';
+  },
+  mounted: function () {
+    //Hide help text by default
+    $('#resourcesHelp').hide();
+    this.init();
+    this.start();
+  },
+  methods: {
+    init: function () {
+      let _this = this;
+    },
+    start: function () {
+      if (!this.isLoading) {
+        this.isLoading = true;
+        this.$http.get('/resources')
+          .then((res) => {
+            this.path.push({ name: 'MSC Drive', id: '-1' });
+            this.files = res.data;
+            this.isLoading = false;
+          });
+      }
+    },
+    onFolderView: function (file, event) {
+      const _this = this;
+
+      //Only process if a folder...
+      if (file.mimeType.includes('folder') && !this.isLoading && (this.folderId != file.id)) {
+        this.isLoading = true;
+        this.folderId = file.id;
+        this.$http.get('/resources/' + file.id)
+          .then((res) => {
+            _this.path.push({ name: file.name, id: file.id });
+            _this.files = res.data;
+
+            //Format file size to KB etc.
+            $.each(_this.files, function (index, file) {
+              file.size = formatBytes(file.size);
+            })
+
+            _this.isLoading = false;
+          }
+          );
+      }
+    },
+    onFileView: function (file, event) {
+
+      const _this = this;
+
+      this.$http.get('/resources/view/' + file.id)
+        .then((res) => {
+          console.log('Response back w/ PDF data');
+
+          //Decode base-64 string
+          let pdfData = atob(res.data);
+
+          //Convert to byte array
+          var uint8Array = new Uint8Array(pdfData.length);
+          for (var i = 0; i < pdfData.length; i++) {
+            uint8Array[i] = pdfData.charCodeAt(i);
+          }
+
+          //Load iframe for PDF viewer
+          var pdfjsframe = document.getElementById('pdfViewer');
+          pdfjsframe.contentWindow.PDFViewerApplication.open(uint8Array);
+          // pdfjsframe.width = '1200';
+          // pdfjsframe.height ='1200';
+
+          // //PDF viewer size
+          $('#pdfModal', window.parent.document).width('65%');
+          $('#pdfModal', window.parent.document).height('100%');
+          $('#pdfViewer', window.parent.document).width('100%');
+          $('#pdfViewer', window.parent.document).height('100%');
+
+          // // var $window = $(pdfjsframe.contentWindow);
+          // $('#pdfViewer').css('width', '100%'); //($window.height() * 0.85));
+          // $('#pdfViewer').css('height', '1300px'); //($window.height() * 0.95));
+
+          //Open modal
+          //>>MaterializeCSS 1.0.0 approach w/o jQuery
+          // var elem = document.querySelector('.modal');
+          // var modal = M.Modal.getInstance(elem);
+          // modal.open();
+
+          //MaterializeCSS 0.100.2 approach w/ jQuery
+          $('#pdfModal').modal('open');
+
+        });
+    },
+    onPDFLoad: function (iFrame) {
+      iFrame.width = iFrame.contentWindow.document.body.scrollWidth;
+      iFrame.height = iFrame.contentWindow.document.body.scrollHeight;
+    },
+    onFileDownload: function (file, event) {
+      window.open('/resources/download/' + file.id);
+    },
+    onBreadcrumb: function (id, event) {
+      const _this = this;
+
+      if (!this.isLoading && (this.folderId != id)) {
+        this.isLoading = true;
+        this.folderId = id;
+        this.$http.get('/resources/' + id)
+          .then((res) => {
+            //Remove all folders below the selected one
+            const index = _this.path.map(function (x) { return x.id; }).indexOf(id);
+            _this.path.splice((index + 1));
+            _this.files = res.data;
+            _this.isLoading = false;
+          });
+      }
+    },
+    onSearch: function (event) {
+      let searchText = $(event.target).val().trim();
+      alert(searchText);
+    },
+    onHelp: function (event) {
+      $('#resourcesHelp').toggle(600);
+    },
+    formatBytes: function (bytes, decimals) {
+      if (bytes == 0) return '0 Bytes';
+      let k = 1024,
+        dm = decimals || 2,
+        sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+        i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+  }
+}
 
 const viewHousehold = {
   template: '#view-household',
@@ -370,41 +516,8 @@ const viewHousehold = {
   }
 };
 
-
-const logout = {
-  template: '#logout',
-  data: function () {
-    return {
-      item: {}
-    }
-  },
-  created: function () {
-    this.start();
-  },
-  methods: {
-    setPageTitle: function () {
-      document.title = (this.item.name) ? this.item.name : 'Logout';
-    },
-    start: function () {
-      _this = this;
-      this.$http.get('/logout')
-        .then(function (resp) {
-          // console.log('start', resp)        
-          _this.item = resp.data;
-          _this.setPageTitle();
-        },
-          function (error) {
-            _this.item = {
-              name: 'sorry!'
-            }
-          }
-        );
-    }
-  }
-};
-
 /*
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ADMIN COMPONENTS
+* ADMIN COMPONENTS
 */
 
 // list of households
@@ -490,20 +603,6 @@ const admin = {
   }
 }
 
-// for creating a household
-// not a child of adminHousehold
-const newHousehold = {
-  template: '#new-household',
-  data: function () {
-    return {
-      item: getNewHousehold()
-    }
-  },
-  mounted: function () {
-    $('.dropdown-trigger').dropdown();
-  }
-};
-
 // parent view of people lists, forms to edit a person and edit a household
 const adminHousehold = {
   template: '#admin-household',
@@ -564,6 +663,20 @@ const firstChild = {
   mounted: function () { },
   updated: function () { }
 }
+
+// for creating a household
+// not a child of adminHousehold
+const newHousehold = {
+  template: '#new-household',
+  data: function () {
+    return {
+      item: getNewHousehold()
+    }
+  },
+  mounted: function () {
+    $('.dropdown-trigger').dropdown();
+  }
+};
 
 // edit a person, child of adminHousehold
 const secondChild = {
@@ -755,150 +868,16 @@ const thirdChild = {
 }
 
 /*
-* Resources: module (Google Drive)
+* Utility functions
 */
-var resources = {
-  template: '#resources',
-  data() {
-    return {
-      path: [],
-      files: [],
-      isLoading: false,
-      folderId: -1
-    }
-  },
-  created() {
-    document.title = 'Resources - MSC';
-  },
-  mounted: function () {
-    //Hide help text by default
-    $('#resourcesHelp').hide();
-    this.init();
-    this.start();
-  },
-  methods: {
-    init: function () {
-      let _this = this;
-    },
-    start: function () {
-      if (!this.isLoading) {
-        this.isLoading = true;
-        this.$http.get('/resources')
-          .then((res) => {
-            this.path.push({ name: 'MSC Drive', id: '-1' });
-            this.files = res.data;
-            this.isLoading = false;
-          });
-      }
-    },
-    onFolderView: function (file, event) {
-
-      //Only process if a folder...
-      if (file.mimeType.includes('folder') && !this.isLoading && (this.folderId != file.id)) {
-        const _this = this;
-        this.isLoading = true;
-        this.folderId = file.id;
-        this.$http.get('/resources/' + file.id)
-          .then((res) => {
-            _this.path.push({ name: file.name, id: file.id });
-            _this.files = res.data;
-
-            //Format file size to KB etc.
-            $.each(_this.files, function (index, file) {
-              file.size = this.formatBytes(file.size);
-            })
-
-            _this.isLoading = false;
-          }
-          );
-      }
-    },
-    onFileView: function (file, event) {
-
-      const _this = this;
-
-      this.$http.get('/resources/view/' + file.id)
-        .then((res) => {
-          console.log('Response back w/ PDF data');
-
-          //Decode base-64 string
-          let pdfData = atob(res.data);
-
-          //Convert to byte array
-          var uint8Array = new Uint8Array(pdfData.length);
-          for (var i = 0; i < pdfData.length; i++) {
-            uint8Array[i] = pdfData.charCodeAt(i);
-          }
-
-          //Load iframe for PDF viewer
-          var pdfjsframe = document.getElementById('pdfViewer');
-          pdfjsframe.contentWindow.PDFViewerApplication.open(uint8Array);
-          // pdfjsframe.width = '1200';
-          // pdfjsframe.height ='1200';
-
-          // //PDF viewer size
-          $('#pdfModal', window.parent.document).width('65%');
-          $('#pdfModal', window.parent.document).height('100%');
-          $('#pdfViewer', window.parent.document).width('100%');
-          $('#pdfViewer', window.parent.document).height('100%');
-
-          // // var $window = $(pdfjsframe.contentWindow);
-          // $('#pdfViewer').css('width', '100%'); //($window.height() * 0.85));
-          // $('#pdfViewer').css('height', '1300px'); //($window.height() * 0.95));
-
-          //Open modal
-          //>>MaterializeCSS 1.0.0 approach w/o jQuery
-          // var elem = document.querySelector('.modal');
-          // var modal = M.Modal.getInstance(elem);
-          // modal.open();
-
-          //MaterializeCSS 0.100.2 approach w/ jQuery
-          $('#pdfModal').modal('open');
-
-        });
-    },
-    onPDFLoad: function (iFrame) {
-      iFrame.width = iFrame.contentWindow.document.body.scrollWidth;
-      iFrame.height = iFrame.contentWindow.document.body.scrollHeight;
-    },
-    onFileDownload: function (file, event) {
-      window.open('/resources/download/' + file.id);
-    },
-    onBreadcrumb: function (id, event) {
-      const _this = this;
-
-      if (!this.isLoading && (this.folderId != id)) {
-        this.isLoading = true;
-        this.folderId = id;
-        this.$http.get('/resources/' + id)
-          .then((res) => {
-            //Remove all folders below the selected one
-            const index = _this.path.map(function (x) { return x.id; }).indexOf(id);
-            _this.path.splice((index + 1));
-            _this.files = res.data;
-            _this.isLoading = false;
-          });
-      }
-    },
-    onSearch: function (event) {
-      let searchText = $(event.target).val().trim();
-      alert(searchText);
-    },
-    onHelp: function (event) {
-      $('#resourcesHelp').toggle(600);
-    },
-    formatBytes(bytes, decimals) {
-      if (bytes == 0) return '0 Bytes';
-      let k = 1024,
-        dm = decimals || 2,
-        sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-        i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    }
-
-  }
+function formatBytes(bytes, decimals) {
+  if (bytes == 0) return '0 Bytes';
+  let k = 1024,
+    dm = decimals || 2,
+    sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+    i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
-
 
 /*
 * GLOBAL components
@@ -944,6 +923,9 @@ Vue.component('form-errors', {
   props: ['errors']
 });
 
+/*
+* Router setup and initialize Vue app
+*/
 const router = getVueRouter();
 
 var vm = new Vue({
