@@ -2,18 +2,16 @@ var cfenv = require("cfenv"),
   appEnv = cfenv.getAppEnv(),
   dotenv = require('dotenv').config(),
   express = require('express'),
-  session = require('express-session'),
   bodyParser = require('body-parser'),
   jsonParser = bodyParser.json(),
   Json2csvParser = require('json2csv').Parser,
-//  Combinatorics = require('js-combinatorics'),
-//  opts = (process.env.VCAP_SERVICES) ? { vcapServices: JSON.parse(process.env.VCAP_SERVICES) } : { url: process.env.url },
-  opts = { url: process.env.URL },
+  Combinatorics = require('js-combinatorics'),
+  opts = (process.env.VCAP_SERVICES) ? { vcapServices: JSON.parse(process.env.VCAP_SERVICES) } : { url: process.env.url },
   env = (process.env.mode) ? process.env.mode : 'prod' // are we in dev mode?
   ;
 
 // Initialize Cloudant
-var cloudant = require('@cloudant/cloudant')(opts);
+var cloudant = require('cloudant')(opts);
 var db = (env == 'dev') ? cloudant.db.use("msc-dev") : cloudant.db.use("msc");
 
 // Create a new Express application.
@@ -30,40 +28,95 @@ http.listen(appEnv.port, "0.0.0.0", function () {
   console.log("server starting on " + appEnv.url);     // print a message when the server starts listening
 });
 
-// auth
-var passport = require('passport'),
-  Strategy = require('passport-http').BasicStrategy,
-  users = require('./lib/auth.js');
-
 app.use(express.static(__dirname + '/public'));
 
-//nothing to be done - call callback
-passport.serializeUser(function (user, done) {
-  // console.log('serializeUser');
-  // console.log('user', user);
-  done(null, user);
-});
+/*
+* BEGIN Authentication setup
+*/
+let session = require("express-session");
+let passport = require('passport');
+let LocalStrategy = require('passport-local').Strategy;
+let flash = require('connect-flash');
 
-//nothing to be done - call callback
-passport.deserializeUser(function (obj, done) {
-  // console.log('deserializeUser');
-  done(null, obj);
-});
-
-var sess = {
-  secret: 'keyboard cat',
-  cookie: {},
-  resave: false, // https://github.com/expressjs/session#options
-  saveUninitialized: false
-};
-
-app.use(session(sess));
+app.use(session({
+  cookie: {
+    httpOnly: true,
+    path: '/'
+  },
+  name: 'msc.sid',
+  resave: false,
+  saveUninitialized: true,
+  secret: "madriverglen"
+}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(flash());
 
-passport.use(users.passportStrategy());
+let authentication = require('authentication');
 
-/* BEGIN Resoures setup */
+passport.use(new LocalStrategy(
+  function (username, password, done) {
+    authentication.users.exists(username, function (err, user) {
+      if (err) { return done(err); }
+      if (!user) {
+        return done(null, false, { message: 'Incorrect username.' });
+      }
+      if (!user.password == password) {
+        return done(null, false, { message: 'Incorrect password.' });
+      }
+      return done(null, user);
+    });
+  }
+));
+
+passport.serializeUser(function (user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(function (id, done) {
+  authentication.users.findById(id, function (err, user) {
+    if (user == null) {
+
+    } else {
+      delete user.password;
+      done(err, user);
+    }
+  });
+});
+
+// function requireAuth (to, from, next) {
+//   if (!authentication.users.isAuthenticated()) {
+//     next({
+//       path: '/',
+//       query: { redirect: to.fullPath }
+//     })
+//   } else {
+//     next()
+//   }
+// }
+
+app.post('/login',
+  passport.authenticate('local', {
+    successRedirect: '/#/memberhome',
+    failureRedirect: '/#/',
+    failureFlash: true
+  })
+);
+
+app.get('/logout',
+  function (req, res) {
+    req.logout();
+    res.redirect('/');
+  });
+
+/*
+* END Authentication setup
+*/
+
+/*
+* BEGIN Resoures setup
+*/
 
 //Google Drive module
 var gdrive = require('gdrive');
@@ -72,24 +125,31 @@ gdrive.oauthclient.init();
 //Google Drive API
 gdrive.api.init();
 
-/* END Resoures setup */
+/*
+* END Resoures setup
+*/
 
-app.get('/logout', function (req, res) {
-  // console.log('session', req.session);
-  // console.log('user', req.user);
-  req.session.loggedOut = true;
-  // req.logout();
-  // req.session.destroy(function (err) {
-  //   if (err) { return next(err); }
-  //   // The response should indicate that the user is no longer authenticated.
-  //   return res.send({ authenticated: req.isAuthenticated() });
-  // });
-  res.send('You are logged out.');
-});
+/**
+ * Home page
+**/
+app.get('/',
+  (req, res) => {
+  }
+);
+
+/**
+ * Member home page
+**/
+app.get('/memberhome',
+  authentication.users.isAuthenticated,
+  (req, res) => {
+    alert(req.user);
+  }
+);
 
 // TODO: ADD ADMIN ONLY AUTH HERE
 app.get('/admin',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
     //db.view(designname, viewname, [params], [callback])
     db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
@@ -129,7 +189,7 @@ app.get('/admin',
 
 // ------------------------------------------- LIST
 app.get('/search',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
 
     var q = req.query.q,
@@ -213,7 +273,7 @@ app.get('/search',
 );
 
 app.get('/list',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
     //db.view(designname, viewname, [params], [callback])
     db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
@@ -252,7 +312,7 @@ app.get('/list',
 );
 
 app.get('/getEmails',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
 
     var params = (req.query.statuses) ? req.query.statuses : null;
@@ -286,7 +346,7 @@ app.get('/getEmails',
 );
 
 app.get('/getPeopleForCSV',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'admin') {
@@ -402,7 +462,7 @@ app.get('/getPeopleForCSV',
 );
 
 app.get('/getPerson/',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'admin') {
@@ -426,7 +486,7 @@ app.get('/getPerson/',
 );
 
 app.get('/getHousehold/',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
     var role = req.user.role[0].value;
     // both admins and members can see these results
@@ -470,7 +530,7 @@ app.get('/getHousehold/',
 // ------------------------------------------- ADMIN
 
 app.post('/postPerson',
-  users.auth,
+  authentication.users.isAuthenticated,
   jsonParser,
   function (req, res) {
     var role = req.user.role[0].value;
@@ -493,7 +553,7 @@ app.post('/postPerson',
 });
 
 app.post('/postHousehold',
-  users.auth,
+  authentication.users.isAuthenticated,
   jsonParser,
   function (req, res) {
     var role = req.user.role[0].value;
@@ -561,7 +621,7 @@ app.post('/postHousehold',
 });
 
 app.post('/postHouseholdOld',
-  users.auth,
+  authentication.users.isAuthenticated,
   jsonParser,
   function (req, res) {
     var role = req.user.role[0].value;
@@ -610,7 +670,7 @@ app.post('/postHouseholdOld',
 
 // ------------------------------------------- SIGNUPS
 app.get('/getSignups',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'member' || role === 'admin') {
@@ -627,7 +687,7 @@ app.get('/getSignups',
 });
 
 app.get('/getSignupChairs',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'admin') {
@@ -644,7 +704,7 @@ app.get('/getSignupChairs',
 });
 
 app.get('/getSignup/',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'member' || role === 'admin') {
@@ -663,7 +723,7 @@ app.get('/getSignup/',
 });
 
 app.get('/editSignup/',
-  users.auth,
+  authentication.users.isAuthenticated,
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'admin') {
@@ -722,7 +782,7 @@ app.post('/update', jsonParser, function (req, res) {
  * Displays root folders from MSC Google Drive
 **/
 app.get('/resources',
-  users.auth,
+  authentication.users.isAuthenticated,
   (req, res) => {
     gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
     gdrive.api.getRoot((files) => {
@@ -734,7 +794,7 @@ app.get('/resources',
  * Download Google Drive file
  **/
 app.get('/resources/download/:id',
-  users.auth,
+  authentication.users.isAuthenticated,
   (req, res) => {
 
     gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
@@ -760,7 +820,7 @@ app.get('/resources/download/:id',
   });
 
 app.get('/resources/export/:id',
-  users.auth,
+  authentication.users.isAuthenticated,
   (req, res) => {
 
     gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());

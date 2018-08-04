@@ -19,8 +19,52 @@ $(function () {
 
 });
 
+// Vue.component('app-layout', {
+//   template: '#layout',
+//   created: function() {
+//   },
+//   data: function () {
+//     return {
+//     }
+//   }
+// });
+
+Vue.component('app-navbar', {
+  template: '#navbar-template',
+  props: ['enabled'],
+  created: function () {
+  },
+  data: function () {
+    return {
+      isEnabled: this.enabled
+    }
+  }
+});
+
+/*
+* LOCAL components (registered w/ routes)
+*/
+
 const home = {
-  template: '#home'
+  template: '#home-template',
+  mounted: function () {
+    $('#username').focus();
+  }
+}
+
+const memberHome = {
+  template: '#member-home-template',
+  data() {
+    return {
+    }
+  },
+  created() {
+    document.title = 'MSC';
+  },
+  mounted: function () {
+  },
+  methods: {
+  }
 }
 
 // parent controller of search, emails, downloads
@@ -851,13 +895,13 @@ var resources = {
         i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
-    
+
   }
 }
 
 
 /*
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REUSABLE COMPONENTS
+* GLOBAL components
 */
 
 Vue.component('location', {
@@ -900,14 +944,15 @@ Vue.component('form-errors', {
   props: ['errors']
 });
 
-// TODO handle page titles
-new Vue({
-  el: 'title',
-  data: {
-    title: 'Montclair Ski Club'
-  },
-  created() { },
-  mounted() {
-    // let title = document.title;
+const router = getVueRouter();
+
+var vm = new Vue({
+  el: '#app-container',
+  router,
+  template: '#layout-template',
+  data: function () {
+    return {
+      title: 'Montclair Ski Club'
+    }
   }
 })

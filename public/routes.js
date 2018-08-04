@@ -1,8 +1,20 @@
-const routes = [
+function getVueRouter() {
+
+  const routes = [
     { 
       name: 'home',
       path: '/', 
       component: home
+    },
+    {
+      name: 'memberhome',
+      path: '/memberhome',
+      component: memberHome
+    },
+    {
+      name: 'logout',
+      path: '/logout',
+      component: logout
     },
     { 
       path: '/list', 
@@ -42,6 +54,11 @@ const routes = [
         default: viewHousehold
       }, 
       props: true 
+    },
+    {
+      name: 'resources',
+      path: '/resources/:id?',
+      component: resources
     },
 
     // ADMIN ROUTES
@@ -94,24 +111,15 @@ const routes = [
           props: true
         }
       ]
-    },
+    }
 //    { path: '/emails', component: emails },
 //    { path: '/list/turn-off/:id', component: adminHousehold, props: true },
-    { path: '/logout', component: logout },
-    { path: '/resources/:id?', component: resources }
   ]
   
-  // 3. Create the router instance and pass the `routes` option
-  // You can pass in additional options here, but let's
-  // keep it simple for now.
-  const router = new VueRouter({
-    routes, // short for `routes: routes`
+  return new VueRouter({
+    routes: routes,
     linkActiveClass: 'active',
     linkExactActiveClass: 'active'
   });
-
-var vm = new Vue({
-  el: '#app',
-  router
-});
-
+  
+}

@@ -1,0 +1,7 @@
+{
+  "name": "authentication",
+  "version": "1.0.0",
+  "description": "MSC Authentication",
+  "main": "authentication.js",
+  "author": "Chris Pels"
+}

@@ -26,8 +26,24 @@
 </head>
 
 <body>
-  <div id="app">
-    <div class="navbar-fixed">
+  <div id="app-container">
+  </div>
+
+  <!-- 
+    BEGIN TEMPLATES
+  -->
+
+  <script type="text/x-template" id="layout-template">
+    <div>
+      <app-navbar :enabled="true"></app-navbar>
+      <div class="container">
+        <router-view></router-view>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-template" id="navbar-template">
+    <div v-show="isEnabled"  class="navbar-fixed">
       <nav>
         <div class="nav-wrapper white black-text">
           <a href="/#" class="brand-logo">
@@ -52,45 +68,57 @@
         </div>
       </nav>
     </div>
-    <div class="container">
-      <router-view></router-view>
-    </div>
-  </div>
+  </script>
 
-  <!-- 
-    BEGIN TEMPLATES
-  -->
+  <script type="text/x-template" id="footer-template">
+  </script>
 
-  <script type="text/x-template" id="home">
+  <script type="text/x-template" id="home-template">
       <div>
-        <h1>
+        <h3>
           Welcome
-        </h1>
+        </h3>
         <div class="row">
           <div class="col m6 s12">
-            <p>
-              The Montclair Ski Club (MSC) is a restricted membership club that was founded in 1947.
-            </p>
-            <p>          
-              In 1959, the club built a ski lodge at the base of Mad River Glen in northern Vermont. The club is focused on providing avid skiers and their families with a warm, caring environment where personal relationships are valued. Currently there are several second and third generation club members.
-            </p>
-            <p>                    
-              Membership in the club is restricted to 100 active members who are expected to participate in a variety of ways, including serving on committees and boards, helping to maintain our lodge and representing the club to the outside world. MSC is a member of the New Jersey Ski Council and encourages its members to participate in its activities.
-            </p>
-            <p>                    
-              Social activities are also a focus of the ski club. An annual Christmas party, a summer picnic, a wine and cheese party, bike rides and an annual September trip to a camp in upstate New York are highlights.
-            </p>
-            <p>                    
-              To become a member of the club, you must be sponsored by a member, complete several tasks during the applicant process, be recommended by the membership committee and receive a positive vote by the membership. The process usually takes a year, assuming that there is an opening on the active membership list.  
-            </p>
+            <p>The Montclair Ski Club, founded in 1947, is a tightly knit group of avid skiers and their families. Amid the fun of skiing, the club promotes a community atmosphere where cooperation and warm personal relationships are valued. On winter weekends at our 40-bed lodge at the base of Mad River Glen, we enjoy skiing, eating and socializing together. Outside of the ski season we also hold various social activities, in both New Jersey and Massachusetts.</p>
+            <p>Our 100 active members participate in the running of the club by serving on committees and boards and by helping to maintain the lodge. MSC is a member of the New Jersey Ski Council and encourages its members to participate in its activities.</p>
           </div>
           <div class="col m6 s12">
-            <p>
-              Member links
-            </p>
-          </div>
+            <form action="/login" method="post">
+              <div>
+                  <label>Username:</label>
+                  <input type="text" id="username" name="username"/>
+              </div>
+              <div>
+                  <label>Password:</label>
+                  <input type="password" name="password"/>
+              </div>
+              <div>
+                  <input type="submit" value="Log In"/>
+              </div>
+          </form>
+        </div>
       </div>
     </script>
+
+  <script type="text/x-template" id="member-home-template">
+    <div>
+      <div class="row">
+        <div class="col m6 s12">
+          <h4>Getting Started</h4>
+          <p>Viral engagement blue money, or staff engagement drop-dead date. High turnaround rate ladder up / ladder back to the strategy price point, yet Bob called an all-hands this afternoon, but gain traction, so accountable talk. Message the initiative are there any leftovers in the kitchen? old boys club hammer out old boys club. We need a paradigm shift golden goose. This vendor is incompetent put in in a deck for our standup today let's prioritize the low-hanging fruit and shotgun approach not enough bandwidth. Value prop in this space yet we need to start advertising on social media imagineer nail jelly to the hothouse wall where do we stand on the latest client ask, or win-win. On-brand but completeley fresh. We want to see more charts curate helicopter view due diligence. Please use "solutionise" instead of solution ideas! :) quarterly sales are at an all-time low for back of the net, or drink the Kool-aid new economy for new economy. Usabiltiy organic growth Q1, so execute lean into that problem quarterly sales are at an all-time low.</p>
+        </div>
+        <div class="col m6 s12">
+          <h4>News</h4>
+          <ul>
+              <li>New MSC website launched</li>
+              <li>Fall Picnic</li>
+              <li>October General Meeting</li>
+            </ul> 
+        </div>
+      </div>
+    </div>
+  </script>
 
   <script type="text/x-template" id="view-location">
       <span>
@@ -126,8 +154,6 @@
       <div v-if="item.work_phone" class="nowrap"><i class="material-icons tiny grey-text">work</i>&nbsp;{{ item.work_phone }}</div>
     </span>
   </script>
-
-
 
   <!-- MEMBERSHIP LIST VIEWS -->
 
@@ -345,7 +371,6 @@
         </div>
   </script>
 
-    
   <!-- ADMIN VIEWS -->
 
   <script type="text/x-template" id="error">
