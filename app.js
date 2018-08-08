@@ -5,8 +5,8 @@ var cfenv = require("cfenv"),
   bodyParser = require('body-parser'),
   jsonParser = bodyParser.json(),
   Json2csvParser = require('json2csv').Parser,
-  Combinatorics = require('js-combinatorics'),
-  opts = (process.env.VCAP_SERVICES) ? { vcapServices: JSON.parse(process.env.VCAP_SERVICES) } : { url: process.env.url },
+  // Combinatorics = require('js-combinatorics'),
+  opts = { url: process.env.URL },
   env = (process.env.mode) ? process.env.mode : 'prod' // are we in dev mode?
   ;
 
