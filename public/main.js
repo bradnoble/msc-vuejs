@@ -292,6 +292,9 @@ const listIntro = {
 
 const login = {
   template: '#login-template',
+  created() {
+    document.title = 'MSC - Login';
+  },
   mounted: function () {
     $('#username').focus();
   }
