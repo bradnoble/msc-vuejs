@@ -190,7 +190,7 @@ const facets = {
   methods: {
     clearfromchild: function () {
       this.searchstring = '';
-      this.$router.push({ name: 'faceted-results', params: { status: 'all' } });
+      this.$router.push({ name: 'members-status', params: { status: 'all' } });
     },
     searchfromchild: function (e) {
       let _this = this;
@@ -206,6 +206,27 @@ const facets = {
 
       e.preventDefault();
     },
+    statusSearch: function () {
+      let _this = this;
+
+      if (_this.$route.params.status) {
+        this.$http.get('/api/members/status/'+  _this.$route.params.status)
+        .then(
+          function (resp) {
+            _this.items = resp.data.docs;
+            _this.loading = false;
+          }
+        );
+      } else {
+        _this.items = [];
+        return;
+      }
+
+      //      this.$http.get('/api/search/status/all', {params:{status:'test'}})
+    },
+    nameSearch: function () {
+
+    },
     facetedSearch: function () {
       let _this = this;
       _this.items = [];
@@ -218,13 +239,21 @@ const facets = {
         params.q = _this.$route.query.q;
       }
 
-      this.$http.get('/search', params)
+      //      this.$http.get('/api/search/status/all', {params:{status:'test'}})
+      this.$http.get('/api/members/status/all')
         .then(
           function (resp) {
             _this.items = resp.data.docs;
             _this.loading = false;
           }
         );
+      // this.$http.get('/search/status', params)
+      // .then(
+      //   function (resp) {
+      //     _this.items = resp.data.docs;
+      //     _this.loading = false;
+      //   }
+      // );
     }
   }
 };
@@ -245,7 +274,7 @@ const home = {
 }
 
 // parent controller of search, emails, downloads
-const list = {
+const members = {
   template: '#list',
   data: function () {
     return {
@@ -263,9 +292,9 @@ const list = {
       // console.log('hi from the child', event);
       this.searchstring = event;
       if (this.searchstring.length > 0) {
-        this.$router.push({ name: 'text-results', params: {}, query: { q: this.searchstring } });
+        this.$router.push({ name: 'members-name', params: {}, query: { q: this.searchstring } });
       } else {
-        this.$router.push({ name: 'faceted-results', params: { status: 'all' } });
+        this.$router.push({ name: 'members-status', params: { status: 'all' } });
       }
     }
   }

@@ -140,90 +140,104 @@ gdrive.api.init();
 /*
 * BEGIN List
 */
-
-app.get('/search',
-  authentication.users.isAuthenticated,
+app.get('/api/members/status/:statusId',
+  // authentication.users.isAuthenticated,
   function (req, res) {
-
-    var q = req.query.q,
-      q_array = (q) ? q.split(' ') : null,
-      status = req.query.status,
-      cmb,
-      a,
-      selector = {}
-      ;
-
-    if (status && status != 'all') {
-      selector = {
-        "status": {
-          "$eq": status
-        }
-      };
-    } else if (status && status == 'all') {
-      selector = {
-        "type": { "$eq": "person" },
-        "$nor": [
-          { "status": "deceased" },
-          { "status": "guest" },
-          { "status": "non-member" }
-        ]
-      };
-    } else if (q) {
-      console.log(q_array)
-      if (q_array.length == 1) {
-        selector = {
-          "$or": [
-            {
-              "first": {
-                "$regex": "^(?i)" + q_array[0] + ".*"
-              }
-            },
-            {
-              "last": {
-                "$regex": "^(?i)" + q_array[0] + ".*"
-              }
-            }
-          ]
-        };
-      } else {
-        selector = {
-          "$or": [
-            {
-              "$and": [
-                { "first": { "$regex": "^(?i)" + q_array[0] + ".*" } },
-                { "last": { "$regex": "^(?i)" + q_array[q_array.length - 1] + ".*" } }
-              ]
-            },
-            {
-              "$and": [
-                { "first": { "$regex": "^(?i)" + q_array[q_array.length - 1] + ".*" } },
-                { "last": { "$regex": "^(?i)" + q_array[0] + ".*" } }
-              ]
-            }
-          ]
-        };
-      }
-    }
-
-    db.find(
-      {
-        "selector": selector,
-        "fields": []
-      }, function (err, data) {
-        if (err) {
-          throw err;
-        }
-        res.send(data)
-      }
-    );
-
-    /*/
-    // use js-combinatorics to create array combinations for the query
-    cmb = Combinatorics.permutationCombination(q_array);
-    var combos = cmb.toArray();
-    /*/
+    console.log('status=' + req.params);
   }
 );
+
+
+app.get('/api/members/:name',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    console.log('test');
+  }
+);
+
+// app.get('/search',
+//   authentication.users.isAuthenticated,
+//   function (req, res) {
+
+//     var q = req.query.q,
+//       q_array = (q) ? q.split(' ') : null,
+//       status = req.query.status,
+//       cmb,
+//       a,
+//       selector = {}
+//       ;
+
+//     if (status && status != 'all') {
+//       selector = {
+//         "status": {
+//           "$eq": status
+//         }
+//       };
+//     } else if (status && status == 'all') {
+//       selector = {
+//         "type": { "$eq": "person" },
+//         "$nor": [
+//           { "status": "deceased" },
+//           { "status": "guest" },
+//           { "status": "non-member" }
+//         ]
+//       };
+//     } else if (q) {
+//       console.log(q_array)
+//       if (q_array.length == 1) {
+//         selector = {
+//           "$or": [
+//             {
+//               "first": {
+//                 "$regex": "^(?i)" + q_array[0] + ".*"
+//               }
+//             },
+//             {
+//               "last": {
+//                 "$regex": "^(?i)" + q_array[0] + ".*"
+//               }
+//             }
+//           ]
+//         };
+//       } else {
+//         selector = {
+//           "$or": [
+//             {
+//               "$and": [
+//                 { "first": { "$regex": "^(?i)" + q_array[0] + ".*" } },
+//                 { "last": { "$regex": "^(?i)" + q_array[q_array.length - 1] + ".*" } }
+//               ]
+//             },
+//             {
+//               "$and": [
+//                 { "first": { "$regex": "^(?i)" + q_array[q_array.length - 1] + ".*" } },
+//                 { "last": { "$regex": "^(?i)" + q_array[0] + ".*" } }
+//               ]
+//             }
+//           ]
+//         };
+//       }
+//     }
+
+//     db.find(
+//       {
+//         "selector": selector,
+//         "fields": []
+//       }, function (err, data) {
+//         if (err) {
+//           throw err;
+//         }
+//         res.send(data)
+//       }
+//     );
+
+//     /*/
+//     // use js-combinatorics to create array combinations for the query
+//     cmb = Combinatorics.permutationCombination(q_array);
+//     var combos = cmb.toArray();
+//     /*/
+//   }
+// );
 
 app.get('/list',
   authentication.users.isAuthenticated,

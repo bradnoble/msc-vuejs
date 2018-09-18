@@ -19,8 +19,8 @@ function getVueRouter() {
       meta: { requiresAuth: true }
     },
     {
-      path: '/list',
-      component: list,
+      path: '/members',
+      component: members,
       props: true,
       children: [
         {
@@ -31,13 +31,13 @@ function getVueRouter() {
         },
         {
           path: 'search/status/:status',
-          name: 'faceted-results',
+          name: 'members-status',
           component: facets,
           props: true
         },
         {
           path: 'search',
-          name: 'text-results',
+          name: 'members-name',
           component: facets,
           props: true
         },

@@ -13,7 +13,7 @@
 -->
   <script src="vendor/vue/vue.min.js"></script>
   <script src="vendor/vue/vue-resource.min.js"></script>
-  <script src="vendor/vue/vue-router.js"></script>
+  <script src="vendor/vue/vue-router.min.js"></script>
   <!--Import Google Icon Font-->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!--Import materialize.css-->
@@ -182,7 +182,7 @@
         Search by type:
       </p>
       <div class="row">
-        <router-link :to="{name:'faceted-results', params:{ status:status }}" v-for="status in statuses" class="btn col m3 s12 center">
+        <router-link :to="{name:'members-status', params:{ status:status }}" v-for="status in statuses" class="btn col m3 s12 center">
           {{ status }}
         </router-link>
       </div>
@@ -213,13 +213,13 @@
           Search by type
         </p>
         <div class="collection facets">
-          <router-link :to="{name:'faceted-results', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
+          <router-link :to="{name:'members-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
             all
             <span class="secondary-content" v-if="$route.params.status == 'all'">
               <i class="material-icons">chevron_right</i>
             </span>
           </router-link>              
-          <router-link :to="{name:'faceted-results', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
+          <router-link :to="{name:'members-status', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
             {{ status }}
             <span class="secondary-content" v-if="$route.params.status == status">
               <i class="material-icons">chevron_right</i>
@@ -890,7 +890,6 @@ Parameters:
 
   <!--Import jQuery before materialize.js-->
   <script type="text/javascript" src="vendor/jquery/jquery.min.js"></script>
-  <!-- <script type="text/javascript" src="/js/materialize.min.js"></script> -->
   <script type="text/javascript" src="vendor/materialize/js/materialize.min.js"></script>
   <!--PDF viewer for Resources-->
   <script type="text/javascript" src="vendor/pdfjs/build/pdf.js"></script>

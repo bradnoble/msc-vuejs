@@ -3,12 +3,6 @@
   * (c) 2017 Evan You
   * @license MIT
   */
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.VueRouter = factory());
-}(this, (function () { 'use strict';
-
 /*  */
 
 function assert (condition, message) {
@@ -18,7 +12,7 @@ function assert (condition, message) {
 }
 
 function warn (condition, message) {
-  if ("development" !== 'production' && !condition) {
+  if (process.env.NODE_ENV !== 'production' && !condition) {
     typeof console !== 'undefined' && console.warn(("[vue-router] " + message));
   }
 }
@@ -129,7 +123,7 @@ function resolveProps (route, config) {
     case 'boolean':
       return config ? route.params : undefined
     default:
-      {
+      if (process.env.NODE_ENV !== 'production') {
         warn(
           false,
           "props in \"" + (route.path) + "\" is a " + (typeof config) + ", " +
@@ -173,7 +167,7 @@ function resolveQuery (
   try {
     parsedQuery = parse(query || '');
   } catch (e) {
-    "development" !== 'production' && warn(false, e.message);
+    process.env.NODE_ENV !== 'production' && warn(false, e.message);
     parsedQuery = {};
   }
   for (var key in extraQuery) {
@@ -1096,7 +1090,7 @@ function fillParams (
       (regexpCompileCache[path] = pathToRegexp_1.compile(path));
     return filler(params || {}, { pretty: true })
   } catch (e) {
-    {
+    if (process.env.NODE_ENV !== 'production') {
       warn(false, ("missing param for " + routeMsg + ": " + (e.message)));
     }
     return ''
@@ -1148,7 +1142,7 @@ function addRouteRecord (
 ) {
   var path = route.path;
   var name = route.name;
-  {
+  if (process.env.NODE_ENV !== 'production') {
     assert(path != null, "\"path\" is required in a route configuration.");
     assert(
       typeof route.component !== 'string',
@@ -1190,7 +1184,7 @@ function addRouteRecord (
     // Warn if route is named, does not redirect and has a default child route.
     // If users navigate to this route by name, the default child will
     // not be rendered (GH Issue #629)
-    {
+    if (process.env.NODE_ENV !== 'production') {
       if (route.name && !route.redirect && route.children.some(function (child) { return /^\/?$/.test(child.path); })) {
         warn(
           false,
@@ -1239,7 +1233,7 @@ function addRouteRecord (
   if (name) {
     if (!nameMap[name]) {
       nameMap[name] = record;
-    } else if ("development" !== 'production' && !matchAs) {
+    } else if (process.env.NODE_ENV !== 'production' && !matchAs) {
       warn(
         false,
         "Duplicate named routes definition: " +
@@ -1251,7 +1245,7 @@ function addRouteRecord (
 
 function compileRouteRegex (path, pathToRegexpOptions) {
   var regex = pathToRegexp_1(path, [], pathToRegexpOptions);
-  {
+  if (process.env.NODE_ENV !== 'production') {
     var keys = Object.create(null);
     regex.keys.forEach(function (key) {
       warn(!keys[key.name], ("Duplicate param keys in route with path: \"" + path + "\""));
@@ -1294,7 +1288,7 @@ function normalizeLocation (
     } else if (current.matched.length) {
       var rawPath = current.matched[current.matched.length - 1].path;
       next.path = fillParams(rawPath, params, ("path " + (current.path)));
-    } else {
+    } else if (process.env.NODE_ENV !== 'production') {
       warn(false, "relative params navigation requires a current route.");
     }
     return next
@@ -1358,7 +1352,7 @@ function createMatcher (
 
     if (name) {
       var record = nameMap[name];
-      {
+      if (process.env.NODE_ENV !== 'production') {
         warn(record, ("Route with name '" + name + "' does not exist"));
       }
       if (!record) { return _createRoute(null, location) }
@@ -1410,7 +1404,7 @@ function createMatcher (
     }
 
     if (!redirect || typeof redirect !== 'object') {
-      {
+      if (process.env.NODE_ENV !== 'production') {
         warn(
           false, ("invalid redirect option: " + (JSON.stringify(redirect)))
         );
@@ -1431,7 +1425,7 @@ function createMatcher (
     if (name) {
       // resolved named direct
       var targetRecord = nameMap[name];
-      {
+      if (process.env.NODE_ENV !== 'production') {
         assert(targetRecord, ("redirect failed: named route \"" + name + "\" not found."));
       }
       return match({
@@ -1454,7 +1448,7 @@ function createMatcher (
         hash: hash
       }, undefined, location)
     } else {
-      {
+      if (process.env.NODE_ENV !== 'production') {
         warn(false, ("invalid redirect option: " + (JSON.stringify(redirect))));
       }
       return _createRoute(null, location)
@@ -1559,7 +1553,7 @@ function handleScroll (
     return
   }
 
-  {
+  if (process.env.NODE_ENV !== 'production') {
     assert(typeof behavior === 'function', "scrollBehavior must be a function");
   }
 
@@ -1576,7 +1570,7 @@ function handleScroll (
       shouldScroll.then(function (shouldScroll) {
         scrollToPosition((shouldScroll), position);
       }).catch(function (err) {
-        {
+        if (process.env.NODE_ENV !== 'production') {
           assert(false, err.toString());
         }
       });
@@ -1766,7 +1760,7 @@ function resolveAsyncComponents (matched) {
 
         var reject = once(function (reason) {
           var msg = "Failed to resolve async component " + key + ": " + reason;
-          "development" !== 'production' && warn(false, msg);
+          process.env.NODE_ENV !== 'production' && warn(false, msg);
           if (!error) {
             error = isError(reason)
               ? reason
@@ -2456,7 +2450,7 @@ var VueRouter = function VueRouter (options) {
       this.history = new AbstractHistory(this, options.base);
       break
     default:
-      {
+      if (process.env.NODE_ENV !== 'production') {
         assert(false, ("invalid mode: " + mode));
       }
   }
@@ -2479,7 +2473,7 @@ prototypeAccessors.currentRoute.get = function () {
 VueRouter.prototype.init = function init (app /* Vue component instance */) {
     var this$1 = this;
 
-  "development" !== 'production' && assert(
+  process.env.NODE_ENV !== 'production' && assert(
     install.installed,
     "not installed. Make sure to call `Vue.use(VueRouter)` " +
     "before creating root instance."
@@ -2626,6 +2620,4 @@ if (inBrowser && window.Vue) {
   window.Vue.use(VueRouter);
 }
 
-return VueRouter;
-
-})));
+export default VueRouter;
