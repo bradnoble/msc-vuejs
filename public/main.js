@@ -35,9 +35,192 @@ Vue.component('app-navbar', {
 * LOCAL components (registered w/ routes)
 */
 
-// third child of list
-const emails = {
-  template: '#emails',
+const home = {
+  template: '#home-template',
+  data() {
+    return {
+    }
+  },
+  created() {
+    document.title = 'MSC';
+  },
+  mounted: function () {
+  },
+  methods: {
+  }
+}
+
+// Member intro (first child of list)
+const memberIntro = {
+  template: '#member-intro',
+  props: [
+    'searchstring',
+    'timer',
+    'statuses'
+  ],
+  methods: {
+    // this was helpful for talking from a child to a parent
+    // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
+    // also this https://laracasts.com/discuss/channels/vue/how-to-catch-a-childs-emit-in-the-parent-with-vue/replies/289920
+    searchfromchild: function (e) {
+      this.$emit('searched', this.searchstring)
+      e.preventDefault();
+    }
+  }
+}
+
+// Member search (second child of list)
+const memberSearch = {
+  template: '#member-results',
+  props: [
+    'searchstring',
+    'timer',
+    'statuses'
+  ],
+  data: function () {
+    return {
+      items: [],
+      loading: false
+    }
+  },
+  mounted: function () {
+    this.loading = true;
+    this.search();
+//    this.facetedSearch();
+  },
+  updated: function () {
+    M.updateTextFields();
+    $('.dropdown-trigger').dropdown();
+  },
+  watch: {
+    '$route'(to, from) {
+      this.loading = true;
+      this.search();
+      // this.facetedSearch();
+    }
+  },
+  methods: {
+    clearfromchild: function () {
+      this.searchstring = '';
+      this.$router.push({ name: 'members-status', params: { status: 'all' } });
+    },
+    onNameSearch: function (e) {
+      let _this = this;
+      _this.items = [];
+
+      if (this.timer) {
+        clearTimeout(this.timer);
+        this.timer = null;
+      }
+      this.timer = setTimeout(() => {
+        this.$emit('searched', _this.searchstring)
+      }, 500);
+
+      e.preventDefault();
+    },
+    search:function(){
+      if (this.$route.params.status) {
+        this.statusSearch(this.$route.params.status);
+      } else if (this.$route.query.q) {
+        this.nameSearch(this.$route.query.q);
+      }
+    },
+    statusSearch: function (status) {
+      let _this = this;
+
+      if (status) {
+        this.$http.get('/api/members/status/' + status)
+          .then(
+            function (res) {
+              _this.items = res.data.docs;
+              _this.loading = false;
+            }
+          );
+      } else {
+        _this.items = [];
+        return;
+      }
+
+      //      this.$http.get('/api/search/status/all', {params:{status:'test'}})
+    },
+    nameSearch: function (name) {
+      let _this = this;
+
+      if (name) {
+        this.$http.get('/api/members?name=' + name)
+          .then(
+            function (res) {
+              _this.items = res.data.docs;
+              _this.loading = false;
+            }
+          );
+      } else {
+        _this.items = [];
+        return;
+      }
+
+    }
+    // facetedSearch: function () {
+    //   let _this = this;
+    //   _this.items = [];
+
+    //   var params = {};
+    //   if (_this.$route.params.status) {
+    //     params.status = _this.$route.params.status;
+    //     _this.searchstring = '';
+    //   } else if (_this.$route.query.q) {
+    //     params.q = _this.$route.query.q;
+    //   }
+
+    //   //      this.$http.get('/api/search/status/all', {params:{status:'test'}})
+    //   this.$http.get('/api/members/status/all')
+    //     .then(
+    //       function (resp) {
+    //         _this.items = resp.data.docs;
+    //         _this.loading = false;
+    //       }
+    //     );
+    //   // this.$http.get('/search/status', params)
+    //   // .then(
+    //   //   function (resp) {
+    //   //     _this.items = resp.data.docs;
+    //   //     _this.loading = false;
+    //   //   }
+    //   // );
+    // }
+  }
+};
+
+// Members (parent controller of search, emails, downloads)
+const members = {
+  template: '#members',
+  data: function () {
+    return {
+      searchstring: '',
+      timer: null,
+      statuses: []
+    }
+  },
+  created: function () {
+    var blacklist = ['deceased'];
+    this.statuses = getStatuses(blacklist);
+  },
+  methods: {
+    search: function (event) {
+      // console.log('hi from the child', event);
+      this.searchstring = event;
+      if (this.searchstring.length > 0) {
+        this.$router.push({ name: 'member-name', params: {}, query: { q: this.searchstring } });
+      } else {
+        this.$router.push({ name: 'member-status', params: { status: 'all' } });
+      }
+    }
+  }
+}
+
+// Member emails (third child of list)
+const memberEmails = {
+  template: '#member-emails',
   props: [
     'statuses'
   ],
@@ -159,166 +342,7 @@ const emails = {
   }
 };
 
-// second child of list
-const facets = {
-  template: '#results',
-  props: [
-    'searchstring',
-    'timer',
-    'statuses'
-  ],
-  data: function () {
-    return {
-      items: [],
-      loading: false
-    }
-  },
-  mounted: function () {
-    this.loading = true;
-    this.facetedSearch();
-  },
-  updated: function () {
-    M.updateTextFields();
-    $('.dropdown-trigger').dropdown();
-  },
-  watch: {
-    '$route'(to, from) {
-      this.loading = true;
-      this.facetedSearch();
-    }
-  },
-  methods: {
-    clearfromchild: function () {
-      this.searchstring = '';
-      this.$router.push({ name: 'members-status', params: { status: 'all' } });
-    },
-    searchfromchild: function (e) {
-      let _this = this;
-      _this.items = [];
-
-      if (this.timer) {
-        clearTimeout(this.timer);
-        this.timer = null;
-      }
-      this.timer = setTimeout(() => {
-        this.$emit('searched', _this.searchstring)
-      }, 500);
-
-      e.preventDefault();
-    },
-    statusSearch: function () {
-      let _this = this;
-
-      if (_this.$route.params.status) {
-        this.$http.get('/api/members/status/'+  _this.$route.params.status)
-        .then(
-          function (resp) {
-            _this.items = resp.data.docs;
-            _this.loading = false;
-          }
-        );
-      } else {
-        _this.items = [];
-        return;
-      }
-
-      //      this.$http.get('/api/search/status/all', {params:{status:'test'}})
-    },
-    nameSearch: function () {
-
-    },
-    facetedSearch: function () {
-      let _this = this;
-      _this.items = [];
-
-      var params = {};
-      if (_this.$route.params.status) {
-        params.status = _this.$route.params.status;
-        _this.searchstring = '';
-      } else if (_this.$route.query.q) {
-        params.q = _this.$route.query.q;
-      }
-
-      //      this.$http.get('/api/search/status/all', {params:{status:'test'}})
-      this.$http.get('/api/members/status/all')
-        .then(
-          function (resp) {
-            _this.items = resp.data.docs;
-            _this.loading = false;
-          }
-        );
-      // this.$http.get('/search/status', params)
-      // .then(
-      //   function (resp) {
-      //     _this.items = resp.data.docs;
-      //     _this.loading = false;
-      //   }
-      // );
-    }
-  }
-};
-
-const home = {
-  template: '#home-template',
-  data() {
-    return {
-    }
-  },
-  created() {
-    document.title = 'MSC';
-  },
-  mounted: function () {
-  },
-  methods: {
-  }
-}
-
-// parent controller of search, emails, downloads
-const members = {
-  template: '#list',
-  data: function () {
-    return {
-      searchstring: '',
-      timer: null,
-      statuses: []
-    }
-  },
-  created: function () {
-    var blacklist = ['deceased'];
-    this.statuses = getStatuses(blacklist);
-  },
-  methods: {
-    search: function (event) {
-      // console.log('hi from the child', event);
-      this.searchstring = event;
-      if (this.searchstring.length > 0) {
-        this.$router.push({ name: 'members-name', params: {}, query: { q: this.searchstring } });
-      } else {
-        this.$router.push({ name: 'members-status', params: { status: 'all' } });
-      }
-    }
-  }
-}
-
-// first child of list
-const listIntro = {
-  template: '#list-intro',
-  props: [
-    'searchstring',
-    'timer',
-    'statuses'
-  ],
-  methods: {
-    // this was helpful for talking from a child to a parent
-    // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
-    // also this https://laracasts.com/discuss/channels/vue/how-to-catch-a-childs-emit-in-the-parent-with-vue/replies/289920
-    searchfromchild: function (e) {
-      this.$emit('searched', this.searchstring)
-      e.preventDefault();
-    }
-  }
-}
-
+//Login controller
 const login = {
   template: '#login-template',
   created() {
@@ -329,6 +353,7 @@ const login = {
   }
 }
 
+//Logout controller
 const logout = {
   created: function () {
     this.logout();
@@ -341,9 +366,9 @@ const logout = {
 };
 
 /*
-* Resources: module (Google Drive)
+* Resources controller (Google Drive)
 */
-var resources = {
+const resources = {
   template: '#resources',
   data() {
     return {
@@ -369,7 +394,7 @@ var resources = {
     start: function () {
       if (!this.isLoading) {
         this.isLoading = true;
-        this.$http.get('/resources')
+        this.$http.get('/api/resources')
           .then((res) => {
             this.path.push({ name: 'MSC Drive', id: '-1' });
             this.files = res.data;
@@ -384,7 +409,7 @@ var resources = {
       if (file.mimeType.includes('folder') && !this.isLoading && (this.folderId != file.id)) {
         this.isLoading = true;
         this.folderId = file.id;
-        this.$http.get('/resources/' + file.id)
+        this.$http.get('/api/resources/' + file.id)
           .then((res) => {
             _this.path.push({ name: file.name, id: file.id });
             _this.files = res.data;
@@ -403,7 +428,7 @@ var resources = {
 
       const _this = this;
 
-      this.$http.get('/resources/view/' + file.id)
+      this.$http.get('/api/resources/pdf/' + file.id)
         .then((res) => {
           console.log('Response back w/ PDF data');
 
@@ -448,7 +473,7 @@ var resources = {
       iFrame.height = iFrame.contentWindow.document.body.scrollHeight;
     },
     onFileDownload: function (file, event) {
-      window.open('/resources/download/' + file.id);
+      window.open('/api/resources/download/' + file.id);
     },
     onBreadcrumb: function (id, event) {
       const _this = this;
@@ -456,7 +481,7 @@ var resources = {
       if (!this.isLoading && (this.folderId != id)) {
         this.isLoading = true;
         this.folderId = id;
-        this.$http.get('/resources/' + id)
+        this.$http.get('/api/resources/' + id)
           .then((res) => {
             //Remove all folders below the selected one
             const index = _this.path.map(function (x) { return x.id; }).indexOf(id);

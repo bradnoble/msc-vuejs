@@ -25,26 +25,26 @@ function getVueRouter() {
       children: [
         {
           path: '',
-          name: 'list',
-          component: listIntro,
+          name: 'member-intro',
+          component: memberIntro,
           props: true
         },
         {
           path: 'search/status/:status',
-          name: 'members-status',
-          component: facets,
+          name: 'member-status',
+          component: memberSearch,
           props: true
         },
         {
           path: 'search',
-          name: 'members-name',
-          component: facets,
+          name: 'member-name',
+          component: memberSearch,
           props: true
         },
         {
           path: 'emails',
-          name: 'emails',
-          component: emails,
+          name: 'member-emails',
+          component: memberEmails,
           props: true
         }
       ],

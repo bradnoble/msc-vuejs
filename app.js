@@ -71,10 +71,12 @@ passport.use(new LocalStrategy(
   }
 ));
 
+//Serializes user info to cookie
 passport.serializeUser(function (user, done) {
   done(null, user.id);
 });
 
+//Deserializes user info to cookie
 passport.deserializeUser(function (id, done) {
   authentication.users.findById(id, function (err, user) {
     if (user == null) {
@@ -138,106 +140,140 @@ gdrive.api.init();
 */
 
 /*
-* BEGIN List
+* BEGIN Members
 */
+
 app.get('/api/members/status/:statusId',
-  // authentication.users.isAuthenticated,
-  function (req, res) {
-    console.log('status=' + req.params);
-  }
-);
-
-
-app.get('/api/members/:name',
   authentication.users.isAuthenticated,
   function (req, res) {
-    console.log('test');
+    console.log('status=' + req.params.statusId);
+
+    if (req.params.statusId) {
+
+      let status = req.params.statusId.toLowerCase();
+
+      if (status === 'all') {
+        selector = {
+          "type": { "$eq": "person" },
+          "$nor": [
+            { "status": "deceased" },
+            { "status": "guest" },
+            { "status": "non-member" }
+          ]
+          // "sort": [
+          //   {
+          //     "last": "asc"
+          //   },
+          //   {
+          //     "first": "asc"
+          //   }
+          // ]
+        };
+      } else {
+        selector = {
+          "type": { "$eq": "person" },
+          "status": {
+            "$eq": status
+          }
+        };
+      }
+
+      db.find(
+        {
+          "selector": selector,
+          "fields": []
+        }, function (err, data) {
+          if (err) {
+            throw err;
+          }
+          res.send(data);
+        }
+      );
+    } else {
+      res.send();
+    }
   }
 );
 
-// app.get('/search',
-//   authentication.users.isAuthenticated,
-//   function (req, res) {
+app.get('/api/members',
+  authentication.users.isAuthenticated,
+  function (req, res) {
 
-//     var q = req.query.q,
-//       q_array = (q) ? q.split(' ') : null,
-//       status = req.query.status,
-//       cmb,
-//       a,
-//       selector = {}
-//       ;
+    console.log(req.query.name);
 
-//     if (status && status != 'all') {
-//       selector = {
-//         "status": {
-//           "$eq": status
-//         }
-//       };
-//     } else if (status && status == 'all') {
-//       selector = {
-//         "type": { "$eq": "person" },
-//         "$nor": [
-//           { "status": "deceased" },
-//           { "status": "guest" },
-//           { "status": "non-member" }
-//         ]
-//       };
-//     } else if (q) {
-//       console.log(q_array)
-//       if (q_array.length == 1) {
-//         selector = {
-//           "$or": [
-//             {
-//               "first": {
-//                 "$regex": "^(?i)" + q_array[0] + ".*"
-//               }
-//             },
-//             {
-//               "last": {
-//                 "$regex": "^(?i)" + q_array[0] + ".*"
-//               }
-//             }
-//           ]
-//         };
-//       } else {
-//         selector = {
-//           "$or": [
-//             {
-//               "$and": [
-//                 { "first": { "$regex": "^(?i)" + q_array[0] + ".*" } },
-//                 { "last": { "$regex": "^(?i)" + q_array[q_array.length - 1] + ".*" } }
-//               ]
-//             },
-//             {
-//               "$and": [
-//                 { "first": { "$regex": "^(?i)" + q_array[q_array.length - 1] + ".*" } },
-//                 { "last": { "$regex": "^(?i)" + q_array[0] + ".*" } }
-//               ]
-//             }
-//           ]
-//         };
-//       }
-//     }
+    if (req.query.name) {
 
-//     db.find(
-//       {
-//         "selector": selector,
-//         "fields": []
-//       }, function (err, data) {
-//         if (err) {
-//           throw err;
-//         }
-//         res.send(data)
-//       }
-//     );
+      let nameList = req.query.name;
 
-//     /*/
-//     // use js-combinatorics to create array combinations for the query
-//     cmb = Combinatorics.permutationCombination(q_array);
-//     var combos = cmb.toArray();
-//     /*/
-//   }
-// );
+      if (!Array.isArray(nameList)) {
+        //Case insensitive match on name
+        selector = {
+          // "type": { "$eq": "person" },
+          "$or": [
+            {
+              "first": {
+                "$regex": "^(?i)" + nameList + "*"
+              }
+            },
+            {
+              "last": {
+                "$regex": "^(?i)" + nameList + "*"
+              }
+            }
+          ]
+          // "sort": [
+          //   {
+          //     "last": "asc"
+          //   },
+          //   {
+          //     "first": "asc"
+          //   }
+          // ]
+        };
+      } else {
+        selector = {
+          "type": { "$eq": "person" },
+          "$or": [
+            {
+              "$and": [
+                { "first": { "$regex": "^(?i)" + nameList[0] + ".*" } },
+                { "last": { "$regex": "^(?i)" + nameList[nameList.length - 1] + "*" } }
+              ]
+            },
+            {
+              "$and": [
+                { "first": { "$regex": "^(?i)" + nameList[nameList.length - 1] + "*" } },
+                { "last": { "$regex": "^(?i)" + nameList[0] + "*" } }
+              ]
+            }
+          ]
+          // "sort": [
+          //   {
+          //     "last": "asc"
+          //   },
+          //   {
+          //     "first": "asc"
+          //   }
+          // ]
+        };
+      }
+
+      db.find(
+        {
+          "selector": selector,
+          "fields": []
+        }, function (err, data) {
+          if (err) {
+            throw err;
+          }
+          res.send(data)
+        }
+      );
+    } else {
+      res.send();
+    }
+  }
+);
 
 app.get('/list',
   authentication.users.isAuthenticated,
@@ -495,7 +531,7 @@ app.get('/getHousehold/',
   });
 
 /*
-* END List
+* END Members
 */
 
 /*
@@ -807,7 +843,7 @@ app.post('/update', jsonParser, function (req, res) {
 */
 
 //Displays root folders from MSC Google Drive
-app.get('/resources',
+app.get('/api/resources',
   authentication.users.isAuthenticated,
   (req, res) => {
     gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
@@ -817,7 +853,7 @@ app.get('/resources',
   });
 
 // Download Google Drive file
-app.get('/resources/download/:id',
+app.get('/api/resources/download/:id',
   authentication.users.isAuthenticated,
   (req, res) => {
 
@@ -844,7 +880,7 @@ app.get('/resources/download/:id',
   });
 
 //Export file
-app.get('/resources/export/:id',
+app.get('/api/resources/export/:id',
   authentication.users.isAuthenticated,
   (req, res) => {
 
@@ -879,7 +915,9 @@ app.get('/resources/export/:id',
   });
 
 // Resources: Endpoint for retrieving list of GDrive metadata for a folder
-app.get('/resources/:folderId', (req, res) => {
+app.get('/api/resources/:folderId', 
+authentication.users.isAuthenticated,
+(req, res) => {
 
   gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
@@ -894,7 +932,9 @@ app.get('/resources/:folderId', (req, res) => {
 });
 
 //Resources: Endpoint for retrieving list of GDrive metadata based upon search text
-app.get('/resources/search/:searchText', (req, res) => {
+app.get('/api/resources/search/:searchText', 
+authentication.users.isAuthenticated,
+(req, res) => {
 
   gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
@@ -909,7 +949,9 @@ app.get('/resources/search/:searchText', (req, res) => {
 });
 
 //Resources: Endpoint for retrieving Base64 file content
-app.get('/resources/view/:id', (req, res) => {
+app.get('/api/resources/pdf/:id', 
+authentication.users.isAuthenticated,
+(req, res) => {
 
   gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 

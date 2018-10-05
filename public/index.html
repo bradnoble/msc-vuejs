@@ -51,7 +51,7 @@
             <img src="img/MSC_Logo_60X60.png">
           </a>
           <ul id="nav-mobile" class="right hide-on-med-and-down">
-            <router-link :to="{name:'list'}" tag="li">
+            <router-link :to="{name:'member-intro'}" tag="li">
               <a>Membership List</a>
             </router-link>
             <router-link to="/resources" tag="li">
@@ -158,13 +158,13 @@
   <!-- MEMBERSHIP LIST VIEWS -->
 
   <!-- parent list view -->
-  <script type="text/x-template" id="list">
+  <script type="text/x-template" id="members">
     <div>
       <router-view @searched="search" :statuses="statuses" :searchstring="searchstring"></router-view>
     </div>
   </script>
 
-  <script type="text/x-template" id="list-intro">
+  <script type="text/x-template" id="member-intro">
     <div>
       <h5>
         Membership List
@@ -182,7 +182,7 @@
         Search by type:
       </p>
       <div class="row">
-        <router-link :to="{name:'members-status', params:{ status:status }}" v-for="status in statuses" class="btn col m3 s12 center">
+        <router-link :to="{name:'member-status', params:{ status:status }}" v-for="status in statuses" class="btn col m3 s12 center">
           {{ status }}
         </router-link>
       </div>
@@ -193,7 +193,7 @@
   </script>
 
   <!--search results, child of list-->
-  <script type="text/x-template" id="results">
+  <script type="text/x-template" id="member-results">
   <div>
     <h5>
       <router-link :to="{name: 'list'}">Membership List</router-link> / Search
@@ -203,7 +203,7 @@
         <i class="material-icons" v-if="searchstring" v-on:click="clearfromchild" title="clear the search input">clear</i>
         <i class="material-icons" v-if="!searchstring" title="search">search</i>
       </span>
-      <input id="search" v-model="searchstring" @keyup="searchfromchild" type="text" />
+      <input id="search" v-model="searchstring" @keyup="onNameSearch" type="text" />
       <label for="search">Search by name</label>
     </div>
 
@@ -213,13 +213,13 @@
           Search by type
         </p>
         <div class="collection facets">
-          <router-link :to="{name:'members-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
+          <router-link :to="{name:'member-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
             all
             <span class="secondary-content" v-if="$route.params.status == 'all'">
               <i class="material-icons">chevron_right</i>
             </span>
           </router-link>              
-          <router-link :to="{name:'members-status', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
+          <router-link :to="{name:'member-status', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
             {{ status }}
             <span class="secondary-content" v-if="$route.params.status == status">
               <i class="material-icons">chevron_right</i>
@@ -286,7 +286,7 @@
   </script>
 
   <!-- second child of list view -->
-  <script type="text/x-template" id="emails">
+  <script type="text/x-template" id="member-emails">
     <div>
       <h6>
         <router-link :to="{name: 'list'}">Membership List</router-link> / Emails
