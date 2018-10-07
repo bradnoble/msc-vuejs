@@ -57,34 +57,32 @@ app.use(flash());
 let authentication = require('authentication');
 
 passport.use(new LocalStrategy(
-  function (username, password, done) {
+  function (username, password, callback) {
     authentication.users.exists(username, function (err, user) {
-      if (err) { return done(err); }
+      if (err) { return callback(err); }
       if (!user) {
-        return done(null, false, { message: 'Incorrect username.' });
+        return callback(null, false, { message: 'Incorrect username' });
       }
       if (!user.password == password) {
-        return done(null, false, { message: 'Incorrect password.' });
+        return callback(null, false, { message: 'Incorrect password' });
       }
-      return done(null, user);
+      return callback(null, user);
     });
   }
 ));
 
 //Serializes user info to cookie
-passport.serializeUser(function (user, done) {
-  done(null, user.id);
+passport.serializeUser(function (user, callback) {
+  callback(null, user.id);
 });
 
-//Deserializes user info to cookie
-passport.deserializeUser(function (id, done) {
+//Deserializes user info from cookie
+passport.deserializeUser(function (id, callback) {
   authentication.users.findById(id, function (err, user) {
-    if (user == null) {
-
-    } else {
+    if (user) {
       delete user.password;
-      done(err, user);
     }
+    callback(err, user);
   });
 });
 
@@ -275,7 +273,7 @@ app.get('/api/members',
   }
 );
 
-app.get('/list',
+app.get('/household',
   authentication.users.isAuthenticated,
   function (req, res) {
     //db.view(designname, viewname, [params], [callback])
@@ -314,7 +312,7 @@ app.get('/list',
   }
 );
 
-app.get('/getEmails',
+app.get('/api/member/emails',
   authentication.users.isAuthenticated,
   function (req, res) {
 
@@ -348,11 +346,10 @@ app.get('/getEmails',
   }
 );
 
-app.get('/getPeopleForCSV',
+app.get('/api/member/csv',
   authentication.users.isAuthenticated,
   function (req, res) {
-    var role = req.user.role[0].value;
-    if (role === 'admin') {
+    if (authentication.users.isInRole(req, 'adimn')) {
       var households = {},
         people = [],
         filename = '',
@@ -488,15 +485,12 @@ app.get('/getPerson/',
   }
 );
 
-app.get('/getHousehold/',
+app.get('/household/:id',
   authentication.users.isAuthenticated,
   function (req, res) {
-    var role = req.user.role[0].value;
     // both admins and members can see these results
-    if (role) {
-      // the factory passes the id of the document as a query parameter
-      var id = req.query.id;
-      db.get(id, function (err, doc) {
+    if (authentication.users.isInRole(req, 'adimn,member')) {
+      db.get(req.params.id, function (err, doc) {
         if (!err) {
           // get the people of this householdsAndPeople
           db.view(
@@ -504,7 +498,7 @@ app.get('/getHousehold/',
             'join_people_to_household',
             {
               'include_docs': true,
-              'key': id
+              'key': req.params.id
             },
             function (err, people) {
               if (!err) {
@@ -526,7 +520,7 @@ app.get('/getHousehold/',
         }
       });
     } else {
-      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
+      return res.status(401).json({ "error": "Sorry, you don't have permission to access households." });
     }
   });
 
@@ -915,65 +909,65 @@ app.get('/api/resources/export/:id',
   });
 
 // Resources: Endpoint for retrieving list of GDrive metadata for a folder
-app.get('/api/resources/:folderId', 
-authentication.users.isAuthenticated,
-(req, res) => {
+app.get('/api/resources/:folderId',
+  authentication.users.isAuthenticated,
+  (req, res) => {
 
-  gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
-  if (req.params.folderId !== undefined) {
-    gdrive.api.listFilesByFolder(req.params.folderId, (files) => {
-      res.send(files);
-    });
-  } else {
-    res.send(null);
-  }
+    if (req.params.folderId !== undefined) {
+      gdrive.api.listFilesByFolder(req.params.folderId, (files) => {
+        res.send(files);
+      });
+    } else {
+      res.send(null);
+    }
 
-});
+  });
 
 //Resources: Endpoint for retrieving list of GDrive metadata based upon search text
-app.get('/api/resources/search/:searchText', 
-authentication.users.isAuthenticated,
-(req, res) => {
+app.get('/api/resources/search/:searchText',
+  authentication.users.isAuthenticated,
+  (req, res) => {
 
-  gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
-  if (req.params.searchText !== undefined) {
-    gdrive.api.findFiles(req.params.search, (files) => {
-      res.send(files);
-    });
-  } else {
-    res.send(null);
-  }
+    if (req.params.searchText !== undefined) {
+      gdrive.api.findFiles(req.params.search, (files) => {
+        res.send(files);
+      });
+    } else {
+      res.send(null);
+    }
 
-});
+  });
 
 //Resources: Endpoint for retrieving Base64 file content
-app.get('/api/resources/pdf/:id', 
-authentication.users.isAuthenticated,
-(req, res) => {
+app.get('/api/resources/pdf/:id',
+  authentication.users.isAuthenticated,
+  (req, res) => {
 
-  gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
 
-  if (req.params.id !== undefined) {
-    res.writeHead(200, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'X-Requested-With',
-      'Content-Type': 'application/pdf'
-    });
+    if (req.params.id !== undefined) {
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'X-Requested-With',
+        'Content-Type': 'application/pdf'
+      });
 
-    gdrive.api.getFileBase64(req.params.id, res, () => {
+      gdrive.api.getFileBase64(req.params.id, res, () => {
 
-      console.log('Base64 file sent in response');
-      res.send();
+        console.log('Base64 file sent in response');
+        res.send();
+        res.end();
+
+      });
+    } else {
       res.end();
+    }
 
-    });
-  } else {
-    res.end();
-  }
-
-});
+  });
 
 /*
 * END Resources

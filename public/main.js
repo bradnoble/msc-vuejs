@@ -35,6 +35,30 @@ Vue.component('app-navbar', {
 * LOCAL components (registered w/ routes)
 */
 
+//Login controller
+const login = {
+  template: '#login-template',
+  created() {
+    document.title = 'MSC - Login';
+  },
+  mounted: function () {
+    $('#username').focus();
+  }
+}
+
+//Logout controller
+const logout = {
+  created: function () {
+    this.logout();
+  },
+  methods: {
+    logout: function () {
+      this.$router.push('/login')
+    }
+  }
+};
+
+//Home controller
 const home = {
   template: '#home-template',
   data() {
@@ -50,7 +74,7 @@ const home = {
   }
 }
 
-// Member intro (first child of list)
+// Member intro controller (first child of list)
 const memberIntro = {
   template: '#member-intro',
   props: [
@@ -69,7 +93,7 @@ const memberIntro = {
   }
 }
 
-// Member search (second child of list)
+// Member search controller (second child of list)
 const memberSearch = {
   template: '#member-results',
   props: [
@@ -191,7 +215,7 @@ const memberSearch = {
   }
 };
 
-// Members (parent controller of search, emails, downloads)
+// Members controller (parent controller of search, emails, downloads)
 const members = {
   template: '#members',
   data: function () {
@@ -218,7 +242,7 @@ const members = {
   }
 }
 
-// Member emails (third child of list)
+// Member emails controller (third child of list)
 const memberEmails = {
   template: '#member-emails',
   props: [
@@ -308,7 +332,7 @@ const memberEmails = {
         // console.log('already an object:', params.statuses)
       }
 
-      this.$http.get('/getEmails', params)
+      this.$http.get('/api/member/emails', params)
         .then(
           function (resp) {
             var data = resp.data.rows;
@@ -342,25 +366,62 @@ const memberEmails = {
   }
 };
 
-//Login controller
-const login = {
-  template: '#login-template',
-  created() {
-    document.title = 'MSC - Login';
+const memberHousehold = {
+  template: '#member-household',
+  data: function () {
+    return {
+      item: {},
+      back: ''
+    }
+  },
+  beforeRouteEnter: function (to, from, next) {
+    // conditional back button
+    // helpful reference about how to use next(): 
+    // https://medium.com/@allenhwkim/resolving-before-route-vuejs-d319b27576c3
+    next(vm => {
+      if (from.fullPath == '/') {
+        vm.back = {
+          name: 'member-intro'
+        };
+      } else {
+        vm.back = {
+          name: from.name,
+          params: from.params,
+          query: from.query
+        };
+      }
+    });
   },
   mounted: function () {
-    $('#username').focus();
-  }
-}
-
-//Logout controller
-const logout = {
-  created: function () {
-    this.logout();
+    this.start();
+  },
+  updated: function () {
+    console.log(this.back)
   },
   methods: {
-    logout: function () {
-      this.$router.push('/login')
+    setPageTitle: function () {
+      document.title = (this.item.name) ? this.item.name : 'View Household';
+    },
+    start: function () {
+      _this = this;
+      this.$http.get('/household/'+ this.$route.params.id)
+        .then(function (resp) {
+          // console.log('start', resp)        
+          _this.item = resp.data;
+          _this.setPageTitle();
+        },
+          function (error) {
+            _this.item = {
+              name: 'sorry!'
+            }
+          }
+        );
+    }
+  },
+  watch: {
+    '$route'(to, from) {
+      console.log('$route', to, from)
+      this.start();
     }
   }
 };
@@ -509,69 +570,6 @@ const resources = {
 
   }
 }
-
-const viewHousehold = {
-  template: '#view-household',
-  data: function () {
-    return {
-      item: {},
-      back: ''
-    }
-  },
-  beforeRouteEnter: function (to, from, next) {
-    // conditional back button
-    // helpful reference about how to use next(): 
-    // https://medium.com/@allenhwkim/resolving-before-route-vuejs-d319b27576c3
-    next(vm => {
-      if (from.fullPath == '/') {
-        vm.back = {
-          name: 'list'
-        };
-      } else {
-        vm.back = {
-          name: from.name,
-          params: from.params,
-          query: from.query
-        };
-      }
-    });
-  },
-  mounted: function () {
-    this.start();
-  },
-  updated: function () {
-    console.log(this.back)
-  },
-  methods: {
-    setPageTitle: function () {
-      document.title = (this.item.name) ? this.item.name : 'View Household';
-    },
-    start: function () {
-      _this = this;
-      this.$http.get('/getHousehold/',
-        {
-          id: this.$route.params.id
-        })
-        .then(function (resp) {
-          // console.log('start', resp)        
-          _this.item = resp.data;
-          _this.setPageTitle();
-        },
-          function (error) {
-            _this.item = {
-              name: 'sorry!'
-            }
-          }
-        );
-    }
-  },
-  watch: {
-    '$route'(to, from) {
-      console.log('$route', to, from)
-      this.start();
-    }
-  }
-};
 
 /*
 * ADMIN COMPONENTS

@@ -187,7 +187,7 @@
         </router-link>
       </div>
       <p>
-        Or, <router-link :to="{name:'emails'}">grab email addresses</router-link> to blast email groups of people.
+        Or, <router-link :to="{name:'member-emails'}">grab email addresses</router-link> to blast email groups of people.
       </p>
     </div>
   </script>
@@ -196,7 +196,7 @@
   <script type="text/x-template" id="member-results">
   <div>
     <h5>
-      <router-link :to="{name: 'list'}">Membership List</router-link> / Search
+      <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Search
     </h5>
     <div class="input-field">
       <span class="prefix">
@@ -241,15 +241,15 @@
               <!-- Dropdown Structure -->
             <ul id="actions" class="dropdown-content">
               <li>
-                <a v-bind:href="'/getPeopleForCSV?status=' + $route.params.status">
+                <a v-bind:href="'/api/member/csv?status=' + $route.params.status">
                   <i class="material-icons">file_download</i> Download (CSV)
                 </a>
               </li>
               <li>
-                <router-link :to="{name: 'emails', query: {status: $route.params.status }}" v-if="$route.params.status != 'all'">
+                <router-link :to="{name: 'member-emails', query: {status: $route.params.status }}" v-if="$route.params.status != 'all'">
                   <i class="material-icons">email</i> Get emails for {{ $route.params.status }}(s)
                 </router-link>
-                <router-link v-else :to="{name: 'emails'}">
+                <router-link v-else :to="{name: 'member-emails'}">
                   <i class="material-icons">email</i> Get emails for all
                 </router-link>
               </li>
@@ -273,7 +273,7 @@
             <div class="col m1">
               <span class="secondary-content" v-if="item.household_id">
                 <!-- protected by v-if b/c https://github.com/vuejs/vue-router/issues/986 -->
-                <router-link :to="{ name: 'list-household', params: { id: item.household_id } }" title="view household" class="btn btn-flat btn-small waves-effect waves-teal teal-text">
+                <router-link :to="{ name: 'member-household', params: { id: item.household_id } }" title="View household" class="btn btn-flat btn-small waves-effect waves-teal teal-text">
                   <i class="material-icons tiny">home</i>
                 </router-link>  
               </span>
@@ -289,7 +289,7 @@
   <script type="text/x-template" id="member-emails">
     <div>
       <h6>
-        <router-link :to="{name: 'list'}">Membership List</router-link> / Emails
+        <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Emails
       </h6>      
       <div class="">
           <div class="row">
@@ -345,10 +345,10 @@
     </div>
   </script>
 
-  <script type="text/x-template" id="view-household">
+  <script type="text/x-template" id="member-household">
         <div>
           <h6>
-            <router-link :to="{name: 'list'}">Membership List</router-link> / {{ item.label_name }}
+            <router-link :to="{name: 'member-intro'}">Membership List</router-link> / {{ item.label_name }}
           </h6>
           <div class="card">
             <div class="card-content">

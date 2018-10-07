@@ -51,10 +51,10 @@ function getVueRouter() {
       meta: { requiresAuth: true }
     },
     {
-      name: 'list-household',
-      path: '/list/:id',
+      name: 'member-household',
+      path: '/household/:id',
       components: {
-        default: viewHousehold
+        default: memberHousehold
       },
       props: true,
       meta: { requiresAuth: true }
