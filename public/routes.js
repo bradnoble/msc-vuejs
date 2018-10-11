@@ -130,25 +130,27 @@ function getVueRouter() {
     linkExactActiveClass: 'active'
   });
 
-  // router.beforeEach((to, from, next) => {
-  //   //TEMP
-  //   next();
+  /*
+  * Evaluates router requests for authorization
+  */
+  router.beforeEach((to, from, next) => {
 
-  //   if (to.matched.some(record => record.meta.requiresAuth)) {
-  //     if (true) {
-  //       next({
-  //         path: '/login',
-  //         query: {
-  //           redirect: to.fullPath,
-  //         },
-  //       });
-  //     } else {
-  //       next();
-  //     }
-  //   } else {
-  //     next();
-  //   }
-  // })
+    //TEMP
+    return next();
+    
+    if (to.matched.some(record => record.meta.requiresAuth)) {
+      if (true) {
+        next({
+          path: '/login',
+          query: {redirect: to.fullPath},
+        });
+      } else {
+        next();
+      }
+    } else {
+      next();
+    }
+  })
 
   return router;
 }

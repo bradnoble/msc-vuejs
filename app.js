@@ -529,6 +529,147 @@ app.get('/household/:id',
 */
 
 /*
+* BEGIN Resources
+*/
+
+//Displays root folders from MSC Google Drive
+app.get('/api/resources',
+  authentication.users.isAuthenticated,
+  (req, res) => {
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+    gdrive.api.getRoot((files) => {
+      res.send(files);
+    });
+  });
+
+// Download Google Drive file
+app.get('/api/resources/download/:id',
+  authentication.users.isAuthenticated,
+  (req, res) => {
+
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+
+    if (req.params.id !== undefined) {
+
+      //Get file metadata w/ filename for d/l
+      // let fileName;
+      // gdrive.api.getFileMetaData(req.params.id, (metadata) => {
+      //   //Get file name from metadata
+      //   fileName = metadata.name;
+
+      //Get file contents and d/l
+      gdrive.api.getFile(req.params.id, res, () => {
+        res.send();
+        res.end();
+      });
+      // });
+    } else {
+      res.end();
+    }
+
+  });
+
+//Export file
+app.get('/api/resources/export/:id',
+  authentication.users.isAuthenticated,
+  (req, res) => {
+
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+
+    if (req.params.id !== undefined) {
+
+      //Get file metadata w/ filename for d/l
+      let fileName;
+      gdrive.api.getFileMetaData(req.params.id, (metadata) => {
+        fileName = metadata.name;
+
+        //Setup response for file d/l
+        res.writeHead(200, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'X-Requested-With',
+          'Content-Disposition': "attachment;filename='" + fileName + "'",
+          'Content-Type': 'application/pdf'
+        });
+
+        //Get file contents and d/l
+        gdrive.api.getFile(req.params.id, res, () => {
+          console.log(fileName + ' sent in response');
+          res.send();
+          res.end();
+        });
+      });
+    } else {
+      res.end();
+    }
+
+  });
+
+// Resources: Endpoint for retrieving list of GDrive metadata for a folder
+app.get('/api/resources/:folderId',
+  authentication.users.isAuthenticated,
+  (req, res) => {
+
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+
+    if (req.params.folderId !== undefined) {
+      gdrive.api.listFilesByFolder(req.params.folderId, (files) => {
+        res.send(files);
+      });
+    } else {
+      res.send(null);
+    }
+
+  });
+
+//Resources: Endpoint for retrieving list of GDrive metadata based upon search text
+app.get('/api/resources/search/:searchText',
+  authentication.users.isAuthenticated,
+  (req, res) => {
+
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+
+    if (req.params.searchText !== undefined) {
+      gdrive.api.findFiles(req.params.search, (files) => {
+        res.send(files);
+      });
+    } else {
+      res.send(null);
+    }
+
+  });
+
+//Resources: Endpoint for retrieving Base64 file content
+app.get('/api/resources/pdf/:id',
+  authentication.users.isAuthenticated,
+  (req, res) => {
+
+    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
+
+    if (req.params.id !== undefined) {
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'X-Requested-With',
+        'Content-Type': 'application/pdf'
+      });
+
+      gdrive.api.getFileBase64(req.params.id, res, () => {
+
+        console.log('Base64 file sent in response');
+        res.send();
+        res.end();
+
+      });
+    } else {
+      res.end();
+    }
+
+  });
+
+/*
+* END Resources
+*/
+
+/*
 * BEGIN Admin
 */
 
@@ -833,142 +974,16 @@ app.post('/update', jsonParser, function (req, res) {
 */
 
 /*
-* BEGIN Resources
+* BEGIN Utilities
 */
 
-//Displays root folders from MSC Google Drive
-app.get('/api/resources',
-  authentication.users.isAuthenticated,
-  (req, res) => {
-    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
-    gdrive.api.getRoot((files) => {
-      res.send(files);
-    });
-  });
-
-// Download Google Drive file
-app.get('/api/resources/download/:id',
-  authentication.users.isAuthenticated,
-  (req, res) => {
-
-    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
-
-    if (req.params.id !== undefined) {
-
-      //Get file metadata w/ filename for d/l
-      // let fileName;
-      // gdrive.api.getFileMetaData(req.params.id, (metadata) => {
-      //   //Get file name from metadata
-      //   fileName = metadata.name;
-
-      //Get file contents and d/l
-      gdrive.api.getFile(req.params.id, res, () => {
-        res.send();
-        res.end();
-      });
-      // });
-    } else {
-      res.end();
-    }
-
-  });
-
-//Export file
-app.get('/api/resources/export/:id',
-  authentication.users.isAuthenticated,
-  (req, res) => {
-
-    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
-
-    if (req.params.id !== undefined) {
-
-      //Get file metadata w/ filename for d/l
-      let fileName;
-      gdrive.api.getFileMetaData(req.params.id, (metadata) => {
-        fileName = metadata.name;
-
-        //Setup response for file d/l
-        res.writeHead(200, {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'X-Requested-With',
-          'Content-Disposition': "attachment;filename='" + fileName + "'",
-          'Content-Type': 'application/pdf'
-        });
-
-        //Get file contents and d/l
-        gdrive.api.getFile(req.params.id, res, () => {
-          console.log(fileName + ' sent in response');
-          res.send();
-          res.end();
-        });
-      });
-    } else {
-      res.end();
-    }
-
-  });
-
-// Resources: Endpoint for retrieving list of GDrive metadata for a folder
-app.get('/api/resources/:folderId',
-  authentication.users.isAuthenticated,
-  (req, res) => {
-
-    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
-
-    if (req.params.folderId !== undefined) {
-      gdrive.api.listFilesByFolder(req.params.folderId, (files) => {
-        res.send(files);
-      });
-    } else {
-      res.send(null);
-    }
-
-  });
-
-//Resources: Endpoint for retrieving list of GDrive metadata based upon search text
-app.get('/api/resources/search/:searchText',
-  authentication.users.isAuthenticated,
-  (req, res) => {
-
-    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
-
-    if (req.params.searchText !== undefined) {
-      gdrive.api.findFiles(req.params.search, (files) => {
-        res.send(files);
-      });
-    } else {
-      res.send(null);
-    }
-
-  });
-
-//Resources: Endpoint for retrieving Base64 file content
-app.get('/api/resources/pdf/:id',
-  authentication.users.isAuthenticated,
-  (req, res) => {
-
-    gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());
-
-    if (req.params.id !== undefined) {
-      res.writeHead(200, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'X-Requested-With',
-        'Content-Type': 'application/pdf'
-      });
-
-      gdrive.api.getFileBase64(req.params.id, res, () => {
-
-        console.log('Base64 file sent in response');
-        res.send();
-        res.end();
-
-      });
-    } else {
-      res.end();
-    }
-
-  });
+//Append user roles to response data
+function appendRoles(data) {
+  if (data) {
+    data.roles = authentication.users.roles;
+  }
+}
 
 /*
-* END Resources
+* END Utilities
 */

@@ -22,11 +22,16 @@ $(function () {
 Vue.component('app-navbar', {
   template: '#navbar-template',
   props: ['enabled'],
+  computed: {
+    roles() {
+      return this.$store.state.roles
+    }
+  },
   created: function () {
   },
   data: function () {
     return {
-      isEnabled: this.enabled
+      isEnabled: true //this.enabled
     }
   }
 });
@@ -110,7 +115,7 @@ const memberSearch = {
   mounted: function () {
     this.loading = true;
     this.search();
-//    this.facetedSearch();
+    //    this.facetedSearch();
   },
   updated: function () {
     M.updateTextFields();
@@ -142,7 +147,7 @@ const memberSearch = {
 
       e.preventDefault();
     },
-    search:function(){
+    search: function () {
       if (this.$route.params.status) {
         this.statusSearch(this.$route.params.status);
       } else if (this.$route.query.q) {
@@ -404,7 +409,7 @@ const memberHousehold = {
     },
     start: function () {
       _this = this;
-      this.$http.get('/household/'+ this.$route.params.id)
+      this.$http.get('/household/' + this.$route.params.id)
         .then(function (resp) {
           // console.log('start', resp)        
           _this.item = resp.data;
@@ -983,8 +988,23 @@ Vue.component('form-errors', {
 */
 const router = getVueRouter();
 
+/*
+* Vue application initialization
+*/
+
+Vue.use(Vuex);
+
+const store = new Vuex.Store({
+  state: {
+    roles: 'admin'
+  },
+  mutations: {
+  }
+})
+
 var vm = new Vue({
   el: '#app-container',
+  store,
   router,
   template: '#layout-template',
   data: function () {
@@ -993,3 +1013,4 @@ var vm = new Vue({
     }
   }
 })
+
