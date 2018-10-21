@@ -10,7 +10,8 @@ function getVueRouter() {
     {
       name: 'login',
       path: '/login',
-      component: login
+      component: login,
+      props: true
     },
     {
       name: 'logout',

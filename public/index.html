@@ -43,7 +43,8 @@
   </script>
 
   <script type="text/x-template" id="navbar-template">
-    <div v-show="roles.includes('admin')"  class="navbar-fixed">
+    <div v-show="true"  class="navbar-fixed">
+      <div>XXX {{roles}}XXX</div>
       <nav>
         <div class="nav-wrapper white black-text">
           <a href="/#" class="brand-logo">
@@ -75,32 +76,44 @@
   </script>
 
   <script type="text/x-template" id="login-template">
-      <div>
-        <h3>
-          Welcome
-        </h3>
-        <div class="row">
-          <div class="col m6 s12">
-            <p>The Montclair Ski Club, founded in 1947, is a tightly knit group of avid skiers and their families. Amid the fun of skiing, the club promotes a community atmosphere where cooperation and warm personal relationships are valued. On winter weekends at our 40-bed lodge at the base of Mad River Glen, we enjoy skiing, eating and socializing together. Outside of the ski season we also hold various social activities, in both New Jersey and Massachusetts.</p>
-            <p>Our 100 active members participate in the running of the club by serving on committees and boards and by helping to maintain the lodge. MSC is a member of the New Jersey Ski Council and encourages its members to participate in its activities.</p>
+          <div>
+            <div class="col">
+              <div class="row">
+                  <h3 class="center-align">Welcome</h3>
           </div>
-          <div class="col m6 s12">
-            <form action="/login" method="post">
-              <div>
-                  <label>Username:</label>
-                  <input type="text" id="username" name="username"/>
+          </div>
+            <div class="row">
+              <div class="col m6 s12">
+                <p>The Montclair Ski Club, founded in 1947, is a tightly knit group of avid skiers and their families. Amid the fun of skiing, the club promotes a community atmosphere where cooperation and warm personal relationships are valued. On winter weekends at our 40-bed lodge at the base of Mad River Glen, we enjoy skiing, eating and socializing together. Outside of the ski season we also hold various social activities, in both New Jersey and Massachusetts.</p>
+                <p>Our 100 active members participate in the running of the club by serving on committees and boards and by helping to maintain the lodge. MSC is a member of the New Jersey Ski Council and encourages its members to participate in its activities.</p>
               </div>
-              <div>
-                  <label>Password:</label>
-                  <input type="password" name="password"/>
+              <div class="col m6 s12">
+                    <div class="row">
+                      <div class="col">
+                        <label>Username:</label>
+                        <input type="text" v-model="username"/>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <label>Password:</label>
+                        <input type="password" v-model="password"/>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <button class="btn blue" type="button" @click="onLogin()">Log In</button>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <p id='loginMsg'></p>
+                      </div>
+                    </div>
               </div>
-              <div>
-                  <input type="submit" value="Log In"/>
-              </div>
-          </form>
-        </div>
-      </div>
-    </script>
+            </div>
+          </div>
+        </script>
 
   <script type="text/x-template" id="logout">
       <span>

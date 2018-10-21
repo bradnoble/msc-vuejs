@@ -52,10 +52,13 @@ app.use(session({
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(flash());
+// app.use(flash());
 
 let authentication = require('authentication');
 
+/*
+* Setup Passport Local Strategy to authenticate and return user object
+*/
 passport.use(new LocalStrategy(
   function (username, password, callback) {
     authentication.users.exists(username, function (err, user) {
@@ -71,12 +74,16 @@ passport.use(new LocalStrategy(
   }
 ));
 
-//Serializes user info to cookie
+/*
+* Serializes user info to cookie
+*/
 passport.serializeUser(function (user, callback) {
   callback(null, user.id);
 });
 
-//Deserializes user info from cookie
+/*
+* Deserializes user info from cookie
+*/
 passport.deserializeUser(function (id, callback) {
   authentication.users.findById(id, function (err, user) {
     if (user) {
@@ -97,24 +104,47 @@ passport.deserializeUser(function (id, callback) {
 //   }
 // }
 
-app.post('/login',
-  passport.authenticate('local', {
-    successRedirect: '/#/',
-    failureRedirect: '/#/login',
-    failureFlash: true
-  })
-);
+/*
+* Login endpoint passes username and password as query string parameters
+* and assigns to request body so Passport strategy will accept them
+*/
+app.get('/login', function (req, res, next) {
 
+  //Assign credentials to request body for Passport strategy
+  req.body.username = req.query.username;
+  req.body.password = req.query.password;
+
+  //Authenticate using Local Strategy
+  passport.authenticate('local', function (err, user, info) {
+    if (err) { return next(err); }
+    if (!user) { return res.redirect('/login'); }
+    req.logIn(user, function (err) {
+      if (err) { return next(err); }
+      //Pass user object/data to client for local storage
+      res.send(user);
+      return res.end();
+    });
+  })(req, res, next);
+});
+
+/*
+* Logout of Passport Local strategy anb rediret to login page
+*/
 app.get('/logout',
   function (req, res) {
     req.logout();
-    res.redirect('/#/login');
+    res.end(); //redirect('/login');
   });
 
-//Home page (authenticated)
+/*
+* Home page for authenticated users
+*/
 app.get('/',
   authentication.users.isAuthenticated,
   (req, res) => {
+    if (true) {
+      let a = 'test';
+    }
   }
 );
 

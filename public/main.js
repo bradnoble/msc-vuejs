@@ -21,10 +21,9 @@ $(function () {
 
 Vue.component('app-navbar', {
   template: '#navbar-template',
-  props: ['enabled'],
   computed: {
-    roles() {
-      return this.$store.state.roles
+    roles: function () {
+      return this.$store.getters.roles
     }
   },
   created: function () {
@@ -43,11 +42,31 @@ Vue.component('app-navbar', {
 //Login controller
 const login = {
   template: '#login-template',
+  props: [
+    'username',
+    'password'
+  ],
   created() {
     document.title = 'MSC - Login';
   },
   mounted: function () {
     $('#username').focus();
+  },
+  methods: {
+    onLogin: function () {
+      let user = this.$http.get('/login?username=' + this.username + '&password=' + this.password)
+        .then((res) => {
+          //If valid user returned
+          if (res.data) {
+            //Store user info and redirect to Home page
+            $('#loginMsg').text('');
+            this.$store.commit('setUser', res.data);
+            this.$router.push('/');
+          } else {
+            $('#loginMsg').text('Authenticate failed: either username or password is incorrect.');
+          }
+        });
+    }
   }
 }
 
@@ -58,6 +77,7 @@ const logout = {
   },
   methods: {
     logout: function () {
+      this.$http.get('/logout');
       this.$router.push('/login')
     }
   }
@@ -115,7 +135,6 @@ const memberSearch = {
   mounted: function () {
     this.loading = true;
     this.search();
-    //    this.facetedSearch();
   },
   updated: function () {
     M.updateTextFields();
@@ -125,7 +144,6 @@ const memberSearch = {
     '$route'(to, from) {
       this.loading = true;
       this.search();
-      // this.facetedSearch();
     }
   },
   methods: {
@@ -994,14 +1012,30 @@ const router = getVueRouter();
 
 Vue.use(Vuex);
 
+//State store initialization
 const store = new Vuex.Store({
   state: {
-    roles: 'admin'
+    user: null
+  },
+  getters: {
+    roles: state => {
+      return (state.user && state.user.roles ? state.user.roles : '')
+    },
+    user: state => {
+      return state.user
+    }
   },
   mutations: {
+    clearUser(state) {
+      state.user = null
+    },
+    setUser(state, user) {
+      state.user = user
+    }
   }
 })
 
+//App initialization
 var vm = new Vue({
   el: '#app-container',
   store,
