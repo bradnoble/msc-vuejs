@@ -1,3 +1,5 @@
+// #region App Initialization
+
 var cfenv = require("cfenv"),
   appEnv = cfenv.getAppEnv(),
   dotenv = require('dotenv').config(),
@@ -30,9 +32,9 @@ http.listen(appEnv.port, "0.0.0.0", function () {
 
 app.use(express.static(__dirname + '/public'));
 
-/*
-* BEGIN Authentication setup
-*/
+// #endregion
+
+// #region Authentication setup
 
 let session = require("express-session");
 let passport = require('passport');
@@ -104,6 +106,10 @@ passport.deserializeUser(function (id, callback) {
 //   }
 // }
 
+// #endregion
+
+// #region Login/Logout Endpoints
+
 /*
 * Login endpoint passes username and password as query string parameters
 * and assigns to request body so Passport strategy will accept them
@@ -136,9 +142,10 @@ app.get('/logout',
     res.end(); //redirect('/login');
   });
 
-/*
-* Home page for authenticated users
-*/
+// #endregion
+
+// #region Home Page Endpoint (authenticated users)
+
 app.get('/',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -148,13 +155,9 @@ app.get('/',
   }
 );
 
-/*
-* END Authentication setup
-*/
+// #endregion
 
-/*
-* BEGIN Resoures setup
-*/
+// #region Resoures Setup
 
 //Google Drive module
 var gdrive = require('gdrive');
@@ -163,13 +166,9 @@ gdrive.oauthclient.init();
 //Google Drive API
 gdrive.api.init();
 
-/*
-* END Resoures setup
-*/
+// #endregion
 
-/*
-* BEGIN Members
-*/
+// #region Members Endpoints
 
 app.get('/api/members/status/:statusId',
   authentication.users.isAuthenticated,
@@ -332,7 +331,7 @@ app.get('/household',
         // only if there's a household to connect a person to
         for (i = 0; i < people.length; i++) {
           if (households[people[i].household_id]) {
-            people[i].household = households[people[i].household_id]
+            people[i].household = households[people[i].household_id];
             finalArray.push(people[i]);
           }
         }
@@ -346,22 +345,10 @@ app.get('/api/member/emails',
   authentication.users.isAuthenticated,
   function (req, res) {
 
-    var params = (req.query.statuses) ? req.query.statuses : null;
-    var opts = {};
-
-    console.log(req.query)
-
-    if (params) {
-      opts.keys = params;
+    let opts = {};
+    if (req.query.statuses) {
+      opts.keys = req.query.statuses.split(',');
     }
-    /*
-        if (params) {
-          console.log(params);
-          console.log(params.split(','));
-          console.log('params length', params.length);
-          opts.keys = params.split(',');
-        }
-    */
     // get the results of the API call
     db.view('app', 'emails', opts, function (err, resp) {
       if (!err) {
@@ -491,6 +478,10 @@ app.get('/api/member/csv',
   }
 );
 
+// #endregion
+
+// #region Household
+
 app.get('/getPerson/',
   authentication.users.isAuthenticated,
   function (req, res) {
@@ -554,13 +545,9 @@ app.get('/household/:id',
     }
   });
 
-/*
-* END Members
-*/
+// #endregion
 
-/*
-* BEGIN Resources
-*/
+// #region Resources Endpoints
 
 //Displays root folders from MSC Google Drive
 app.get('/api/resources',
@@ -695,13 +682,9 @@ app.get('/api/resources/pdf/:id',
 
   });
 
-/*
-* END Resources
-*/
+// #endregion
 
-/*
-* BEGIN Admin
-*/
+// #region Admin Endpoints
 
 // TODO: ADD ADMIN ONLY AUTH HERE
 app.get('/admin',
@@ -882,13 +865,9 @@ app.post('/postHouseholdOld',
     }
   });
 
-/*
-* END Admin
-*/
+// #endregion
 
-/*
-* BEGIN Signup
-*/
+// #region Signup Endpoints
 
 app.get('/getSignups',
   authentication.users.isAuthenticated,
@@ -999,13 +978,9 @@ app.post('/update', jsonParser, function (req, res) {
   });
 });
 
-/*
-* END Signup
-*/
+// #endregion
 
-/*
-* BEGIN Utilities
-*/
+// #region Utilities
 
 //Append user roles to response data
 function appendRoles(data) {
@@ -1014,6 +989,4 @@ function appendRoles(data) {
   }
 }
 
-/*
-* END Utilities
-*/
+// #endregion

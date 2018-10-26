@@ -44,7 +44,6 @@
 
   <script type="text/x-template" id="navbar-template">
     <div v-show="true"  class="navbar-fixed">
-      <div>XXX {{roles}}XXX</div>
       <nav>
         <div class="nav-wrapper white black-text">
           <a href="/#" class="brand-logo">
@@ -76,44 +75,44 @@
   </script>
 
   <script type="text/x-template" id="login-template">
-          <div>
+    <div>
+      <div class="row">
+        <div class="col s5 center-align"><img src="img/MSC_Logo_150X150.jpg"></div>
+        <div class="col s5">&nbsp;</div>
+      </div>
+      <div class="row">
+        <div class="col s5">
+          <p>The Montclair Ski Club, founded in 1947, is a tightly knit group of avid skiers and their families. Amid the fun of skiing, the club promotes a community atmosphere where cooperation and warm personal relationships are valued. On winter weekends at our 40-bed lodge at the base of Mad River Glen, we enjoy skiing, eating and socializing together. Outside of the ski season we also hold various social activities, in both New Jersey and New England.</p>
+          <p>Our 100 active members participate in the running of the club by serving on committees and boards, and by helping to maintain the lodge. MSC is a member of the New Jersey Ski Council and encourages its members to participate in its activities.</p>
+        </div>
+        <div class="col s1">&nbsp;</div>
+        <div class="col s6">
+          <div class="row">
             <div class="col">
-              <div class="row">
-                  <h3 class="center-align">Welcome</h3>
-          </div>
-          </div>
-            <div class="row">
-              <div class="col m6 s12">
-                <p>The Montclair Ski Club, founded in 1947, is a tightly knit group of avid skiers and their families. Amid the fun of skiing, the club promotes a community atmosphere where cooperation and warm personal relationships are valued. On winter weekends at our 40-bed lodge at the base of Mad River Glen, we enjoy skiing, eating and socializing together. Outside of the ski season we also hold various social activities, in both New Jersey and Massachusetts.</p>
-                <p>Our 100 active members participate in the running of the club by serving on committees and boards and by helping to maintain the lodge. MSC is a member of the New Jersey Ski Council and encourages its members to participate in its activities.</p>
-              </div>
-              <div class="col m6 s12">
-                    <div class="row">
-                      <div class="col">
-                        <label>Username:</label>
-                        <input type="text" v-model="username"/>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col">
-                        <label>Password:</label>
-                        <input type="password" v-model="password"/>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col">
-                        <button class="btn blue" type="button" @click="onLogin()">Log In</button>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col">
-                        <p id='loginMsg'></p>
-                      </div>
-                    </div>
-              </div>
+              <label>Username:</label>
+              <input type="text" id="username" v-model="username"/>
             </div>
           </div>
-        </script>
+          <div class="row">
+            <div class="col">
+              <label>Password:</label>
+              <input type="password" id="password" v-model="password"/>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <button class="btn blue" type="button" @click="onLogin()">Log In</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <p id='loginMsg'></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </script>
 
   <script type="text/x-template" id="logout">
       <span>
@@ -125,22 +124,46 @@
     <div>
       <div class="row">
         <div class="col m6 s12">
-          <h4>Getting Started</h4>
-          <p>Viral engagement blue money, or staff engagement drop-dead date. High turnaround rate ladder up / ladder back to the strategy price point, yet Bob called an all-hands this afternoon, but gain traction, so accountable talk. Message the initiative are there any leftovers in the kitchen? old boys club hammer out old boys club. We need a paradigm shift golden goose. This vendor is incompetent put in in a deck for our standup today let's prioritize the low-hanging fruit and shotgun approach not enough bandwidth. Value prop in this space yet we need to start advertising on social media imagineer nail jelly to the hothouse wall where do we stand on the latest client ask, or win-win. On-brand but completeley fresh. We want to see more charts curate helicopter view due diligence. Please use "solutionise" instead of solution ideas! :) quarterly sales are at an all-time low for back of the net, or drink the Kool-aid new economy for new economy. Usabiltiy organic growth Q1, so execute lean into that problem quarterly sales are at an all-time low.</p>
+          <h4>Quick Access</h4>
+          <div class="row">
+            <div class="col">Signup Chairs</div>
+          </div>
+          <div class="row">
+              <div class="col">Lodge Rates</div>
+          </div>
+          <div class="row">
+            <div class="col">Meeting Minutes</div>
+          </div>
+          <div class="row">
+            <div class="col">Financial Reports</div>
+          </div>
+          <div class="row">
+            <div class="col">Newsletters</div>
+          </div>
+          <div class="row">
+            <div class="col">Join.me Info</div>
+          </div>
+          <div class="row">
+            <div class="col">All Resources</div>
+          </div>
+          <div class="row">
+            <div class="col"></div>
+          </div>
         </div>
         <div class="col m6 s12">
-          <h4>News</h4>
-          <ul>
-              <li>New MSC website launched</li>
-              <li>Fall Picnic</li>
-              <li>October General Meeting</li>
-            </ul> 
-        </div>
+          <h4>News &amp; Events</h4>
+          <div class="row">
+            <div class="col">General Meeting Wed 11/7/2018</div>
+          </div>
+          <div class="row">
+            <div class="col">New Jersey Holiday Party Fri 12/7/2018</div>
+          </div>
+          </div>
       </div>
     </div>
   </script>
 
-  <!-- MEMBERSHIP LIST VIEWS -->
+  <!-- MEMBERSHIP VIEWS -->
 
   <script type="text/x-template" id="members">
     <div>
@@ -291,29 +314,32 @@
                 </ul>
               </div>
               <div class="section">
+                <a class="btn" id="" @click="onStatusChange(event)">All</a>
                 <p>
-                  Build a list by type
+                  Filter by member category
                 </p>
                 <div class="collection">
+                  <a v-for="status in statuses" class="collection-item" @click="onStatusChange(event,status)" >
+                    <i class="material-icons small">check_box_outline_blank</i><span>&nbsp;{{status}}</span>
+                  </a>
+                </div>
+              <!-- <div class="collection">
                   <a class="collection-item" @click="intercept()" :class="{'active': !$route.query.status}">All</a>
                   <a class="collection-item" v-for="status in statuses" @click="intercept(status)" :class="{active: $route.query.status && $route.query.status.indexOf(status) > -1}">
                     <i class="material-icons tiny" v-if="$route.query.status && $route.query.status.indexOf(status) > -1">check_box</i>
                     <i class="material-icons tiny" v-else>check_box_outline_blank</i> 
                     {{ status }}
                   </a>
-                </div>
+                </div> -->
               </div>
             </div>
 
             <div class="col m9">
-              <p>
-                Email addresses
-                <!-- <small><a v-on:click="selectEmails()">Select all</a></small> -->
-              </p>
+              <p><b><span>Email Addresses&nbsp;</span><span>({{totalEmails}})</span></b></p>
               <div v-if="!loading">
                 <form>
                   <div class="input-field">
-                    <textarea id="textarea-emails" v-model="items" class="materialize-textarea">{{items}}</textarea>
+                    <textarea id="textarea-emails" v-model="emailAddresses" class="materialize-textarea">{{emailAddresses}}</textarea>
                   </div>
                 </form>
               </div>

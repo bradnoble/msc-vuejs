@@ -1,4 +1,5 @@
-//Page init
+// #region Page initialization
+
 $(function () {
   /*
   $('.dropdown-trigger').dropdown();
@@ -19,27 +20,10 @@ $(function () {
 
 });
 
-Vue.component('app-navbar', {
-  template: '#navbar-template',
-  computed: {
-    roles: function () {
-      return this.$store.getters.roles
-    }
-  },
-  created: function () {
-  },
-  data: function () {
-    return {
-      isEnabled: true //this.enabled
-    }
-  }
-});
+// #endregion
 
-/*
-* LOCAL components (registered w/ routes)
-*/
+// #region Login/Logout
 
-//Login controller
 const login = {
   template: '#login-template',
   props: [
@@ -83,6 +67,10 @@ const logout = {
   }
 };
 
+// #endregion
+
+// #region Home and NavBar
+
 //Home controller
 const home = {
   template: '#home-template',
@@ -96,6 +84,53 @@ const home = {
   mounted: function () {
   },
   methods: {
+  }
+}
+
+Vue.component('app-navbar', {
+  template: '#navbar-template',
+  computed: {
+    roles: function () {
+      return this.$store.getters.roles
+    }
+  },
+  created: function () {
+  },
+  data: function () {
+    return {
+      isEnabled: true //this.enabled
+    }
+  }
+});
+
+// #endregion
+
+// #region Members
+
+// Members controller (parent controller of search, emails, downloads)
+const members = {
+  template: '#members',
+  data: function () {
+    return {
+      searchstring: '',
+      timer: null,
+      statuses: []
+    }
+  },
+  created: function () {
+    var blacklist = ['deceased'];
+    this.statuses = getStatuses(blacklist);
+  },
+  methods: {
+    search: function (event) {
+      // console.log('hi from the child', event);
+      this.searchstring = event;
+      if (this.searchstring.length > 0) {
+        this.$router.push({ name: 'member-name', params: {}, query: { q: this.searchstring } });
+      } else {
+        this.$router.push({ name: 'member-status', params: { status: 'all' } });
+      }
+    }
   }
 }
 
@@ -165,6 +200,7 @@ const memberSearch = {
 
       e.preventDefault();
     },
+    //Invokes search and routes based upoon search mode
     search: function () {
       if (this.$route.params.status) {
         this.statusSearch(this.$route.params.status);
@@ -172,6 +208,7 @@ const memberSearch = {
         this.nameSearch(this.$route.query.q);
       }
     },
+    //Search by member status
     statusSearch: function (status) {
       let _this = this;
 
@@ -187,9 +224,8 @@ const memberSearch = {
         _this.items = [];
         return;
       }
-
-      //      this.$http.get('/api/search/status/all', {params:{status:'test'}})
     },
+    //Search by member name(s)
     nameSearch: function (name) {
       let _this = this;
 
@@ -207,63 +243,8 @@ const memberSearch = {
       }
 
     }
-    // facetedSearch: function () {
-    //   let _this = this;
-    //   _this.items = [];
-
-    //   var params = {};
-    //   if (_this.$route.params.status) {
-    //     params.status = _this.$route.params.status;
-    //     _this.searchstring = '';
-    //   } else if (_this.$route.query.q) {
-    //     params.q = _this.$route.query.q;
-    //   }
-
-    //   //      this.$http.get('/api/search/status/all', {params:{status:'test'}})
-    //   this.$http.get('/api/members/status/all')
-    //     .then(
-    //       function (resp) {
-    //         _this.items = resp.data.docs;
-    //         _this.loading = false;
-    //       }
-    //     );
-    //   // this.$http.get('/search/status', params)
-    //   // .then(
-    //   //   function (resp) {
-    //   //     _this.items = resp.data.docs;
-    //   //     _this.loading = false;
-    //   //   }
-    //   // );
-    // }
   }
 };
-
-// Members controller (parent controller of search, emails, downloads)
-const members = {
-  template: '#members',
-  data: function () {
-    return {
-      searchstring: '',
-      timer: null,
-      statuses: []
-    }
-  },
-  created: function () {
-    var blacklist = ['deceased'];
-    this.statuses = getStatuses(blacklist);
-  },
-  methods: {
-    search: function (event) {
-      // console.log('hi from the child', event);
-      this.searchstring = event;
-      if (this.searchstring.length > 0) {
-        this.$router.push({ name: 'member-name', params: {}, query: { q: this.searchstring } });
-      } else {
-        this.$router.push({ name: 'member-status', params: { status: 'all' } });
-      }
-    }
-  }
-}
 
 // Member emails controller (third child of list)
 const memberEmails = {
@@ -273,103 +254,81 @@ const memberEmails = {
   ],
   data: function () {
     return {
-      items: [],
-      loading: true,
-      selected: {},
       emailsSelected: 'Select emails',
+      emailAddresses: [],
+      loading: true,
       newsletter: ['active', 'inactive', 'life'],
-      querystring: []
+      selected: {},
+      selectedStatus: [],
+      totalEmails: 0
     }
   },
   mounted: function () {
-    // this gets data when page loads
-    // start has logic to deal with the querystring
-    this.start();
+    // Get all emails by default when page loads
+    this.getEmails();
   },
   updated: function () {
     M.textareaAutoResize($('#textarea-emails'));
   },
-  watch: {
-    '$route.query.status'(to, from) {
-      // when the querystring changes, do another search
-
-      // working on a way to turn the string into an array as a data object
-      // rather than having to do that in multiple methods
-
-      this.start();
-    }
-  },
   methods: {
-    intercept: function (str) {
-      var arr = [];
-      var status = str;
-      var querystring = this.$route.query;
-      var index = 0;
+    //Event handler for select/deselect of a status value
+    onStatusChange: function (event, status) {
 
-      // no param means get all
-      if (!status) {
-        this.$router.push({ name: 'emails' });
-      } else {
-        // if there's no querystring, start the array
-        if (!querystring.status) {
-          arr.push(status);
-        }
-        // in vuejs, if the querystring already has only one value, it's a string
-        // and we need to change it to an array so it can have other friends
-        if (querystring.status && typeof querystring.status == 'string') {
-          querystring.status = [querystring.status];
-        }
-        // might not need this check here, b/c anything making it this far will be an object
-        if (typeof querystring.status == 'object') {
-          // if the status is already in the querystring, get it out
-          index = querystring.status.indexOf(status);
+      const $this = $(event.target);
+
+      if (status) {
+        if (this.selectedStatus.includes(status)) {
+          const index = this.selectedStatus.indexOf(status);
           if (index > -1) {
-            // create a new querystring array without it
-            for (var i = 0; i < querystring.status.length; i++) {
-              if (querystring.status[i] != status) {
-                arr.push(querystring.status[i]);
-              }
-            }
-          } else {
-            // add the new status to the query array
-            arr.push(status);
-            console.log('arr', arr, 'querystring.status', querystring.status)
-            arr = arr.concat(querystring.status);
-            // console.log(arr)
+            this.setStatus($this, false);
+            this.selectedStatus.splice(index, 1);
           }
+        } else {
+          this.setStatus($this, true);
+          this.selectedStatus.push(status);
         }
-        this.$router.push({ query: { status: arr } })
+      }
+      else {
+        $this.parent().find('i').each(function () {
+          $(this).text('check_box_outline_blank');
+        });
+        this.selectedStatus = [];
+      }
+
+      this.getEmails();
+    },
+    //Set the status list icon based upon selection status
+    setStatus: function ($element, selected) {
+      if ($element.is('a')) {
+        $element.children('i').text((selected ? 'check_box' : 'check_box_outline_blank'));
+      } else if ($element.is('span')) {
+        $element.siblings('i').text((selected ? 'check_box' : 'check_box_outline_blank'));
+      } else {
+        $element.text((selected ? 'check_box' : 'check_box_outline_blank'));
       }
     },
-    start: function () {
+    //Get email addresses
+    getEmails: function () {
+
+      //Local reference to component
       let _this = this;
-      _this.loading = true;
-      var params = {};
-      var querystring = this.$route.query.status;
 
-      if (querystring && typeof querystring == 'string') {
-        params.statuses = [querystring];
-        // console.log('from string to array: ', params.statuses);
-      } else {
-        params.statuses = querystring;
-        // console.log('already an object:', params.statuses)
-      }
+      this.$http.get('/api/member/emails', { params: { statuses: this.selectedStatus.join(',') } })
+        .then(function (resp) {
+          let data = resp.data.rows;
 
-      this.$http.get('/api/member/emails', params)
-        .then(
-          function (resp) {
-            var data = resp.data.rows;
-            var blob = '';
-
+          if (data.length > 0) {
             var emails = data.map(function (row) {
               return row.value[0];
-            })
-            blob = emails.join(', ');
-            // update the view with the result
-            _this.items = blob;
-            _this.loading = false;
+            });
+            _this.emailAddresses = emails.join(',');
+          } else {
+            _this.emailAddresses = 'No email addresses found';
           }
-        );
+          _this.loading = false;
+          _this.totalEmails = data.length;
+        });
+
     },
     selectEmails: function () {
       var copyText = $('#emails').select();
@@ -387,7 +346,7 @@ const memberEmails = {
       alert("Copied the text: " + copyText.value);
     }
   }
-};
+}
 
 const memberHousehold = {
   template: '#member-household',
@@ -448,6 +407,10 @@ const memberHousehold = {
     }
   }
 };
+
+// #endregion
+
+// #region Resources
 
 /*
 * Resources controller (Google Drive)
@@ -594,9 +557,9 @@ const resources = {
   }
 }
 
-/*
-* ADMIN COMPONENTS
-*/
+// #endregion
+
+// #region Admin
 
 // list of households
 const admin = {
@@ -945,9 +908,10 @@ const thirdChild = {
   }
 }
 
-/*
-* Utility functions
-*/
+// #endregion
+
+// #region Utility functions
+
 function formatBytes(bytes, decimals) {
   if (bytes == 0) return '0 Bytes';
   let k = 1024,
@@ -957,9 +921,9 @@ function formatBytes(bytes, decimals) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-/*
-* GLOBAL components
-*/
+// #endregion
+
+// #region GLOBAL components
 
 Vue.component('location', {
   template: '#view-location',
@@ -1001,14 +965,12 @@ Vue.component('form-errors', {
   props: ['errors']
 });
 
-/*
-* Router setup and initialize Vue app
-*/
-const router = getVueRouter();
+// #endregion
 
-/*
-* Vue application initialization
-*/
+// #region Vue application initialization
+
+// Router setup and initialize Vue app
+const router = getVueRouter();
 
 Vue.use(Vuex);
 
@@ -1048,3 +1010,4 @@ var vm = new Vue({
   }
 })
 
+// #endregion
