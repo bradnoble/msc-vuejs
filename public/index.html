@@ -307,9 +307,7 @@
                 </p>
                 <ul>
                   <li class="">
-                    <router-link :to="{query:{status:newsletter}}" :class="{'black-text': JSON.stringify($route.query.status) == JSON.stringify(newsletter)}" :title="newsletter">
-                      Newsletter list <i class="material-icons tiny" v-if="JSON.stringify($route.query.status) == JSON.stringify(newsletter)">chevron_right</i>
-                    </router-link>                                  
+                    <a @click="onNewsletter">Newsletter list <i class="material-icons tiny">chevron_right</i></a>
                   </li>
                 </ul>
               </div>
@@ -318,7 +316,7 @@
                 <p>
                   Filter by member category
                 </p>
-                <div class="collection">
+                <div id="emailStatusList" class="collection">
                   <a v-for="status in statuses" class="collection-item" @click="onStatusChange(event,status)" >
                     <i class="material-icons small">check_box_outline_blank</i><span>&nbsp;{{status}}</span>
                   </a>

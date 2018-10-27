@@ -257,7 +257,7 @@ const memberEmails = {
       emailsSelected: 'Select emails',
       emailAddresses: [],
       loading: true,
-      newsletter: ['active', 'inactive', 'life'],
+      newsletterStatus: ['active', 'inactive', 'life'],
       selected: {},
       selectedStatus: [],
       totalEmails: 0
@@ -271,41 +271,10 @@ const memberEmails = {
     M.textareaAutoResize($('#textarea-emails'));
   },
   methods: {
-    //Event handler for select/deselect of a status value
-    onStatusChange: function (event, status) {
-
-      const $this = $(event.target);
-
-      if (status) {
-        if (this.selectedStatus.includes(status)) {
-          const index = this.selectedStatus.indexOf(status);
-          if (index > -1) {
-            this.setStatus($this, false);
-            this.selectedStatus.splice(index, 1);
-          }
-        } else {
-          this.setStatus($this, true);
-          this.selectedStatus.push(status);
-        }
-      }
-      else {
-        $this.parent().find('i').each(function () {
-          $(this).text('check_box_outline_blank');
-        });
-        this.selectedStatus = [];
-      }
-
-      this.getEmails();
-    },
-    //Set the status list icon based upon selection status
-    setStatus: function ($element, selected) {
-      if ($element.is('a')) {
-        $element.children('i').text((selected ? 'check_box' : 'check_box_outline_blank'));
-      } else if ($element.is('span')) {
-        $element.siblings('i').text((selected ? 'check_box' : 'check_box_outline_blank'));
-      } else {
-        $element.text((selected ? 'check_box' : 'check_box_outline_blank'));
-      }
+    clearAll: function () {
+      $('#emailStatusList').find('i').each(function () {
+        $(this).text('check_box_outline_blank');
+      });
     },
     //Get email addresses
     getEmails: function () {
@@ -330,6 +299,35 @@ const memberEmails = {
         });
 
     },
+    onNewsletter: function (event) {
+      this.clearAll();
+      this.selectedStatus = this.newsletterStatus;
+      this.getEmails();
+    },
+    //Event handler for select/deselect of a status value
+    onStatusChange: function (event, status) {
+
+      const $this = $(event.target);
+
+      if (status) {
+        if (this.selectedStatus.includes(status)) {
+          const index = this.selectedStatus.indexOf(status);
+          if (index > -1) {
+            this.setStatus($this, false);
+            this.selectedStatus.splice(index, 1);
+          }
+        } else {
+          this.setStatus($this, true);
+          this.selectedStatus.push(status);
+        }
+      }
+      else {
+        this.clearAll();
+        this.selectedStatus = [];
+      }
+
+      this.getEmails();
+    },
     selectEmails: function () {
       var copyText = $('#emails').select();
       //      this.emailsSelected = "Emails selected"
@@ -344,6 +342,16 @@ const memberEmails = {
 
       /* Alert the copied text */
       alert("Copied the text: " + copyText.value);
+    },
+    //Set the status list icon based upon selection status
+    setStatus: function ($this, selected) {
+      if ($this.is('a')) {
+        $this.children('i').text((selected ? 'check_box' : 'check_box_outline_blank'));
+      } else if ($this.is('span')) {
+        $this.siblings('i').text((selected ? 'check_box' : 'check_box_outline_blank'));
+      } else {
+        $this.text((selected ? 'check_box' : 'check_box_outline_blank'));
+      }
     }
   }
 }
