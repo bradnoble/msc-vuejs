@@ -1,4 +1,4 @@
-// #region Page initialization
+// #region App initialization
 
 $(function () {
   /*
@@ -17,6 +17,52 @@ $(function () {
   // });
   // Initialize collapsible (uncomment the line below if you use the dropdown variation)
   //$('.collapsible').collapsible();
+
+  //Vuex initialization
+  Vue.use(Vuex);
+
+  //State store initialization
+  const store = new Vuex.Store({
+    state: {
+      user: null
+    },
+    getters: {
+      //List of user roles
+      roles: state => {
+        return (state.user && state.user.roles ? state.user.roles : '')
+      },
+      //User object
+      user: state => {
+        return state.user
+      }
+    },
+    mutations: {
+      //Clear user from state
+      clearUser(state) {
+        state.user = null
+      },
+      //Set user in state
+      setUser(state, user) {
+        state.user = user
+      }
+    }
+  })
+
+  // Router setup and initialize Vue app
+  const router = initializeVueRouter(store);
+
+  //App initialization
+  var vm = new Vue({
+    el: '#app-container',
+    store,
+    router,
+    template: '#layout-template',
+    data: function () {
+      return {
+        title: 'Montclair Ski Club'
+      }
+    }
+  })
 
 });
 
@@ -61,7 +107,13 @@ const logout = {
   },
   methods: {
     logout: function () {
+      //Clear client user data representing authentication
+      this.$store.commit('clearUser');
+
+      //Initiate logout of Passport on server
       this.$http.get('/logout');
+
+      //Redirect to login page
       this.$router.push('/login')
     }
   }
@@ -90,17 +142,23 @@ const home = {
 Vue.component('app-navbar', {
   template: '#navbar-template',
   computed: {
-    roles: function () {
-      return this.$store.getters.roles
+    isAdmin: function () {
+      return (this.$store.getters.roles.includes('admin'));
+    },
+    isAuthenticated: function () {
+      return (this.$store.getters.user ? true : false);
     }
   },
   created: function () {
   },
   data: function () {
     return {
-      isEnabled: true //this.enabled
     }
   }
+});
+
+Vue.component('app-footer', {
+  template: '#footer-template'
 });
 
 // #endregion
@@ -972,50 +1030,5 @@ Vue.component('form-errors', {
   template: '#form-errors',
   props: ['errors']
 });
-
-// #endregion
-
-// #region Vue application initialization
-
-// Router setup and initialize Vue app
-const router = getVueRouter();
-
-Vue.use(Vuex);
-
-//State store initialization
-const store = new Vuex.Store({
-  state: {
-    user: null
-  },
-  getters: {
-    roles: state => {
-      return (state.user && state.user.roles ? state.user.roles : '')
-    },
-    user: state => {
-      return state.user
-    }
-  },
-  mutations: {
-    clearUser(state) {
-      state.user = null
-    },
-    setUser(state, user) {
-      state.user = user
-    }
-  }
-})
-
-//App initialization
-var vm = new Vue({
-  el: '#app-container',
-  store,
-  router,
-  template: '#layout-template',
-  data: function () {
-    return {
-      title: 'Montclair Ski Club'
-    }
-  }
-})
 
 // #endregion

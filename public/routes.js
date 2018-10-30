@@ -1,4 +1,7 @@
-function getVueRouter() {
+/*
+* Initialize VueRouter w/ Vuex state store
+*/
+function initializeVueRouter(store) {
 
   const routes = [
     {
@@ -122,8 +125,6 @@ function getVueRouter() {
       meta: { requiresAuth: true }
     },
   ]
-  //    { path: '/emails', component: emails },
-  //    { path: '/list/turn-off/:id', component: adminHousehold, props: true },
 
   const router = new VueRouter({
     routes: routes,
@@ -136,17 +137,21 @@ function getVueRouter() {
   */
   router.beforeEach((to, from, next) => {
 
-    //TEMP
-    return next();
+    //TEMP-for testing
+    //return next();
     
+    //Test if route metadata require authorization
     if (to.matched.some(record => record.meta.requiresAuth)) {
-      if (true) {
+      //Presence of user object indicates user is authenticated
+      //TBD-could expand this to allow access to routes based upon roles
+      if (store.getters.user) {
+        next();
+      } else {
+        //Redirect to login page if not authenticated
         next({
           path: '/login',
           query: {redirect: to.fullPath},
         });
-      } else {
-        next();
       }
     } else {
       next();

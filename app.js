@@ -134,12 +134,12 @@ app.get('/login', function (req, res, next) {
 });
 
 /*
-* Logout of Passport Local strategy anb rediret to login page
+* Logout of Passport Local strategy
 */
 app.get('/logout',
   function (req, res) {
     req.logout();
-    res.end(); //redirect('/login');
+    res.end();
   });
 
 // #endregion

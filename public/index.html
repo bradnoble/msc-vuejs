@@ -36,17 +36,18 @@
   <script type="text/x-template" id="layout-template">
     <div>
       <app-navbar></app-navbar>
-      <div class="container">
+      <main class="container">
         <router-view></router-view>
-      </div>
+      </main>
+      <app-footer></app-footer>
     </div>
   </script>
 
   <script type="text/x-template" id="navbar-template">
-    <div v-show="true"  class="navbar-fixed">
+    <header v-show="isAuthenticated"  class="navbar-fixed">
       <nav>
         <div class="nav-wrapper white black-text">
-          <a href="/#" class="brand-logo">
+          <a href="/#/" class="brand-logo">
             <span>&nbsp;&nbsp;</span>
             <img src="img/MSC_Logo_60X60.png">
           </a>
@@ -57,7 +58,7 @@
             <router-link to="/resources" tag="li">
               <a>Resources</a>
             </router-link>
-            <router-link :to="{name:'admin'}" tag="li">
+            <router-link v-if="isAdmin" :to="{name:'admin'}" tag="li">
               <a>Admin</a>
             </router-link>
             <router-link to="/logout" tag="li">
@@ -67,12 +68,23 @@
           </ul>
         </div>
       </nav>
-    </div>
+    </header>
   </script>
 
   <script type="text/x-template" id="footer-template">
-
-  </script>
+    <div>
+    <footer class="page-footer blue lighten-2">
+        <div class="container">
+          <div class="row">
+        </div>
+        <div class="footer-copyright">
+          <div class="container">
+          © 2018 Montclair Ski Club
+          </div>
+        </div>
+      </footer>
+    </div>  
+    </script>
 
   <script type="text/x-template" id="login-template">
     <div>
@@ -96,12 +108,12 @@
           <div class="row">
             <div class="col">
               <label>Password:</label>
-              <input type="password" id="password" v-model="password"/>
+              <input type="password" id="password" v-model="password" @keyup.enter="onLogin"/>
             </div>
           </div>
           <div class="row">
             <div class="col">
-              <button class="btn blue" type="button" @click="onLogin()">Log In</button>
+              <button class="btn blue" type="button" @click="onLogin">Log In</button>
             </div>
           </div>
           <div class="row">
@@ -152,13 +164,10 @@
         </div>
         <div class="col m6 s12">
           <h4>News &amp; Events</h4>
-          <div class="row">
-            <div class="col">General Meeting Wed 11/7/2018</div>
+          <div>
+              <a class="twitter-timeline" data-width="400" data-height="600" data-theme="light" data-link-color="#2B7BB9" href="https://twitter.com/msc_madriver?ref_src=twsrc%5Etfw">Tweets by msc_madriver</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
           </div>
-          <div class="row">
-            <div class="col">New Jersey Holiday Party Fri 12/7/2018</div>
-          </div>
-          </div>
+        </div>
       </div>
     </div>
   </script>
