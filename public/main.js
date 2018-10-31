@@ -623,7 +623,7 @@ const resources = {
 
 // #endregion
 
-// #region Admin
+// #region Admin-Household
 
 // list of households
 const households = {
@@ -756,129 +756,6 @@ const household = {
   }
 };
 
-// list people, child of adminHousehold
-const firstChild = {
-  template: '#first-child',
-  props: ['item'], // gotta use props to grab data from the parent
-  data: function () {
-    return {
-    }
-  },
-  created: function () { },
-  mounted: function () { },
-  updated: function () { }
-}
-
-// for creating a household
-// not a child of adminHousehold
-const householdNew = {
-  template: '#household-new',
-  data: function () {
-    return {
-      item: getNewHousehold()
-    }
-  },
-  mounted: function () {
-    $('.dropdown-trigger').dropdown();
-  }
-};
-
-// edit a person, child of adminHousehold
-const secondChild = {
-  template: '#second-child',
-  props: ['household_id', 'person_id', 'loading', 'error'],
-  data: function () {
-    return {
-      person: {},
-      statuses: getStatuses(),
-      genders: getGenders(),
-      title: {},
-      errors: []
-    }
-  },
-  created: function () { },
-  mounted: function () {
-    // frob the process meter
-    // the parent update method will turn it off when it completes
-    this.$parent.loading = true;
-
-    // for new people in the household
-    if (this.$route.name == 'newPerson') {
-      this.title = {
-        icon: "person_add",
-        content: "Add a person to this household"
-      };
-      this.person = getPersonObject();
-      // assign the new person to the household
-      this.person.household_id = this.household_id;
-    }
-    // for editing people who are already in the household
-    else {
-      this.title = {
-        icon: "edit",
-        content: "Edit this person's entry"
-      };
-      // grab the person's data from the database
-      this.get();
-    }
-  },
-  updated: function () { },
-  methods: {
-    get: function () {
-      let _this = this;
-      this.$http.get('/getPerson/',
-        {
-          id: _this.person_id
-        })
-        .then(function (resp) {
-          _this.person = resp.data;
-        }, function (error) {
-          _this.$parent.error = error.data.error;
-        }
-        );
-    },
-    checkform: function () {
-      this.errors = [];
-      if (this.person.last.length > 0 && this.person.first.length > 0) {
-        return true;
-      }
-      if (this.person.last == '' || this.person.first == '') {
-        this.errors.push('Please provide a first and last name.')
-      }
-    },
-    save: function (e) {
-      let _this = this;
-
-      if (this.checkform()) {
-
-        // starting label for the save button
-        var txt = $('#save').text();
-        // temporary message that shows
-        $('#save').text('Saving...');
-
-        this.$http.post('/postPerson/', _this.person)
-          .then(function (resp) {
-            setTimeout(function () {
-              // revert the label of the save button
-              $('#save').text(txt);
-              // redirect to the summary tab
-              _this.$router.replace({ name: 'admin-household', params: { household_id: _this.household_id } });
-            }, 200);
-          }, function (error) {
-            console.log('error', error);
-          }
-          );
-
-      }
-      e.preventDefault();
-    },
-    removePerson: function () {
-      let _this = this;
-      Vue.set(_this.person, '_deleted', true);
-    }
-  }
-}
-
 // edit the household, child of households
 const householdEdit = {
   template: '#household-edit',
@@ -972,6 +849,133 @@ const householdEdit = {
   }
 }
 
+// for creating a household
+// not a child of adminHousehold
+const householdNew = {
+  template: '#household-new',
+  data: function () {
+    return {
+      item: getNewHousehold()
+    }
+  },
+  mounted: function () {
+    $('.dropdown-trigger').dropdown();
+  }
+};
+
+// #endregion
+
+// #region Admin-Person
+
+// list people, child of adminHousehold
+const firstChild = {
+  template: '#first-child',
+  props: ['item'], // gotta use props to grab data from the parent
+  data: function () {
+    return {
+    }
+  },
+  created: function () { },
+  mounted: function () { },
+  updated: function () { }
+}
+
+// edit a person, child of adminHousehold
+const personEdit = {
+  template: '#person-edit',
+  props: ['household_id', 'person_id', 'loading', 'error'],
+  data: function () {
+    return {
+      person: {},
+      statuses: getStatuses(),
+      genders: getGenders(),
+      title: {},
+      errors: []
+    }
+  },
+  created: function () { },
+  mounted: function () {
+    // frob the process meter
+    // the parent update method will turn it off when it completes
+    this.$parent.loading = true;
+
+    // for new people in the household
+    if (this.$route.name == 'newPerson') {
+      this.title = {
+        icon: "person_add",
+        content: "Add a person to this household"
+      };
+      this.person = getPersonObject();
+      // assign the new person to the household
+      this.person.household_id = this.household_id;
+    }
+    // for editing people who are already in the household
+    else {
+      this.title = {
+        icon: "edit",
+        content: "Edit this person's entry"
+      };
+      // grab the person's data from the database
+      this.get();
+    }
+  },
+  updated: function () { },
+  methods: {
+    get: function () {
+      let _this = this;
+      this.$http.get('/getPerson/',
+        {
+          id: _this.person_id
+        })
+        .then(function (resp) {
+          _this.person = resp.data;
+        }, function (error) {
+          _this.$parent.error = error.data.error;
+        }
+        );
+    },
+    checkform: function () {
+      this.errors = [];
+      if (this.person.last.length > 0 && this.person.first.length > 0) {
+        return true;
+      }
+      if (this.person.last == '' || this.person.first == '') {
+        this.errors.push('Please provide a first and last name.')
+      }
+    },
+    save: function (e) {
+      let _this = this;
+
+      if (this.checkform()) {
+
+        // starting label for the save button
+        var txt = $('#save').text();
+        // temporary message that shows
+        $('#save').text('Saving...');
+
+        this.$http.post('/postPerson/', _this.person)
+          .then(function (resp) {
+            setTimeout(function () {
+              // revert the label of the save button
+              $('#save').text(txt);
+              // redirect to the summary tab
+              _this.$router.replace({ name: 'admin-household', params: { household_id: _this.household_id } });
+            }, 200);
+          }, function (error) {
+            console.log('error', error);
+          }
+          );
+
+      }
+      e.preventDefault();
+    },
+    removePerson: function () {
+      let _this = this;
+      Vue.set(_this.person, '_deleted', true);
+    }
+  }
+}
+
 // #endregion
 
 // #region Utility functions
@@ -999,8 +1003,8 @@ Vue.component('person', {
   props: ['item']
 });
 
-Vue.component('admin-person', {
-  template: '#admin-person',
+Vue.component('household-person', {
+  template: '#household-person',
   props: ['item']
 });
 

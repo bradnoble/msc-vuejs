@@ -556,7 +556,7 @@ Parameters:
     </div>
   </script>
 
-  <script type="text/x-template" id="admin-person">
+  <script type="text/x-template" id="household-person">
     <div class="collection-item avatar">
       <i class="material-icons circle green">person</i>
       <span class="title">
@@ -619,11 +619,11 @@ Parameters:
               </div>
               <div class="col m9">
                 <ul class="collection">
-                    <admin-person 
+                    <household-person 
                     v-for="person in item.people" 
                     v-bind:key="person._id" 
                     v-bind:item="person">
-                  </admin-person>
+                  </household-person>
                 </ul>
               </div>
             </div><!--row-->
@@ -650,11 +650,11 @@ Parameters:
   <script type="text/x-template" id="first-child">
     <div>
       <ul class="collection" v-show="item.people.length > 0">
-        <admin-person 
+        <household-person 
           v-for="person in item.people" 
           v-bind:key="person._id" 
           v-bind:item="person">
-        </admin-person>                
+        </household-person>                
       </ul>
       <p v-if="item.people.length == 0">
         <router-link :to="{ name: 'newPerson', params: { household_id: item._id }}" class="btn">
@@ -665,7 +665,7 @@ Parameters:
   </script>
 
   <!-- a form to edit a person in the household -->
-  <script type="text/x-template" id="second-child">
+  <script type="text/x-template" id="person-edit">
     <div>
 
         <form id="form-edit-person" name="form-edit-person" v-on:submit="save" action="#" method="post">

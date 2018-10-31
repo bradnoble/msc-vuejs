@@ -714,29 +714,6 @@ app.get('/api/households',
   }
 );
 
-app.post('/postPerson',
-  authentication.users.isAuthenticated,
-  jsonParser,
-  function (req, res) {
-    var role = req.user.role[0].value;
-    if (role === 'admin') {
-      var person = req.body;
-      db.insert(person, function (err, doc) {
-        if (!err) {
-          console.log('success updating person, will add people to response next');
-          console.log(doc);
-          res.send(doc);
-        }
-        else {
-          console.log('household:' + err.reason);
-        }
-      });
-    } else {
-      // console.log('not admin');
-      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
-    }
-  });
-
 //IS THIS USED ANYWHERE?
 app.get('/household',
   authentication.users.isAuthenticated,
@@ -776,6 +753,29 @@ app.get('/household',
     });
   }
 );
+
+app.post('/postPerson',
+  authentication.users.isAuthenticated,
+  jsonParser,
+  function (req, res) {
+    var role = req.user.role[0].value;
+    if (role === 'admin') {
+      var person = req.body;
+      db.insert(person, function (err, doc) {
+        if (!err) {
+          console.log('success updating person, will add people to response next');
+          console.log(doc);
+          res.send(doc);
+        }
+        else {
+          console.log('household:' + err.reason);
+        }
+      });
+    } else {
+      // console.log('not admin');
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
+    }
+  });
 
 app.post('/api/household',
   authentication.users.isAuthenticated,

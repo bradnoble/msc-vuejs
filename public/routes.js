@@ -105,8 +105,8 @@ function initializeVueRouter(store) {
         },
         {
           path: 'person/:person_id',
-          name: 'editPerson',
-          component: secondChild,
+          name: 'person-edit',
+          component: personEdit,
           props: true
         },
         {
