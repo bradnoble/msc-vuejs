@@ -73,28 +73,28 @@ function initializeVueRouter(store) {
     // ADMIN ROUTES
 
     {
-      path: '/admin',
-      name: 'admin',
-      component: admin,
+      path: '/households',
+      name: 'households',
+      component: households,
       meta: { requiresAuth: true }
     },
     {
-      path: '/admin/household/new',
-      component: newHousehold,
+      path: '/households/new',
+      component: householdNew,
       props: true,
       children: [
         {
           path: '',
-          name: 'new-household',
-          component: thirdChild,
+          name: 'household-new',
+          component: householdEdit,
           props: true
         }
       ],
       meta: { requiresAuth: true }
     },
     {
-      path: '/admin/household/:household_id',
-      component: adminHousehold,
+      path: '/household/:household_id',
+      component: household,
       props: true,
       children: [
         {
@@ -117,8 +117,8 @@ function initializeVueRouter(store) {
         },
         {
           path: 'edit',
-          name: 'editHousehold',
-          component: thirdChild,
+          name: 'household-edit',
+          component: householdEdit,
           props: true
         }
       ],

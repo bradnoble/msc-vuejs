@@ -68,7 +68,7 @@ $(function () {
 
 // #endregion
 
-// #region Login/Logout
+// #region Layout/Login/Logout/Home
 
 const login = {
   template: '#login-template',
@@ -77,7 +77,7 @@ const login = {
     'password'
   ],
   created() {
-    document.title = 'MSC - Login';
+    document.title = 'Login-MSC ';
   },
   mounted: function () {
     $('#username').focus();
@@ -118,10 +118,6 @@ const logout = {
     }
   }
 };
-
-// #endregion
-
-// #region Home and NavBar
 
 //Home controller
 const home = {
@@ -452,7 +448,7 @@ const memberHousehold = {
     },
     start: function () {
       _this = this;
-      this.$http.get('/household/' + this.$route.params.id)
+      this.$http.get('/api/households/' + this.$route.params.id)
         .then(function (resp) {
           // console.log('start', resp)        
           _this.item = resp.data;
@@ -492,7 +488,7 @@ const resources = {
     }
   },
   created() {
-    document.title = 'Resources - MSC';
+    document.title = 'Resources-MSC';
   },
   mounted: function () {
     //Hide help text by default
@@ -509,33 +505,40 @@ const resources = {
         this.isLoading = true;
         this.$http.get('/api/resources')
           .then((res) => {
+            //Pushes root breadcrumb
             this.path.push({ name: 'MSC Drive', id: '-1' });
+            //Store folder/file data
             this.files = res.data;
             this.isLoading = false;
           });
       }
     },
-    onFolderView: function (file, event) {
+    formatBytes: function (bytes, decimals) {
+      if (bytes == 0) return '0 Bytes';
+      let k = 1024,
+        dm = decimals || 2,
+        sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+        i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    },
+    onBreadcrumb: function (id, event) {
       const _this = this;
 
-      //Only process if a folder...
-      if (file.mimeType.includes('folder') && !this.isLoading && (this.folderId != file.id)) {
+      if (!this.isLoading && (this.folderId != id)) {
         this.isLoading = true;
-        this.folderId = file.id;
-        this.$http.get('/api/resources/' + file.id)
+        this.folderId = id;
+        this.$http.get('/api/resources/' + id)
           .then((res) => {
-            _this.path.push({ name: file.name, id: file.id });
+            //Remove all folders below the selected one
+            const index = _this.path.map(function (x) { return x.id; }).indexOf(id);
+            _this.path.splice((index + 1));
             _this.files = res.data;
-
-            //Format file size to KB etc.
-            $.each(_this.files, function (index, file) {
-              file.size = formatBytes(file.size);
-            })
-
             _this.isLoading = false;
-          }
-          );
+          });
       }
+    },
+    onFileDownload: function (file, event) {
+      window.open('/api/resources/download/' + file.id);
     },
     onFileView: function (file, event) {
 
@@ -581,43 +584,38 @@ const resources = {
 
         });
     },
-    onPDFLoad: function (iFrame) {
-      iFrame.width = iFrame.contentWindow.document.body.scrollWidth;
-      iFrame.height = iFrame.contentWindow.document.body.scrollHeight;
-    },
-    onFileDownload: function (file, event) {
-      window.open('/api/resources/download/' + file.id);
-    },
-    onBreadcrumb: function (id, event) {
+    onFolderView: function (file, event) {
       const _this = this;
 
-      if (!this.isLoading && (this.folderId != id)) {
+      //Only process if a folder...
+      if (file.mimeType.includes('folder') && !this.isLoading && (this.folderId != file.id)) {
         this.isLoading = true;
-        this.folderId = id;
-        this.$http.get('/api/resources/' + id)
+        this.folderId = file.id;
+        this.$http.get('/api/resources/' + file.id)
           .then((res) => {
-            //Remove all folders below the selected one
-            const index = _this.path.map(function (x) { return x.id; }).indexOf(id);
-            _this.path.splice((index + 1));
+            _this.path.push({ name: file.name, id: file.id });
             _this.files = res.data;
+
+            //Format file size to KB etc.
+            $.each(_this.files, function (index, file) {
+              file.size = formatBytes(file.size);
+            })
+
             _this.isLoading = false;
-          });
+          }
+          );
       }
-    },
-    onSearch: function (event) {
-      let searchText = $(event.target).val().trim();
-      alert(searchText);
     },
     onHelp: function (event) {
       $('#resourcesHelp').toggle(600);
     },
-    formatBytes: function (bytes, decimals) {
-      if (bytes == 0) return '0 Bytes';
-      let k = 1024,
-        dm = decimals || 2,
-        sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-        i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    onPDFLoad: function (iFrame) {
+      iFrame.width = iFrame.contentWindow.document.body.scrollWidth;
+      iFrame.height = iFrame.contentWindow.document.body.scrollHeight;
+    },
+    onSearch: function (event) {
+      let searchText = $(event.target).val().trim();
+      alert(searchText);
     }
 
   }
@@ -628,8 +626,8 @@ const resources = {
 // #region Admin
 
 // list of households
-const admin = {
-  template: '#admin',
+const households = {
+  template: '#households',
   data: function () {
     return {
       items: [],
@@ -638,7 +636,7 @@ const admin = {
     }
   },
   created: function () {
-    document.title = 'Admin';
+    document.title = 'Households-MSC';
     this.loading = true;
     this.start();
   },
@@ -653,7 +651,7 @@ const admin = {
   methods: {
     start: function () {
       _this = this;
-      this.$http.get('/admin')
+      this.$http.get('/api/households')
         .then(
           function (resp) {
             var data = resp.data;
@@ -711,8 +709,8 @@ const admin = {
 }
 
 // parent view of people lists, forms to edit a person and edit a household
-const adminHousehold = {
-  template: '#admin-household',
+const household = {
+  template: '#household',
   props: ['household_id'],
   data: function () {
     return {
@@ -739,21 +737,21 @@ const adminHousehold = {
     '$route': function (to, from) {
       let _this = this;
       // after editing a person or household, update the household and the people
-      if (from.name == 'editPerson' || from.name == 'newPerson' || from.name == 'editHousehold') {
+      if (from.name == 'editPerson' || from.name == 'newPerson' || from.name == 'household-edit') {
         _this.get();
       }
     }
   },
   methods: {
     get: function () {
-      let _this = this; // need `_this` to cast and set `this` into the API call
-      this.$http.get('/getHousehold/', {
-        id: _this.household_id // can this be cast in via props?
-      }).then(function (resp) {
-        _this.item = resp.data;
-      }, function (error) {
-        _this.error = error.data.error;
-      });
+      const _this = this; 
+
+      this.$http.get('/api/households/' + _this.household_id)
+        .then(function (resp) {
+          _this.item = resp.data;
+        }, function (error) {
+          _this.error = error.data.error;
+        });
     }
   }
 };
@@ -773,8 +771,8 @@ const firstChild = {
 
 // for creating a household
 // not a child of adminHousehold
-const newHousehold = {
-  template: '#new-household',
+const householdNew = {
+  template: '#household-new',
   data: function () {
     return {
       item: getNewHousehold()
@@ -881,9 +879,9 @@ const secondChild = {
   }
 }
 
-// edit the household, child of adminHousehold
-const thirdChild = {
-  template: '#third-child',
+// edit the household, child of households
+const householdEdit = {
+  template: '#household-edit',
   props: ['household_id', 'loading', 'error', 'item'],
   data: function () {
     return {
@@ -893,7 +891,7 @@ const thirdChild = {
   },
   created: function () { },
   mounted: function () {
-    // if the route has a household_id, then this must be the edit view
+    // if the route has a household_id, then this must be the edit mode
     if (this.household_id) {
       this.title = {
         icon: "edit",
@@ -932,7 +930,7 @@ const thirdChild = {
         // temporary message that shows
         $('#save').text('Saving...');
 
-        this.$http.post('/postHousehold/', _this.item)
+        this.$http.post('/api/household', _this.item)
           .then(function (resp) {
             // console.log('item', _this.item)
             setTimeout(function () {

@@ -144,19 +144,6 @@ app.get('/logout',
 
 // #endregion
 
-// #region Home Page Endpoint (authenticated users)
-
-app.get('/',
-  authentication.users.isAuthenticated,
-  (req, res) => {
-    if (true) {
-      let a = 'test';
-    }
-  }
-);
-
-// #endregion
-
 // #region Resoures Setup
 
 //Google Drive module
@@ -168,8 +155,22 @@ gdrive.api.init();
 
 // #endregion
 
+// #region Home Page Endpoint (authenticated users)
+
+//MAY BE ABLE TO REMOVE THIS ENDPOINT
+app.get('/',
+  authentication.users.isAuthenticated,
+  (req, res) => {
+  }
+);
+
+// #endregion
+
 // #region Members Endpoints
 
+/*
+* Get a list of members based upon member status
+*/
 app.get('/api/members/status/:statusId',
   authentication.users.isAuthenticated,
   function (req, res) {
@@ -222,6 +223,9 @@ app.get('/api/members/status/:statusId',
   }
 );
 
+/*
+* Get a list of members based upon member name(s)
+*/
 app.get('/api/members',
   authentication.users.isAuthenticated,
   function (req, res) {
@@ -302,53 +306,19 @@ app.get('/api/members',
   }
 );
 
-app.get('/household',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    //db.view(designname, viewname, [params], [callback])
-    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
-      if (!err) {
-        var mapped = function (data) {
-          return data.rows.map(function (row) {
-            return row.doc; // this is the entire payload
-          });
-        };
-        // add people to the household
-        var docs = mapped(resp);
-        var households = {};
-        var people = [];
-        var finalArray = [];
-
-        for (i = 0; i < docs.length; i++) {
-          if (docs[i].type == 'person' && docs[i].first && docs[i].last && docs[i].status != 'deceased' && docs[i].status != 'non-member') {
-            // build an object that holds objects that hold arrays of people
-            people.push(docs[i]);
-          } else if (docs[i].type == 'household') {
-            households[docs[i]._id] = docs[i];
-          }
-        }
-        // connect the household info to the person
-        // only if there's a household to connect a person to
-        for (i = 0; i < people.length; i++) {
-          if (households[people[i].household_id]) {
-            people[i].household = households[people[i].household_id];
-            finalArray.push(people[i]);
-          }
-        }
-        res.send(finalArray);
-      }
-    });
-  }
-);
-
+/*
+* Get a list of member emails based upon one-to-many member status values
+*/
 app.get('/api/member/emails',
   authentication.users.isAuthenticated,
   function (req, res) {
 
     let opts = {};
+    //Status values are passed in a comma delimited list and converted to an array
     if (req.query.statuses) {
       opts.keys = req.query.statuses.split(',');
     }
+
     // get the results of the API call
     db.view('app', 'emails', opts, function (err, resp) {
       if (!err) {
@@ -363,6 +333,9 @@ app.get('/api/member/emails',
   }
 );
 
+/*
+* Get a list of member data for use in a .csv file based upon  member status
+*/
 app.get('/api/member/csv',
   authentication.users.isAuthenticated,
   function (req, res) {
@@ -480,7 +453,7 @@ app.get('/api/member/csv',
 
 // #endregion
 
-// #region Household
+// #region Household Endpoints
 
 app.get('/getPerson/',
   authentication.users.isAuthenticated,
@@ -506,7 +479,10 @@ app.get('/getPerson/',
   }
 );
 
-app.get('/household/:id',
+/*
+* Get a household by ID
+*/
+app.get('/api/households/:id',
   authentication.users.isAuthenticated,
   function (req, res) {
     // both admins and members can see these results
@@ -549,7 +525,9 @@ app.get('/household/:id',
 
 // #region Resources Endpoints
 
-//Displays root folders from MSC Google Drive
+/*
+*Displays root folders from MSC Google Drive
+*/
 app.get('/api/resources',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -559,7 +537,9 @@ app.get('/api/resources',
     });
   });
 
-// Download Google Drive file
+/*
+* Download Google Drive file
+*/
 app.get('/api/resources/download/:id',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -586,7 +566,9 @@ app.get('/api/resources/download/:id',
 
   });
 
-//Export file
+/*
+* Export file a Google Drive file
+*/
 app.get('/api/resources/export/:id',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -621,7 +603,9 @@ app.get('/api/resources/export/:id',
 
   });
 
-// Resources: Endpoint for retrieving list of GDrive metadata for a folder
+/*
+* Retrieve a list of GDrive metadata for a folder
+*/
 app.get('/api/resources/:folderId',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -638,7 +622,9 @@ app.get('/api/resources/:folderId',
 
   });
 
-//Resources: Endpoint for retrieving list of GDrive metadata based upon search text
+/*
+* Retrieve a list of GDrive metadata based upon search text
+*/
 app.get('/api/resources/search/:searchText',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -655,7 +641,9 @@ app.get('/api/resources/search/:searchText',
 
   });
 
-//Resources: Endpoint for retrieving Base64 file content
+/*
+* Retrieve Base64 file content
+*/
 app.get('/api/resources/pdf/:id',
   authentication.users.isAuthenticated,
   (req, res) => {
@@ -687,7 +675,7 @@ app.get('/api/resources/pdf/:id',
 // #region Admin Endpoints
 
 // TODO: ADD ADMIN ONLY AUTH HERE
-app.get('/admin',
+app.get('/api/households',
   authentication.users.isAuthenticated,
   function (req, res) {
     //db.view(designname, viewname, [params], [callback])
@@ -749,13 +737,51 @@ app.post('/postPerson',
     }
   });
 
-app.post('/postHousehold',
+//IS THIS USED ANYWHERE?
+app.get('/household',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    //db.view(designname, viewname, [params], [callback])
+    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
+      if (!err) {
+        var mapped = function (data) {
+          return data.rows.map(function (row) {
+            return row.doc; // this is the entire payload
+          });
+        };
+        // add people to the household
+        var docs = mapped(resp);
+        var households = {};
+        var people = [];
+        var finalArray = [];
+
+        for (i = 0; i < docs.length; i++) {
+          if (docs[i].type == 'person' && docs[i].first && docs[i].last && docs[i].status != 'deceased' && docs[i].status != 'non-member') {
+            // build an object that holds objects that hold arrays of people
+            people.push(docs[i]);
+          } else if (docs[i].type == 'household') {
+            households[docs[i]._id] = docs[i];
+          }
+        }
+        // connect the household info to the person
+        // only if there's a household to connect a person to
+        for (i = 0; i < people.length; i++) {
+          if (households[people[i].household_id]) {
+            people[i].household = households[people[i].household_id];
+            finalArray.push(people[i]);
+          }
+        }
+        res.send(finalArray);
+      }
+    });
+  }
+);
+
+app.post('/api/household',
   authentication.users.isAuthenticated,
   jsonParser,
   function (req, res) {
-    var role = req.user.role[0].value;
-    if (role === 'admin') {
-
+    if (authentication.users.isInRole(req, 'adimn')) {
       var household = req.body;
 
       // if we're deleting a household, we should first delete the people

@@ -58,7 +58,7 @@
             <router-link to="/resources" tag="li">
               <a>Resources</a>
             </router-link>
-            <router-link v-if="isAdmin" :to="{name:'admin'}" tag="li">
+            <router-link v-if="isAdmin" :to="{name:'households'}" tag="li">
               <a>Admin</a>
             </router-link>
             <router-link to="/logout" tag="li">
@@ -138,7 +138,9 @@
         <div class="col m6 s12">
           <h4>Quick Access</h4>
           <div class="row">
-            <div class="col">Signup Chairs</div>
+            <div class="col">
+                <router-link to="/resources/999"><a>Signup Chairs</a></router-link>    
+            </div>
           </div>
           <div class="row">
               <div class="col">Lodge Rates</div>
@@ -569,18 +571,18 @@ Parameters:
     </div>
   </script>
 
-  <script type="text/x-template" id="admin">
+  <script type="text/x-template" id="households">
     <div>
       <h6>
         Admin
       </h6>
-      <div v-if="!loading">
+      <div v-if="!loading">hold
         <ul class="collection">
           <li class="collection-item grey lighten-4 row">
             <div class="input-field col m8 s12">
               <i class="material-icons prefix">search</i>
               <input id="search" v-model="searchStr" @keyup="search()" placeholder="First or last name..." />
-              <label for="search" class="active">Search for a household</label>
+              <label for="search" class="active">Search by household name or first/last name of a person in the household </label>
             </div>            
             <div class="col m4">
               <router-link :to="{name:'new-household'}" class="btn right">
@@ -605,7 +607,7 @@ Parameters:
                   </router-link>
                 </li>
                 <li>
-                  <router-link :to="{ name: 'editHousehold', params: { household_id: item._id }}" title="Edit household">
+                  <router-link :to="{ name: 'household-edit', params: { household_id: item._id }}" title="Edit household">
                     <i class="material-icons">edit</i> Edit household
                   </router-link>
                 </li>
@@ -762,16 +764,12 @@ Parameters:
   </script>
 
   <!-- a form to edit a household -->
-  <script type="text/x-template" id="third-child">
+  <script type="text/x-template" id="household-edit">
     <div>
-
       <form id="form-edit-household" name="form-edit-household" v-on:submit="save" action="#" method="post">
-
         <div class="card-content grey lighten-4">
           <span class="card-title">{{ title.content }}</span>
-
           <form-errors :errors="errors"></form-errors>
-
           <div class="row">
             <div class="input-field col m4 s12">
               <input type="text" id="household_name" v-model="item.name" class="validate" />
@@ -810,18 +808,15 @@ Parameters:
               <span class="helper-text red-text text-darken-2">Required</span>
             </div>
           </div>
-
           <div class="input-field">              
             <input type="text" id="household_phone" v-model="item.phone"  />
             <label for="household_phone" class="active">Household Phone</label>
           </div>
-
           <div class="section">
             <h5>
               Hardcopies
             </h5>
           </div>
-
           <div class="row">              
             <div class="col m6 s12 switch">
               Mail a hardcopy of the newsletter?<br />
@@ -842,7 +837,6 @@ Parameters:
               </label>
             </div>
           </div><!--row-->
-
         </div><!--card content-->
         <div class="card-content red lighten-4" v-if="$route.params.household_id">
           <p>
@@ -861,17 +855,15 @@ Parameters:
           <router-link v-if="$route.name == 'editHousehold'" :to="{name: 'admin-household', params: {id: item._id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</router-link>
           <router-link v-if="$route.name == 'new-household'" :to="{name: 'admin'}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</router-link>
         </div>
-
       </form>
-
     </div>
   </script>
 
   <!-- a form to add a new household -->
-  <script type="text/x-template" id="new-household">
+  <script type="text/x-template" id="household-new">
     <div>        
       <h6>
-        <a href="#/admin">Admin</a> / Add a household
+        <a href="#/households">Admin</a> / Add a household
       </h6>
       <div class="row">
         <div class="col s12 m8">
@@ -889,7 +881,7 @@ Parameters:
   </script>
 
   <!-- parent view for each household -->
-  <script type="text/x-template" id="admin-household">
+  <script type="text/x-template" id="household">
     <div>
 
       <loading :status="loading"></loading>
@@ -897,7 +889,7 @@ Parameters:
 
       <div v-if="!error">
         <h6>
-          <router-link :to="{name: 'admin'}">Admin</router-link> / {{ item.name }}
+          <router-link :to="{name: 'households'}">Admin</router-link> / {{ item.name }}
         </h6>
         <div class="row">
           <div class="col s12 m10">
@@ -920,7 +912,7 @@ Parameters:
                           </router-link>
                         </li>
                         <li>
-                          <router-link :to="{ name: 'editHousehold', params: { household_id: item._id }}" title="Edit household">
+                          <router-link :to="{ name: 'household-edit', params: { household_id: item._id }}" title="Edit household">
                             <i class="material-icons">edit</i> Edit household
                           </router-link>
                         </li>
@@ -935,7 +927,7 @@ Parameters:
           </div><!-- col -->          
         </div><!--row-->
       </div><!--!error-->
-      <a href="#/admin">&larr; Back to Admin</a>
+      <a href="#/households">&larr; Back to Admin</a>
     </div><!-- container -->
   </script>
 
