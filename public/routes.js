@@ -93,7 +93,7 @@ function initializeVueRouter(store) {
       meta: { requiresAuth: true }
     },
     {
-      path: '/household/:household_id',
+      path: '/households/:household_id',
       component: household,
       props: true,
       children: [
@@ -110,9 +110,9 @@ function initializeVueRouter(store) {
           props: true
         },
         {
-          path: 'new-person',
-          name: 'newPerson',
-          component: secondChild,
+          path: 'person/new',
+          name: 'person-new',
+          component: personEdit,
           props: true
         },
         {

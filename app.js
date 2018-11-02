@@ -166,6 +166,246 @@ app.get('/',
 
 // #endregion
 
+// #region Household Endpoints
+
+/*
+* Get a household by ID
+*/
+app.get('/api/households/:id',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    // both admins and members can see these results
+    if (authentication.users.isInRole(req, 'adimn,member')) {
+      db.get(req.params.id, function (err, doc) {
+        if (!err) {
+          // get the people of this householdsAndPeople
+          db.view(
+            'app',
+            'join_people_to_household',
+            {
+              'include_docs': true,
+              'key': req.params.id
+            },
+            function (err, people) {
+              if (!err) {
+                var mapped = function (data) {
+                  return data.rows.map(function (row) {
+                    return row.doc; // this is the entire payload
+                  });
+                };
+                // add people to the household
+                doc.people = mapped(people);
+                res.send(doc);
+              }
+            }
+          );
+          //console.log(doc);
+          //res.send(doc);
+        } else {
+          return res.status(404).json({ "error": "Sorry, we don't have a household with that id." });
+        }
+      });
+    } else {
+      return res.status(401).json({ "error": "Sorry, you don't have permission to access households." });
+    }
+  });
+
+// TODO: ADD ADMIN ONLY AUTH HERE
+app.get('/api/households',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    //db.view(designname, viewname, [params], [callback])
+    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
+      if (!err) {
+        var mapped = function (data) {
+          return data.rows.map(function (row) {
+            return row.doc; // this is the entire payload
+          });
+        };
+        // add people to the household
+        var docs = mapped(resp);
+        var households = [];
+        var people = {};
+        for (i = 0; i < docs.length; i++) {
+          if (docs[i].type == 'person') {
+            // build an object that holds objects that hold arrays of people
+            if (!people[docs[i].household_id]) {
+              people[docs[i].household_id] = [];
+            }
+            people[docs[i].household_id].push(docs[i]);
+          } else if (docs[i].type == 'household') {
+            households[i] = docs[i];
+          }
+          // console.log(people);
+        }
+        for (i = 0; i < households.length; i++) {
+          var household_id = households[i]._id;
+          households[i].people = [];
+          households[i].people = people[household_id];
+        }
+        // console.log(docs[1]);
+        res.send(households);
+      }
+    });
+  }
+);
+
+//IS THIS USED ANYWHERE?
+app.get('/household',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    //db.view(designname, viewname, [params], [callback])
+    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
+      if (!err) {
+        var mapped = function (data) {
+          return data.rows.map(function (row) {
+            return row.doc; // this is the entire payload
+          });
+        };
+        // add people to the household
+        var docs = mapped(resp);
+        var households = {};
+        var people = [];
+        var finalArray = [];
+
+        for (i = 0; i < docs.length; i++) {
+          if (docs[i].type == 'person' && docs[i].first && docs[i].last && docs[i].status != 'deceased' && docs[i].status != 'non-member') {
+            // build an object that holds objects that hold arrays of people
+            people.push(docs[i]);
+          } else if (docs[i].type == 'household') {
+            households[docs[i]._id] = docs[i];
+          }
+        }
+        // connect the household info to the person
+        // only if there's a household to connect a person to
+        for (i = 0; i < people.length; i++) {
+          if (households[people[i].household_id]) {
+            people[i].household = households[people[i].household_id];
+            finalArray.push(people[i]);
+          }
+        }
+        res.send(finalArray);
+      }
+    });
+  }
+);
+
+app.post('/api/household',
+  authentication.users.isAuthenticated,
+  jsonParser,
+  function (req, res) {
+    if (authentication.users.isInRole(req, 'adimn')) {
+      var household = req.body;
+
+      // if we're deleting a household, we should first delete the people
+      if (household._deleted == true) {
+        // using cloudant query means we don't have to pre-build our indexes
+        // which means I don't have to worry about keeping mapreduce code in sync 
+        // across the dev and prod database(s), and can instead just update views here
+        db.find(
+          {
+            "selector": {
+              "household_id": {
+                "$eq": household._id
+              }
+            },
+            "fields": [
+              "_id",
+              "_rev"
+            ]
+          }, function (err, data) {
+            if (err) {
+              throw err;
+            }
+            var people = [];
+
+            console.log('Found %d people in this household', data.docs.length);
+
+            for (var i = 0; i < data.docs.length; i++) {
+              data.docs[i]._deleted = true;
+              people.push(data.docs[i]);
+            }
+
+            if (people.length > 0) {
+              db.bulk({ docs: people }, function (err, docs) {
+                if (!err) {
+                  console.log('deleted this many people', people.length);
+                } else {
+                  console.log('error deleting people', err.reason);
+                }
+              });
+            }
+          });
+      }
+
+      // update the household      
+      db.insert(household, function (err, doc) {
+        if (!err) {
+          console.log('success updating household');
+          res.send(doc);
+        }
+        else {
+          console.log('household:' + err.reason);
+          res.status(401).json({ "error": err.reason });
+        }
+      });
+
+    } else {
+      // console.log('not admin');
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
+    }
+  });
+
+app.post('/postHouseholdOld',
+  authentication.users.isAuthenticated,
+  jsonParser,
+  function (req, res) {
+    var role = req.user.role[0].value;
+    if (role === 'admin') {
+
+      var household = req.body,
+        newPeople = [];
+      // bulk insert people
+      // todo: make sure this works when a household has zero people, even though that's very unlikely
+      // might even wanna prevent saving a household until there's a person
+      if (household.people.length > 0) {
+        // update people in bulk
+        db.bulk({ docs: household.people }, function (err, docs) {
+          //db.insert(household.people[1], function(err, docs){
+          if (!err) {
+            console.log(docs);
+            // update the new people object with response, including _rev
+            newPeople = docs;
+            // don't push the people object into the household, b/c people are stored separately
+            delete household.people;
+            // update household
+            db.insert(household, function (err, doc) {
+              if (!err) {
+                console.log('success updating household, will add people to response next');
+                // make sure there are no people in the household object
+                doc.people = [];
+                // append the updated people object to the household before sending the response
+                doc.people = newPeople;
+                console.log(doc);
+                res.send(doc);
+              }
+              else {
+                console.log('household:' + err.reason);
+              }
+            });
+          } else {
+            console.log('people: ' + err.reason);
+          }
+        });
+      }
+    } else {
+      // console.log('not admin');
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
+    }
+  });
+
+// #endregion
+
 // #region Members Endpoints
 
 /*
@@ -453,15 +693,14 @@ app.get('/api/member/csv',
 
 // #endregion
 
-// #region Household Endpoints
+// #region Person Endpoints
 
-app.get('/getPerson/',
+app.get('/api/person/:id',
   authentication.users.isAuthenticated,
   function (req, res) {
-    var role = req.user.role[0].value;
-    if (role === 'admin') {
+    if (authentication.users.isInRole(req, 'adimn')) {
       // the factory passes the id of the document as a query parameter
-      var id = req.query.id;
+      var id = req.params.id;
       db.get(id, function (err, doc) {
         if (!err) {
           res.send(doc);
@@ -479,45 +718,25 @@ app.get('/getPerson/',
   }
 );
 
-/*
-* Get a household by ID
-*/
-app.get('/api/households/:id',
+app.post('/api/person',
   authentication.users.isAuthenticated,
+  jsonParser,
   function (req, res) {
-    // both admins and members can see these results
-    if (authentication.users.isInRole(req, 'adimn,member')) {
-      db.get(req.params.id, function (err, doc) {
+    if (authentication.users.isInRole(req, 'adimn')) {
+      var person = req.body;
+      db.insert(person, function (err, doc) {
         if (!err) {
-          // get the people of this householdsAndPeople
-          db.view(
-            'app',
-            'join_people_to_household',
-            {
-              'include_docs': true,
-              'key': req.params.id
-            },
-            function (err, people) {
-              if (!err) {
-                var mapped = function (data) {
-                  return data.rows.map(function (row) {
-                    return row.doc; // this is the entire payload
-                  });
-                };
-                // add people to the household
-                doc.people = mapped(people);
-                res.send(doc);
-              }
-            }
-          );
-          //console.log(doc);
-          //res.send(doc);
-        } else {
-          return res.status(404).json({ "error": "Sorry, we don't have a household with that id." });
+          console.log('success updating person, will add people to response next');
+          console.log(doc);
+          res.send(doc);
+        }
+        else {
+          console.log('household:' + err.reason);
         }
       });
     } else {
-      return res.status(401).json({ "error": "Sorry, you don't have permission to access households." });
+      // console.log('not admin');
+      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
 
@@ -668,227 +887,6 @@ app.get('/api/resources/pdf/:id',
       res.end();
     }
 
-  });
-
-// #endregion
-
-// #region Admin Endpoints
-
-// TODO: ADD ADMIN ONLY AUTH HERE
-app.get('/api/households',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    //db.view(designname, viewname, [params], [callback])
-    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
-      if (!err) {
-        var mapped = function (data) {
-          return data.rows.map(function (row) {
-            return row.doc; // this is the entire payload
-          });
-        };
-        // add people to the household
-        var docs = mapped(resp);
-        var households = [];
-        var people = {};
-        for (i = 0; i < docs.length; i++) {
-          if (docs[i].type == 'person') {
-            // build an object that holds objects that hold arrays of people
-            if (!people[docs[i].household_id]) {
-              people[docs[i].household_id] = [];
-            }
-            people[docs[i].household_id].push(docs[i]);
-          } else if (docs[i].type == 'household') {
-            households[i] = docs[i];
-          }
-          // console.log(people);
-        }
-        for (i = 0; i < households.length; i++) {
-          var household_id = households[i]._id;
-          households[i].people = [];
-          households[i].people = people[household_id];
-        }
-        // console.log(docs[1]);
-        res.send(households);
-      }
-    });
-  }
-);
-
-//IS THIS USED ANYWHERE?
-app.get('/household',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    //db.view(designname, viewname, [params], [callback])
-    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
-      if (!err) {
-        var mapped = function (data) {
-          return data.rows.map(function (row) {
-            return row.doc; // this is the entire payload
-          });
-        };
-        // add people to the household
-        var docs = mapped(resp);
-        var households = {};
-        var people = [];
-        var finalArray = [];
-
-        for (i = 0; i < docs.length; i++) {
-          if (docs[i].type == 'person' && docs[i].first && docs[i].last && docs[i].status != 'deceased' && docs[i].status != 'non-member') {
-            // build an object that holds objects that hold arrays of people
-            people.push(docs[i]);
-          } else if (docs[i].type == 'household') {
-            households[docs[i]._id] = docs[i];
-          }
-        }
-        // connect the household info to the person
-        // only if there's a household to connect a person to
-        for (i = 0; i < people.length; i++) {
-          if (households[people[i].household_id]) {
-            people[i].household = households[people[i].household_id];
-            finalArray.push(people[i]);
-          }
-        }
-        res.send(finalArray);
-      }
-    });
-  }
-);
-
-app.post('/postPerson',
-  authentication.users.isAuthenticated,
-  jsonParser,
-  function (req, res) {
-    var role = req.user.role[0].value;
-    if (role === 'admin') {
-      var person = req.body;
-      db.insert(person, function (err, doc) {
-        if (!err) {
-          console.log('success updating person, will add people to response next');
-          console.log(doc);
-          res.send(doc);
-        }
-        else {
-          console.log('household:' + err.reason);
-        }
-      });
-    } else {
-      // console.log('not admin');
-      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
-    }
-  });
-
-app.post('/api/household',
-  authentication.users.isAuthenticated,
-  jsonParser,
-  function (req, res) {
-    if (authentication.users.isInRole(req, 'adimn')) {
-      var household = req.body;
-
-      // if we're deleting a household, we should first delete the people
-      if (household._deleted == true) {
-        // using cloudant query means we don't have to pre-build our indexes
-        // which means I don't have to worry about keeping mapreduce code in sync 
-        // across the dev and prod database(s), and can instead just update views here
-        db.find(
-          {
-            "selector": {
-              "household_id": {
-                "$eq": household._id
-              }
-            },
-            "fields": [
-              "_id",
-              "_rev"
-            ]
-          }, function (err, data) {
-            if (err) {
-              throw err;
-            }
-            var people = [];
-
-            console.log('Found %d people in this household', data.docs.length);
-
-            for (var i = 0; i < data.docs.length; i++) {
-              data.docs[i]._deleted = true;
-              people.push(data.docs[i]);
-            }
-
-            if (people.length > 0) {
-              db.bulk({ docs: people }, function (err, docs) {
-                if (!err) {
-                  console.log('deleted this many people', people.length);
-                } else {
-                  console.log('error deleting people', err.reason);
-                }
-              });
-            }
-          });
-      }
-
-      // update the household      
-      db.insert(household, function (err, doc) {
-        if (!err) {
-          console.log('success updating household');
-          res.send(doc);
-        }
-        else {
-          console.log('household:' + err.reason);
-          res.status(401).json({ "error": err.reason });
-        }
-      });
-
-    } else {
-      // console.log('not admin');
-      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
-    }
-  });
-
-app.post('/postHouseholdOld',
-  authentication.users.isAuthenticated,
-  jsonParser,
-  function (req, res) {
-    var role = req.user.role[0].value;
-    if (role === 'admin') {
-
-      var household = req.body,
-        newPeople = [];
-      // bulk insert people
-      // todo: make sure this works when a household has zero people, even though that's very unlikely
-      // might even wanna prevent saving a household until there's a person
-      if (household.people.length > 0) {
-        // update people in bulk
-        db.bulk({ docs: household.people }, function (err, docs) {
-          //db.insert(household.people[1], function(err, docs){
-          if (!err) {
-            console.log(docs);
-            // update the new people object with response, including _rev
-            newPeople = docs;
-            // don't push the people object into the household, b/c people are stored separately
-            delete household.people;
-            // update household
-            db.insert(household, function (err, doc) {
-              if (!err) {
-                console.log('success updating household, will add people to response next');
-                // make sure there are no people in the household object
-                doc.people = [];
-                // append the updated people object to the household before sending the response
-                doc.people = newPeople;
-                console.log(doc);
-                res.send(doc);
-              }
-              else {
-                console.log('household:' + err.reason);
-              }
-            });
-          } else {
-            console.log('people: ' + err.reason);
-          }
-        });
-      }
-    } else {
-      // console.log('not admin');
-      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
-    }
   });
 
 // #endregion

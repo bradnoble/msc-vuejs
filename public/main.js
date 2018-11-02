@@ -744,7 +744,7 @@ const household = {
   },
   methods: {
     get: function () {
-      const _this = this; 
+      const _this = this;
 
       this.$http.get('/api/households/' + _this.household_id)
         .then(function (resp) {
@@ -867,7 +867,7 @@ const householdNew = {
 
 // #region Admin-Person
 
-// list people, child of adminHousehold
+// IS USED??? list people, child of adminHousehold
 const firstChild = {
   template: '#first-child',
   props: ['item'], // gotta use props to grab data from the parent
@@ -900,7 +900,7 @@ const personEdit = {
     this.$parent.loading = true;
 
     // for new people in the household
-    if (this.$route.name == 'newPerson') {
+    if (this.$route.name == 'person-new') {
       this.title = {
         icon: "person_add",
         content: "Add a person to this household"
@@ -923,10 +923,7 @@ const personEdit = {
   methods: {
     get: function () {
       let _this = this;
-      this.$http.get('/getPerson/',
-        {
-          id: _this.person_id
-        })
+      this.$http.get('/api/person/' + _this.person_id)
         .then(function (resp) {
           _this.person = resp.data;
         }, function (error) {
@@ -953,7 +950,7 @@ const personEdit = {
         // temporary message that shows
         $('#save').text('Saving...');
 
-        this.$http.post('/postPerson/', _this.person)
+        this.$http.post('/api/person/', _this.person)
           .then(function (resp) {
             setTimeout(function () {
               // revert the label of the save button
