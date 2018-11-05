@@ -130,6 +130,32 @@ const home = {
     document.title = 'MSC';
   },
   mounted: function () {
+    TwitterWidgetsLoader.load(function (err, twttr) {
+      if (err) {
+        //do some graceful degradation / fallback
+        console('TwitterWidgetLoad failed to load');
+        return;
+      }
+
+      //twttr.widgets.createTweet('20', document.getElementById('twitter'));
+
+      twttr.widgets.createTimeline(
+        {
+          sourceType: 'profile',
+          screenName: 'msc_madriver'
+        },
+        document.getElementById('twitter-timeline'),
+        {
+          width: '550',
+          height: '600',
+          related: 'twitterdev,twitterapi'
+        }).then(function (el) {
+          console.log('Embedded a timeline.')
+        });
+
+    });
+
+
   },
   methods: {
   }

@@ -18,6 +18,18 @@ i.material-icons {
   cursor: pointer;
 }
 
+.background-image{
+    /* The image used */
+    background-image: url("/img/msc1.jpg");
+
+    /* Full height */
+    height: 100%; 
+
+    /* Center and scale the image nicely */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;}
+
 /*
 .tabs .router-link-exact-active {
   background-color: #ffebee
