@@ -139,18 +139,18 @@ function initializeVueRouter(store) {
 
     //TEMP-for testing
     //return next();
-    
-    //Test if route metadata require authorization
+
+    //If route metadata require authorization
     if (to.matched.some(record => record.meta.requiresAuth)) {
-      //Presence of user object indicates user is authenticated
+      //Presence of user object in cookie indicates user is authenticated
       //TBD-could expand this to allow access to routes based upon roles
-      if (store.getters.user) {
+      if (this.$cookies.get('msc-user')) {
         next();
       } else {
         //Redirect to login page if not authenticated
         next({
           path: '/login',
-          query: {redirect: to.fullPath},
+          query: { redirect: to.fullPath },
         });
       }
     } else {

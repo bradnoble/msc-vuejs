@@ -86,10 +86,14 @@ const login = {
     onLogin: function () {
       let user = this.$http.get('/login?username=' + this.username + '&password=' + this.password)
         .then((res) => {
-          //TBD: Replace by reading cookie in response header then write local cookie
-          //to be read by vue-route to/from
           //If valid user returned
           if (res.data) {
+
+            //Store user object in local cookie
+            this.$cookies.set('msc-user',res.data);
+            // TEST print user name
+            console.log(this.$cookies.get('msc-user').username);
+
             //Store user info and redirect to Home page
             $('#loginMsg').text('');
             this.$store.commit('setUser', res.data);
@@ -109,6 +113,10 @@ const logout = {
   },
   methods: {
     logout: function () {
+
+      //Remove local cookie w/ user data
+      this.$cookies.remove('msc-user');
+
       //Clear client user data representing authentication
       this.$store.commit('clearUser');
 

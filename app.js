@@ -120,13 +120,13 @@ app.get('/login', function (req, res, next) {
     req.logIn(user, function (err) {
       if (err) { return next(err); }
 
-      res.cookie('msc-user', user,
-        {
-          domain: 'montclairskiclub.com',
-          expires: new Date(Date.now() + 900000),
-          httpOnly: true
-        }
-      );
+      // res.cookie('msc-user', user,
+      //   {
+      //     domain: 'montclairskiclub.com',
+      //     expires: new Date(Date.now() + 900000),
+      //     httpOnly: true
+      //   }
+      // );
       //Pass user object/data to client for local storage
       res.send(user);
       return res.end();
