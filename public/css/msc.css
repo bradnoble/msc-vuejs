@@ -3,11 +3,11 @@ body .nav-wrapper a {
   color: #333
 }
 
-body .navbar-fixed nav {}
+/* body .navbar-fixed nav {}
 
 body {}
 
-body .container {}
+body .container {} */
 
 i.material-icons {
   vertical-align: middle !important;

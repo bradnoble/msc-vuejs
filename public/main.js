@@ -86,6 +86,8 @@ const login = {
     onLogin: function () {
       let user = this.$http.get('/login?username=' + this.username + '&password=' + this.password)
         .then((res) => {
+          //TBD: Replace by reading cookie in response header then write local cookie
+          //to be read by vue-route to/from
           //If valid user returned
           if (res.data) {
             //Store user info and redirect to Home page
@@ -146,7 +148,7 @@ const home = {
         },
         document.getElementById('twitter-timeline'),
         {
-          width: '550',
+          width: '600',
           height: '600',
           related: 'twitterdev,twitterapi'
         }).then(function (el) {

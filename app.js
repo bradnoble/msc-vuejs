@@ -41,10 +41,14 @@ let passport = require('passport');
 let LocalStrategy = require('passport-local').Strategy;
 let flash = require('connect-flash');
 
+//Disable to prevent info on server system
+app.disable('x-powered-by');
+
 app.use(session({
   cookie: {
+    domain: 'montclairskiclub.com',
     httpOnly: true,
-    path: '/'
+    path: '/authentication'
   },
   name: 'msc.sid',
   resave: false,
@@ -84,7 +88,7 @@ passport.serializeUser(function (user, callback) {
 });
 
 /*
-* Deserializes user info from cookie
+* Deserializes user info from cookie in server session store
 */
 passport.deserializeUser(function (id, callback) {
   authentication.users.findById(id, function (err, user) {
@@ -94,17 +98,6 @@ passport.deserializeUser(function (id, callback) {
     callback(err, user);
   });
 });
-
-// function requireAuth (to, from, next) {
-//   if (!authentication.users.isAuthenticated()) {
-//     next({
-//       path: '/',
-//       query: { redirect: to.fullPath }
-//     })
-//   } else {
-//     next()
-//   }
-// }
 
 // #endregion
 
@@ -126,6 +119,14 @@ app.get('/login', function (req, res, next) {
     if (!user) { return res.redirect('/login'); }
     req.logIn(user, function (err) {
       if (err) { return next(err); }
+
+      res.cookie('msc-user', user,
+        {
+          domain: 'montclairskiclub.com',
+          expires: new Date(Date.now() + 900000),
+          httpOnly: true
+        }
+      );
       //Pass user object/data to client for local storage
       res.send(user);
       return res.end();
@@ -139,6 +140,7 @@ app.get('/login', function (req, res, next) {
 app.get('/logout',
   function (req, res) {
     req.logout();
+    res.clearCookie('msc-user');
     res.end();
   });
 
