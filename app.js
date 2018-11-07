@@ -39,16 +39,16 @@ app.use(express.static(__dirname + '/public'));
 let session = require("express-session");
 let passport = require('passport');
 let LocalStrategy = require('passport-local').Strategy;
-let flash = require('connect-flash');
+//let flash = require('connect-flash');
 
 //Disable to prevent info on server system
-app.disable('x-powered-by');
+//app.disable('x-powered-by');
 
 app.use(session({
   cookie: {
-    domain: 'montclairskiclub.com',
+    //domain: 'localhost', TBD-set in env variable?
     httpOnly: true,
-    path: '/authentication'
+    path: '/'
   },
   name: 'msc.sid',
   resave: false,
@@ -127,6 +127,7 @@ app.get('/login', function (req, res, next) {
       //     httpOnly: true
       //   }
       // );
+
       //Pass user object/data to client for local storage
       res.send(user);
       return res.end();

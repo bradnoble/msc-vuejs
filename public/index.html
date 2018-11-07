@@ -76,11 +76,10 @@
     <div>
     <footer class="page-footer blue lighten-2">
         <div class="container">
-          <div class="row">
         </div>
         <div class="footer-copyright">
           <div class="container">
-          © 2018 Montclair Ski Club
+          &copy; 2018 Montclair Ski Club
           </div>
         </div>
       </footer>
@@ -140,29 +139,33 @@
           <h4>Quick Access</h4>
           <div class="row">
             <div class="col">
-                <router-link to="/resources/999"><a>Signup Chairs</a></router-link>    
+                <router-link to="/resources/1zy6dcB1aAiIWCvg05fuX60L2s61ejwyH"><a>Signup Chairs</a></router-link>    
             </div>
           </div>
           <div class="row">
-              <div class="col">Lodge Rates</div>
+            <div class="col">
+              <router-link to="/resources/1zy6dcB1aAiIWCvg05fuX60L2s61ejwyH"><a>Lodge Rates</a></router-link>              
+            </div>
           </div>
           <div class="row">
-            <div class="col">Meeting Minutes</div>
+            <div class="col">
+                <router-link to="/resources/1qqFt70tPY-zL3wzEFg5F3yE481AaIv22"><a>Newsletters</a></router-link>              
+            </div>
           </div>
           <div class="row">
-            <div class="col">Financial Reports</div>
+            <div class="col">
+              <router-link to="/resources/1kLCc0HNuQEXnkUlu9Fcm5d5tSb2kX4eD"><a>Meeting Minutes</a></router-link>              
+            </div>
           </div>
           <div class="row">
-            <div class="col">Newsletters</div>
+            <div class="col">
+                <router-link to="/resources/10BN8b-oKJv-8v8ZrNkDdN-Z4DfSx9eFc"><a>Financial Reports</a></router-link>              
+            </div>
           </div>
           <div class="row">
-            <div class="col">Join.me Info</div>
-          </div>
-          <div class="row">
-            <div class="col">All Resources</div>
-          </div>
-          <div class="row">
-            <div class="col"></div>
+            <div class="col">
+                <router-link to="/resources/1tcUBBGjktzxpzO_ofIPCyH93gHjoc__n"><a>join.me Info</a></router-link>              
+            </div>
           </div>
         </div>
         <div class="col m8">
@@ -173,316 +176,6 @@
       </div>
     </div>
   </script>
-
-  <!-- MEMBERS VIEWS -->
-
-  <script type="text/x-template" id="members">
-    <div>
-      <router-view @searched="search" :statuses="statuses" :searchstring="searchstring"></router-view>
-    </div>
-  </script>
-
-  <script type="text/x-template" id="member-intro">
-    <div>
-      <h5>
-        Membership List
-      </h5>
-      <form action="#" @submit="searchfromchild">
-        <div class="input-field">
-          <span class="prefix">
-            <i class="material-icons" title="search">search</i>
-          </span>
-          <input id="search" v-model="searchstring" type="text" />
-          <label for="search">Search by name</label>
-        </div>
-      </form>
-      <p>
-        Search by type:
-      </p>
-      <div class="row">
-        <router-link :to="{name:'member-status', params:{ status:status }}" v-for="status in statuses" class="btn col m3 s12 center">
-          {{ status }}
-        </router-link>
-      </div>
-      <p>
-        Or, <router-link :to="{name:'member-emails'}">grab email addresses</router-link> to blast email groups of people.
-      </p>
-    </div>
-  </script>
-
-  <!--search results, child of list-->
-  <script type="text/x-template" id="member-results">
-  <div>
-    <h5>
-      <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Search
-    </h5>
-    <div class="input-field">
-      <span class="prefix">
-        <i class="material-icons" v-if="searchstring" v-on:click="clearfromchild" title="clear the search input">clear</i>
-        <i class="material-icons" v-if="!searchstring" title="search">search</i>
-      </span>
-      <input id="search" v-model="searchstring" @keyup="onNameSearch" type="text" />
-      <label for="search">Search by name</label>
-    </div>
-
-    <div class="row">
-      <div class="col m3">
-        <p>
-          Search by type
-        </p>
-        <div class="collection facets">
-          <router-link :to="{name:'member-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
-            all
-            <span class="secondary-content" v-if="$route.params.status == 'all'">
-              <i class="material-icons">chevron_right</i>
-            </span>
-          </router-link>              
-          <router-link :to="{name:'member-status', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
-            {{ status }}
-            <span class="secondary-content" v-if="$route.params.status == status">
-              <i class="material-icons">chevron_right</i>
-            </span>
-          </router-link>
-        </div>
-      </div>
-      <div class="col m9">
-        <loading :status="loading"></loading>
-
-        <div v-if="!loading">
-          <p v-if="$route.params.status">
-            {{ items.length }} {{ $route.params.status }}(s) 
-
-              <a class="dropdown-trigger" href="#" data-target="actions" data-constrainwidth="false" data-alignment="right" title="click to see options">
-                <i class="material-icons small">more_horiz</i>
-              </a>
-
-              <!-- Dropdown Structure -->
-            <ul id="actions" class="dropdown-content">
-              <li>
-                <a v-bind:href="'/api/member/csv?status=' + $route.params.status">
-                  <i class="material-icons">file_download</i> Download (CSV)
-                </a>
-              </li>
-              <li>
-                <router-link :to="{name: 'member-emails', query: {status: $route.params.status }}" v-if="$route.params.status != 'all'">
-                  <i class="material-icons">email</i> Get emails for {{ $route.params.status }}(s)
-                </router-link>
-                <router-link v-else :to="{name: 'member-emails'}">
-                  <i class="material-icons">email</i> Get emails for all
-                </router-link>
-              </li>
-            </ul>
-
-          </p>
-          <p v-if="$route.query.q">
-            {{ items.length }} result(s) 
-          </p>
-        </div>
-
-        <ul class="collection" v-if="!loading">
-          <li class="collection-item row" v-for="item in items" v-bind:id="item._id">
-
-            <div class="col m5">
-              <person-name :item="item"></person-name>
-            </div>
-            <div class="col m6">
-              <person-contact-info :item="item"></person-contact-info>
-            </div>
-            <div class="col m1">
-              <span class="secondary-content" v-if="item.household_id">
-                <!-- protected by v-if b/c https://github.com/vuejs/vue-router/issues/986 -->
-                <router-link :to="{ name: 'member-household', params: { id: item.household_id } }" title="View household" class="btn btn-flat btn-small waves-effect waves-teal teal-text">
-                  <i class="material-icons tiny">home</i>
-                </router-link>  
-              </span>
-            </div>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  </script>
-
-  <!-- second child of list view -->
-  <script type="text/x-template" id="member-emails">
-    <div>
-      <h6>
-        <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Emails
-      </h6>      
-      <div class="">
-          <div class="row">
-            <div class="col m3">
-              <div class="section">
-                <p>
-                  Quicklinks
-                </p>
-                <ul>
-                  <li class="">
-                    <a @click="onNewsletter">Newsletter list <i class="material-icons tiny">chevron_right</i></a>
-                  </li>
-                </ul>
-              </div>
-              <div class="section">
-                <a class="btn" id="" @click="onStatusChange(event)">All</a>
-                <p>
-                  Filter by member category
-                </p>
-                <div id="emailStatusList" class="collection">
-                  <a v-for="status in statuses" class="collection-item" @click="onStatusChange(event,status)" >
-                    <i class="material-icons small">check_box_outline_blank</i><span>&nbsp;{{status}}</span>
-                  </a>
-                </div>
-              <!-- <div class="collection">
-                  <a class="collection-item" @click="intercept()" :class="{'active': !$route.query.status}">All</a>
-                  <a class="collection-item" v-for="status in statuses" @click="intercept(status)" :class="{active: $route.query.status && $route.query.status.indexOf(status) > -1}">
-                    <i class="material-icons tiny" v-if="$route.query.status && $route.query.status.indexOf(status) > -1">check_box</i>
-                    <i class="material-icons tiny" v-else>check_box_outline_blank</i> 
-                    {{ status }}
-                  </a>
-                </div> -->
-              </div>
-            </div>
-
-            <div class="col m9">
-              <p><b><span>Email Addresses&nbsp;</span><span>({{totalEmails}})</span></b></p>
-              <div v-if="!loading">
-                <form>
-                  <div class="input-field">
-                    <textarea id="textarea-emails" v-model="emailAddresses" class="materialize-textarea">{{emailAddresses}}</textarea>
-                  </div>
-                </form>
-              </div>
-              <div v-else class="progress">
-                <div class="indeterminate"></div>
-              </div>
-
-            </div><!-- col -->
-          </div><!-- row -->
-          <router-link to="/list">Back to the list</router-link>
-        </div><!--card panel-->    
-
-    </div>
-  </script>
-
-  <script type="text/x-template" id="member-household">
-        <div>
-          <h6>
-            <router-link :to="{name: 'member-intro'}">Membership List</router-link> / {{ item.label_name }}
-          </h6>
-          <div class="card">
-            <div class="card-content">
-              <span class="card-title">
-                {{ item.label_name }}
-              </span>
-              <location v-bind:item="item"></location>
-              <ul class="collection">
-                <person 
-                  v-for="person in item.people" 
-                  v-bind:key="person._id" 
-                  v-bind:item="person">
-                </person>
-              </ul>
-            </div>
-          </div>
-          <div class="">
-            <router-link :to="back">&larr; Back</router-link>
-          </div>
-        </div>
-  </script>
-
-  <!-- RESOURCES VIEWS-->
-
-  <!--Resources (Google Drive)-->
-  <script type="text/x-template" id="resources">
-    <div>
-      <div class="row">
-        <div class="col s12">
-        </div>
-      </div>
-      <div class="row">
-        <div class="col s12">
-          <h5>Resources&nbsp;<i class="material-icons small cursor-pointer hoverable" @click="onHelp($event)">help_outline</i></h5>
-        </div>
-      </div>
-      <div id="resourcesHelp" class="row">
-        <div class="col s12">
-            <p>Resources files are organized in folders by topic. PDF files can be viewed and all files can be downloaded.</p>
-            <ul>
-              <li><i class="material-icons">chevron_right</i>Select a folder to display the files and additional folders contained in it.</li>
-              <li><i class="material-icons">chevron_right</i>Select a PDF file to view the contents.</li>
-              <li><i class="material-icons">chevron_right</i>Click the <i class="material-icons">file_download</i> icon to download a file.</li>
-              <li><i class="material-icons">chevron_right</i>Use the breadcrumbs at the top of the list tomove up in the folder hierarchy.</li>
-            </ul>
-            <a class="waves-effect waves-light btn blue" @click="onHelp($event)"><i class="material-icons left">arrow_drop_up</i>Close</a>
-        </div>
-      </div>
-            <!-- <div class="row"> -->
-        <!-- <div class="col s12">
-          <h5>Resources&nbsp;<i class="material-icons small waves-effect waves-light btn modal-trigger" href="resourcesHelpmodal">help_outline</i></h5>
-        </div> -->
-        <!-- <div class="col s8">
-          <nav class="grey lighten-4">
-            <div class="nav-wrapper">
-              <form>
-                <div class="input-field">
-                  <input id="search" type="search" placeholder="Search resources"  v-on:keyup.enter="onSearch($event)" required>
-                  <label class="label-icon" for="search"><i class="material-icons  black-text">search</i></label>
-                  <i class="material-icons">close</i>
-                </div>
-              </form>
-            </div>
-          </nav>
-        </div> -->
-      <!-- </div> -->
-      <nav class="blue darken-2">
-        <div class="nav-wrapper">
-          <div class="col s12">
-            <span v-for="folder in path" @click="onBreadcrumb(folder.id, $event)" class="breadcrumb cursor-pointer">{{folder.name}}</span>
-          </div>
-        </div>
-      </nav>
-      <div class="row">
-        <div class="col s12">
-          <div class="divider"></div>
-        </div>
-      </div>
-      <div v-if="files.length==0">
-        <div class="row">
-            <div class="col s12"><i class="material-icons small">info_outline</i><span>&nbsp;No files in this folder</span></div>
-        </div>
-      </div>
-      <div v-else>
-        <div class="row grey lighten-4">
-          <div class="col s5">Name</div>
-          <div class="col s1">Type</div>
-          <div class="col s2">Modified</div>
-          <div class="col s2">Size</div>
-          <div class="col s1"></div>
-        </div>
-        </div>
-        <div class="row"  v-for="file in files" :key="file.id" v-if="file.type=='Folder'">
-          <div class="col s5" @click="onFolderView(file,$event)"><i class="material-icons small cursor-pointer">folder</i><span class="cursor-pointer">&nbsp;{{file.name}}</span></div>
-          <div class="col s1">&minus;</div>
-          <div class="col s2">&minus;</div>
-          <div class="col s2">&minus;</div>
-          <div class="col s1"></div>
-        </div>
-        <div class="row"  v-for="file in files" :key="file.id" v-if="file.type!='Folder'">
-          <div class="col s5" v-bind:class="{'cursor-pointer':file.type=='PDF','hoverable':file.type=='PDF'}" @click="(file.canView?onFileView(file, $event):null)"><i class="material-icons small">{{(file.type=='PDF'?'description':(file.type=='Spreadsheet'?'grid_on':'format_align_left'))}}</i><span>&nbsp;{{file.name + (!file.canView?'&nbsp;(Download only)':'')}}</span></div>
-          <div class="col s1">{{file.type}}</div>
-          <div class="col s2">{{file.modifiedTimeFormatted}}</div>
-          <div class="col s2" v-html="file.sizeFormatted"></div>
-          <div class="col s1"><i v-if="file.canDownload" class="material-icons small cursor-pointer hoverable" @click="onFileDownload(file, $event)">file_download</i></div>
-        </div>
-      </div>
-    </div>
-  </script>
-
-  <!--Resources: PDF viewer for Google Docs-->
-  <div id="pdfModal" class="modal">
-    <iframe id="pdfViewer" name="pdfViewer" src="vendor/pdfjs/web/viewer.html" allowfullscreen="true"
-      webkitallowfullscreen=""></iframe>
-  </div>
 
   <!-- HOUSEHOLD VIEWS -->
 
@@ -752,6 +445,222 @@
     </div>
   </script>
 
+  <!-- MEMBERS VIEWS -->
+
+  <script type="text/x-template" id="members">
+    <div>
+      <router-view @searched="search" :statuses="statuses" :searchstring="searchstring"></router-view>
+    </div>
+  </script>
+
+  <script type="text/x-template" id="member-intro">
+    <div>
+      <h5>
+        Membership List
+      </h5>
+      <form action="#" @submit="searchfromchild">
+        <div class="input-field">
+          <span class="prefix">
+            <i class="material-icons" title="search">search</i>
+          </span>
+          <input id="search" v-model="searchstring" type="text" />
+          <label for="search">Search by name</label>
+        </div>
+      </form>
+      <p>
+        Search by type:
+      </p>
+      <div class="row">
+        <router-link :to="{name:'member-status', params:{ status:status }}" v-for="status in statuses" class="btn col m3 s12 center">
+          {{ status }}
+        </router-link>
+      </div>
+      <p>
+        Or, <router-link :to="{name:'member-emails'}">grab email addresses</router-link> to blast email groups of people.
+      </p>
+    </div>
+  </script>
+
+  <!--search results, child of list-->
+  <script type="text/x-template" id="member-results">
+  <div>
+    <h5>
+      <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Search
+    </h5>
+    <div class="input-field">
+      <span class="prefix">
+        <i class="material-icons" v-if="searchstring" v-on:click="clearfromchild" title="clear the search input">clear</i>
+        <i class="material-icons" v-if="!searchstring" title="search">search</i>
+      </span>
+      <input id="search" v-model="searchstring" @keyup="onNameSearch" type="text" />
+      <label for="search">Search by name</label>
+    </div>
+
+    <div class="row">
+      <div class="col m3">
+        <p>
+          Search by type
+        </p>
+        <div class="collection facets">
+          <router-link :to="{name:'member-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
+            all
+            <span class="secondary-content" v-if="$route.params.status == 'all'">
+              <i class="material-icons">chevron_right</i>
+            </span>
+          </router-link>              
+          <router-link :to="{name:'member-status', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
+            {{ status }}
+            <span class="secondary-content" v-if="$route.params.status == status">
+              <i class="material-icons">chevron_right</i>
+            </span>
+          </router-link>
+        </div>
+      </div>
+      <div class="col m9">
+        <loading :status="loading"></loading>
+
+        <div v-if="!loading">
+          <p v-if="$route.params.status">
+            {{ items.length }} {{ $route.params.status }}(s) 
+
+              <a class="dropdown-trigger" href="#" data-target="actions" data-constrainwidth="false" data-alignment="right" title="click to see options">
+                <i class="material-icons small">more_horiz</i>
+              </a>
+
+              <!-- Dropdown Structure -->
+            <ul id="actions" class="dropdown-content">
+              <li>
+                <a v-bind:href="'/api/member/csv?status=' + $route.params.status">
+                  <i class="material-icons">file_download</i> Download (CSV)
+                </a>
+              </li>
+              <li>
+                <router-link :to="{name: 'member-emails', query: {status: $route.params.status }}" v-if="$route.params.status != 'all'">
+                  <i class="material-icons">email</i> Get emails for {{ $route.params.status }}(s)
+                </router-link>
+                <router-link v-else :to="{name: 'member-emails'}">
+                  <i class="material-icons">email</i> Get emails for all
+                </router-link>
+              </li>
+            </ul>
+
+          </p>
+          <p v-if="$route.query.q">
+            {{ items.length }} result(s) 
+          </p>
+        </div>
+
+        <ul class="collection" v-if="!loading">
+          <li class="collection-item row" v-for="item in items" v-bind:id="item._id">
+
+            <div class="col m5">
+              <person-name :item="item"></person-name>
+            </div>
+            <div class="col m6">
+              <person-contact-info :item="item"></person-contact-info>
+            </div>
+            <div class="col m1">
+              <span class="secondary-content" v-if="item.household_id">
+                <!-- protected by v-if b/c https://github.com/vuejs/vue-router/issues/986 -->
+                <router-link :to="{ name: 'member-household', params: { id: item.household_id } }" title="View household" class="btn btn-flat btn-small waves-effect waves-teal teal-text">
+                  <i class="material-icons tiny">home</i>
+                </router-link>  
+              </span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  </script>
+
+  <!-- second child of list view -->
+  <script type="text/x-template" id="member-emails">
+    <div>
+      <h6>
+        <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Emails
+      </h6>      
+      <div class="">
+          <div class="row">
+            <div class="col m3">
+              <div class="section">
+                <p>
+                  Quicklinks
+                </p>
+                <ul>
+                  <li class="">
+                    <a @click="onNewsletter">Newsletter list <i class="material-icons tiny">chevron_right</i></a>
+                  </li>
+                </ul>
+              </div>
+              <div class="section">
+                <a class="btn" id="" @click="onStatusChange(event)">All</a>
+                <p>
+                  Filter by member category
+                </p>
+                <div id="emailStatusList" class="collection">
+                  <a v-for="status in statuses" class="collection-item" @click="onStatusChange(event,status)" >
+                    <i class="material-icons small">check_box_outline_blank</i><span>&nbsp;{{status}}</span>
+                  </a>
+                </div>
+              <!-- <div class="collection">
+                  <a class="collection-item" @click="intercept()" :class="{'active': !$route.query.status}">All</a>
+                  <a class="collection-item" v-for="status in statuses" @click="intercept(status)" :class="{active: $route.query.status && $route.query.status.indexOf(status) > -1}">
+                    <i class="material-icons tiny" v-if="$route.query.status && $route.query.status.indexOf(status) > -1">check_box</i>
+                    <i class="material-icons tiny" v-else>check_box_outline_blank</i> 
+                    {{ status }}
+                  </a>
+                </div> -->
+              </div>
+            </div>
+
+            <div class="col m9">
+              <p><b><span>Email Addresses&nbsp;</span><span>({{totalEmails}})</span></b></p>
+              <div v-if="!loading">
+                <form>
+                  <div class="input-field">
+                    <textarea id="textarea-emails" v-model="emailAddresses" class="materialize-textarea">{{emailAddresses}}</textarea>
+                  </div>
+                </form>
+              </div>
+              <div v-else class="progress">
+                <div class="indeterminate"></div>
+              </div>
+
+            </div><!-- col -->
+          </div><!-- row -->
+          <router-link to="/list">Back to the list</router-link>
+        </div><!--card panel-->    
+
+    </div>
+  </script>
+
+  <script type="text/x-template" id="member-household">
+        <div>
+          <h6>
+            <router-link :to="{name: 'member-intro'}">Membership List</router-link> / {{ item.label_name }}
+          </h6>
+          <div class="card">
+            <div class="card-content">
+              <span class="card-title">
+                {{ item.label_name }}
+              </span>
+              <location v-bind:item="item"></location>
+              <ul class="collection">
+                <person 
+                  v-for="person in item.people" 
+                  v-bind:key="person._id" 
+                  v-bind:item="person">
+                </person>
+              </ul>
+            </div>
+          </div>
+          <div class="">
+            <router-link :to="back">&larr; Back</router-link>
+          </div>
+        </div>
+  </script>
+  
   <!-- PERSON VIEWS -->
 
   <!-- a form to edit a person in the household -->
@@ -853,31 +762,125 @@
       </div>
     </script>
 
-  <!--SHARED VIEWS-->
-  <script type="text/x-template" id="error">
-      <div v-if="error">
-        <div class="alert error card">
-          <div class="card-content red white-text">
-            <p>
-              <i class="material-icons">error</i> {{ error }}
-            </p>
-          </div>      
-        </div>
-        <div class="card">
-          <div class="card-content">
-            <span class="card-title">
-              Error Details
-            </span>
-            <p>
-              If you are getting this error and you don't know why, copy this stuff and send it to Brad Noble:
-            </p>
-            <pre>Path: {{ $route.path }}
-  Parameters:
-  {{ $route.params }}</pre>
-          </div>
+  <!-- RESOURCES VIEWS-->
+
+  <!--Resources (Google Drive)-->
+  <script type="text/x-template" id="resources">
+    <div>
+      <div class="row">
+        <div class="col s12">
         </div>
       </div>
-    </script>
+      <div class="row">
+        <div class="col s12">
+          <h5>Resources&nbsp;<i class="material-icons small cursor-pointer hoverable" @click="onHelp($event)">help_outline</i></h5>
+        </div>
+      </div>
+      <div id="resourcesHelp" class="row">
+        <div class="col s12">
+            <p>Resources files are organized in folders by topic. PDF files can be viewed and all files can be downloaded.</p>
+            <ul>
+              <li><i class="material-icons">chevron_right</i>Select a folder to display the files and additional folders contained in it.</li>
+              <li><i class="material-icons">chevron_right</i>Select a PDF file to view the contents.</li>
+              <li><i class="material-icons">chevron_right</i>Click the <i class="material-icons">file_download</i> icon to download a file.</li>
+              <li><i class="material-icons">chevron_right</i>Use the breadcrumbs at the top of the list tomove up in the folder hierarchy.</li>
+            </ul>
+            <a class="waves-effect waves-light btn blue" @click="onHelp($event)"><i class="material-icons left">arrow_drop_up</i>Close</a>
+        </div>
+      </div>
+            <!-- <div class="row"> -->
+        <!-- <div class="col s12">
+          <h5>Resources&nbsp;<i class="material-icons small waves-effect waves-light btn modal-trigger" href="resourcesHelpmodal">help_outline</i></h5>
+        </div> -->
+        <!-- <div class="col s8">
+          <nav class="grey lighten-4">
+            <div class="nav-wrapper">
+              <form>
+                <div class="input-field">
+                  <input id="search" type="search" placeholder="Search resources"  v-on:keyup.enter="onSearch($event)" required>
+                  <label class="label-icon" for="search"><i class="material-icons  black-text">search</i></label>
+                  <i class="material-icons">close</i>
+                </div>
+              </form>
+            </div>
+          </nav>
+        </div> -->
+      <!-- </div> -->
+      <nav class="blue darken-2">
+        <div class="nav-wrapper">
+          <div class="col s12">
+            <span v-for="folder in path" @click="onBreadcrumb(folder.id, $event)" class="breadcrumb cursor-pointer">{{folder.name}}</span>
+          </div>
+        </div>
+      </nav>
+      <div class="row">
+        <div class="col s12">
+          <div class="divider"></div>
+        </div>
+      </div>
+      <div v-if="files.length==0">
+        <div class="row">
+            <div class="col s12"><i class="material-icons small">info_outline</i><span>&nbsp;No files in this folder</span></div>
+        </div>
+      </div>
+      <div v-else>
+        <div class="row grey lighten-4">
+          <div class="col s5">Name</div>
+          <div class="col s1">Type</div>
+          <div class="col s2">Modified</div>
+          <div class="col s2">Size</div>
+          <div class="col s1"></div>
+        </div>
+        </div>
+        <div class="row"  v-for="file in files" :key="file.id" v-if="file.type=='Folder'">
+          <div class="col s5" @click="onFolderView(file,$event)"><i class="material-icons small cursor-pointer">folder</i><span class="cursor-pointer">&nbsp;{{file.name}}</span></div>
+          <div class="col s1">&minus;</div>
+          <div class="col s2">&minus;</div>
+          <div class="col s2">&minus;</div>
+          <div class="col s1"></div>
+        </div>
+        <div class="row"  v-for="file in files" :key="file.id" v-if="file.type!='Folder'">
+          <div class="col s5" v-bind:class="{'cursor-pointer':file.type=='PDF','hoverable':file.type=='PDF'}" @click="(file.canView?onFileView(file, $event):null)"><i class="material-icons small">{{(file.type=='PDF'?'description':(file.type=='Spreadsheet'?'grid_on':'format_align_left'))}}</i><span>&nbsp;{{file.name + (!file.canView?'&nbsp;(Download only)':'')}}</span></div>
+          <div class="col s1">{{file.type}}</div>
+          <div class="col s2">{{file.modifiedTimeFormatted}}</div>
+          <div class="col s2" v-html="file.sizeFormatted"></div>
+          <div class="col s1"><i v-if="file.canDownload" class="material-icons small cursor-pointer hoverable" @click="onFileDownload(file, $event)">file_download</i></div>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <!--Resources: PDF viewer for Google Docs-->
+  <div id="pdfModal" class="modal">
+    <iframe id="pdfViewer" name="pdfViewer" src="vendor/pdfjs/web/viewer.html" allowfullscreen="true"
+      webkitallowfullscreen=""></iframe>
+  </div>
+    
+  <!--SHARED VIEWS-->
+  <script type="text/x-template" id="error">
+    <div v-if="error">
+      <div class="alert error card">
+        <div class="card-content red white-text">
+          <p>
+            <i class="material-icons">error</i> {{ error }}
+          </p>
+        </div>      
+      </div>
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">
+            Error Details
+          </span>
+          <p>
+            If you are getting this error and you don't know why, copy this stuff and send it to Brad Noble:
+          </p>
+          <pre>Path: {{ $route.path }}
+  Parameters:
+  {{ $route.params }}</pre>
+        </div>
+      </div>
+    </div>
+  </script>
 
   <script type="text/x-template" id="loading">
       <div v-if="status" >
@@ -932,7 +935,7 @@
     <div v-if="item.phone" class="nowrap"><i class="material-icons tiny grey-text">phone_iphone</i>&nbsp;{{ item.phone }}</div>
     <div v-if="item.work_phone" class="nowrap"><i class="material-icons tiny grey-text">work</i>&nbsp;{{ item.work_phone }}</div>
   </span>
-</script>
+  </script>
 
   <!--Import jQuery before materialize.js-->
   <script type="text/javascript" src="vendor/jquery/jquery.min.js"></script>

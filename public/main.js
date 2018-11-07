@@ -24,7 +24,8 @@ $(function () {
   //State store initialization
   const store = new Vuex.Store({
     state: {
-      user: null
+      //Read user from cookie, null if not present
+      user: window.$cookies.get('msc-user')
     },
     getters: {
       //List of user roles
@@ -90,7 +91,7 @@ const login = {
           if (res.data) {
 
             //Store user object in local cookie
-            this.$cookies.set('msc-user',res.data);
+            this.$cookies.set('msc-user', res.data);
             // TEST print user name
             console.log(this.$cookies.get('msc-user').username);
 
@@ -164,7 +165,6 @@ const home = {
         });
 
     });
-
 
   },
   methods: {
@@ -530,23 +530,16 @@ const resources = {
     //Hide help text by default
     $('#resourcesHelp').hide();
     this.init();
-    this.start();
   },
   methods: {
     init: function () {
-      let _this = this;
-    },
-    start: function () {
       if (!this.isLoading) {
         this.isLoading = true;
-        this.$http.get('/api/resources')
-          .then((res) => {
-            //Pushes root breadcrumb
-            this.path.push({ name: 'MSC Drive', id: '-1' });
-            //Store folder/file data
-            this.files = res.data;
-            this.isLoading = false;
-          });
+        if (this.$route.params && this.$route.params.id) {
+          this.loadFolder(this.$route.params.id);
+        } else {
+          this.loadRoot();
+        }
       }
     },
     formatBytes: function (bytes, decimals) {
@@ -556,6 +549,26 @@ const resources = {
         sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
         i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    },
+    loadFolder: function (id) {
+      this.$http.get('/api/resources/' + id)
+        .then((res) => {
+          //Pushes root breadcrumb
+          this.path.push({ name: 'MSC Drive', id: '-1' });
+          //Store folder/file data
+          this.files = res.data;
+          this.isLoading = false;
+        });
+    },
+    loadRoot: function () {
+      this.$http.get('/api/resources')
+        .then((res) => {
+          //Pushes root breadcrumb
+          this.path.push({ name: 'MSC Drive', id: '-1' });
+          //Store folder/file data
+          this.files = res.data;
+          this.isLoading = false;
+        });
     },
     onBreadcrumb: function (id, event) {
       const _this = this;
@@ -1024,7 +1037,7 @@ function formatBytes(bytes, decimals) {
 
 // #endregion
 
-// #region GLOBAL components
+// #region Shared components
 
 Vue.component('location', {
   template: '#view-location',

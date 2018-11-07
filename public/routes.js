@@ -3,11 +3,65 @@
 */
 function initializeVueRouter(store) {
 
+  // #region Route definitions
+
   const routes = [
     {
       name: 'home',
       path: '/',
       component: home,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/households',
+      name: 'households',
+      component: households,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/households/new',
+      component: householdNew,
+      props: true,
+      children: [
+        {
+          path: '',
+          name: 'household-new',
+          component: householdEdit,
+          props: true
+        }
+      ],
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/households/:household_id',
+      component: household,
+      props: true,
+      children: [
+        {
+          path: '',
+          name: 'admin-household',
+          component: firstChild,
+          props: true
+        },
+        {
+          path: 'person/:person_id',
+          name: 'person-edit',
+          component: personEdit,
+          props: true
+        },
+        {
+          path: 'person/new',
+          name: 'person-new',
+          component: personEdit,
+          props: true
+        },
+        {
+          path: 'edit',
+          name: 'household-edit',
+          component: householdEdit,
+          props: true
+        }
+      ],
       meta: { requiresAuth: true }
     },
     {
@@ -68,63 +122,12 @@ function initializeVueRouter(store) {
       path: '/resources/:id?',
       component: resources,
       meta: { requiresAuth: true }
-    },
-
-    // ADMIN ROUTES
-
-    {
-      path: '/households',
-      name: 'households',
-      component: households,
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/households/new',
-      component: householdNew,
-      props: true,
-      children: [
-        {
-          path: '',
-          name: 'household-new',
-          component: householdEdit,
-          props: true
-        }
-      ],
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/households/:household_id',
-      component: household,
-      props: true,
-      children: [
-        {
-          path: '',
-          name: 'admin-household',
-          component: firstChild,
-          props: true
-        },
-        {
-          path: 'person/:person_id',
-          name: 'person-edit',
-          component: personEdit,
-          props: true
-        },
-        {
-          path: 'person/new',
-          name: 'person-new',
-          component: personEdit,
-          props: true
-        },
-        {
-          path: 'edit',
-          name: 'household-edit',
-          component: householdEdit,
-          props: true
-        }
-      ],
-      meta: { requiresAuth: true }
-    },
+    }
   ]
+
+  // #endregion
+  
+  // #region Initialization and metnhods
 
   const router = new VueRouter({
     routes: routes,
@@ -159,4 +162,7 @@ function initializeVueRouter(store) {
   })
 
   return router;
+
+  // #endregion
+
 }
