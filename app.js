@@ -122,7 +122,6 @@ app.get('/api/login', function (req, res, next) {
 
       // res.cookie('msc-user', user,
       //   {
-      //     domain: 'montclairskiclub.com',
       //     expires: new Date(Date.now() + 900000),
       //     httpOnly: true
       //   }
@@ -152,7 +151,6 @@ app.get('/api/login/:id', function (req, res, next) {
 
         // res.cookie('msc-user', user,
         //   {
-        //     domain: 'montclairskiclub.com',
         //     expires: new Date(Date.now() + 900000),
         //     httpOnly: true
         //   }

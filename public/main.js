@@ -68,14 +68,7 @@ $(function () {
   //Authorization initialization
   let user = window.$cookies.get('msc-user');
   if (user) {
-    //If user in cookie, re-auth on server
-    $.get("/api/login/" + user.id, function (success) {
-      if (!success) {
-        this.router.push('/login');
-      }
-    }).fail(function () {
-      this.router.push('/login');
-    });
+    Vue.http.headers.common['api-key'] = user.token;
   }
 
 });
@@ -103,14 +96,19 @@ const login = {
           //If valid user returned
           if (res.data) {
 
+            const user=res.data;
+
             //Store user object in local cookie
-            this.$cookies.set('msc-user', res.data, '1d');
+            this.$cookies.set('msc-user', user, '1d');
             // TEST print user name
             //console.log(this.$cookies.get('msc-user').username);
 
+            //Set global HTTP header
+            Vue.http.headers.common['api-key'] = user.token;
+
             //Store user info and redirect to Home page
             $('#loginMsg').text('');
-            this.$store.commit('setUser', res.data);
+            this.$store.commit('setUser', user);
             this.$router.push('/');
           } else {
             $('#loginMsg').text('Authenticate failed: either username or password is incorrect.');
