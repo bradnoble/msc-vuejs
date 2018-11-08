@@ -62,14 +62,15 @@ $(function () {
       return {
         title: 'Montclair Ski Club'
       }
+    },
+    created: function () {
+      //Authorization initialization before any loading
+      let user = window.$cookies.get('msc-user');
+      if (user) {
+        Vue.http.headers.common['api-key'] = user.token;
+      }
     }
   })
-
-  //Authorization initialization
-  let user = window.$cookies.get('msc-user');
-  if (user) {
-    Vue.http.headers.common['api-key'] = user.token;
-  }
 
 });
 
@@ -96,7 +97,7 @@ const login = {
           //If valid user returned
           if (res.data) {
 
-            const user=res.data;
+            const user = res.data;
 
             //Store user object in local cookie
             this.$cookies.set('msc-user', user, '1d');
