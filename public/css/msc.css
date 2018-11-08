@@ -1,6 +1,7 @@
 /*Element styles*/
 body .nav-wrapper a {
-  color: #333
+  color: #333;
+  font-weight:bold;
 }
 
 /* body .navbar-fixed nav {}
@@ -18,7 +19,7 @@ i.material-icons {
   cursor: pointer;
 }
 
-.background-image{
+.background-image-1{
     /* The image used */
     background-image: url("/img/msc1.jpg");
 

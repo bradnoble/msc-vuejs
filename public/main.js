@@ -65,6 +65,19 @@ $(function () {
     }
   })
 
+  //Authorization initialization
+  let user = window.$cookies.get('msc-user');
+  if (user) {
+    //If user in cookie, re-auth on server
+    $.get("/api/login/" + user.id, function (success) {
+      if (!success) {
+        this.router.push('/login');
+      }
+    }).fail(function () {
+      this.router.push('/login');
+    });
+  }
+
 });
 
 // #endregion
@@ -85,15 +98,15 @@ const login = {
   },
   methods: {
     onLogin: function () {
-      let user = this.$http.get('/login?username=' + this.username + '&password=' + this.password)
+      let user = this.$http.get('/api/login?username=' + this.username + '&password=' + this.password)
         .then((res) => {
           //If valid user returned
           if (res.data) {
 
             //Store user object in local cookie
-            this.$cookies.set('msc-user', res.data);
+            this.$cookies.set('msc-user', res.data, '1d');
             // TEST print user name
-            console.log(this.$cookies.get('msc-user').username);
+            //console.log(this.$cookies.get('msc-user').username);
 
             //Store user info and redirect to Home page
             $('#loginMsg').text('');
@@ -122,7 +135,7 @@ const logout = {
       this.$store.commit('clearUser');
 
       //Initiate logout of Passport on server
-      this.$http.get('/logout');
+      this.$http.get('/api/logout');
 
       //Redirect to login page
       this.$router.push('/login')
@@ -148,8 +161,6 @@ const home = {
         return;
       }
 
-      //twttr.widgets.createTweet('20', document.getElementById('twitter'));
-
       twttr.widgets.createTimeline(
         {
           sourceType: 'profile',
@@ -165,6 +176,9 @@ const home = {
         });
 
     });
+
+    //UI initialization
+    //$('.carousel').carousel();
 
   },
   methods: {

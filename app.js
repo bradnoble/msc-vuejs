@@ -107,7 +107,7 @@ passport.deserializeUser(function (id, callback) {
 * Login endpoint passes username and password as query string parameters
 * and assigns to request body so Passport strategy will accept them
 */
-app.get('/login', function (req, res, next) {
+app.get('/api/login', function (req, res, next) {
 
   //Assign credentials to request body for Passport strategy
   req.body.username = req.query.username;
@@ -136,9 +136,44 @@ app.get('/login', function (req, res, next) {
 });
 
 /*
+* Server login based upon ID
+* Used by client to "silently" login user based upon cookie
+*/
+app.get('/api/login/:id', function (req, res, next) {
+
+  //Check if valid user ID
+  authentication.users.findById(req.params.id, function (err, user) {
+    if (user) {
+      delete user.password;
+
+      //Login user to Passport
+      req.logIn(user, function (err) {
+        if (err) { return next(err); }
+
+        // res.cookie('msc-user', user,
+        //   {
+        //     domain: 'montclairskiclub.com',
+        //     expires: new Date(Date.now() + 900000),
+        //     httpOnly: true
+        //   }
+        // );
+
+        //Indicates success
+        res.send(true);
+        return res.end();
+      });
+
+    } else {
+      res.send(false);
+    }
+  });
+
+});
+
+/*
 * Logout of Passport Local strategy
 */
-app.get('/logout',
+app.get('/api/logout',
   function (req, res) {
     req.logout();
     res.clearCookie('msc-user');
