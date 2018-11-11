@@ -202,6 +202,72 @@ app.get('/',
 
 // #endregion
 
+// #region design docs stuff for managing Cloudant indexes
+// https://stackoverflow.com/questions/38385101/couchdb-update-design-doc
+const ddoc = {
+  _id: "_design/foo",
+  views: {
+    by_status: {
+      map: function(doc) {
+        if(doc.type == 'person'){
+          emit(doc.status, 1);
+        }
+      },
+      reduce: '_sum'
+    }
+  }
+};
+
+db.get(ddoc._id, function(err, doc){
+  if(err){
+    console.log('no ddoc');
+    db.insert(ddoc, function (err, doc) {
+      if (!err) {
+        console.log('success: inserted ddoc');
+      }
+      else {
+        console.log('ddoc:' + err.reason);
+      }
+    });
+  }
+  else {
+    ddoc._rev = doc._rev;
+    db.insert(ddoc, function (err, doc) {
+      if (!err) {
+        console.log('success: updated ddoc');
+        console.log(doc);
+      }
+      else {
+        console.log('ddoc:' + err.reason);
+      }
+    });
+  }
+});
+
+// #endregion
+
+// get counts for the membership landing page
+app.get('/api/members/statuses',
+  function (req, res) {
+    db.view('foo','by_status',
+      {
+        reduce: true,
+        group_level: 1
+      },
+      function (err, docs) {
+        if(err) {
+          console.log(err);
+        }
+        else {
+          // console.log(docs);
+          res.send(docs);
+        }
+      }
+    );
+  }
+);
+
+
 // #region Household Endpoints
 
 /*

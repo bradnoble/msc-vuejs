@@ -240,11 +240,20 @@ const members = {
 // Member intro controller (first child of list)
 const memberIntro = {
   template: '#member-intro',
+  data: function () {
+    return {
+      items: [],
+      total: 0
+    }
+  },
   props: [
     'searchstring',
     'timer',
     'statuses'
   ],
+  mounted: function () {
+    this.getStatusCounts();
+  },
   methods: {
     // this was helpful for talking from a child to a parent
     // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
@@ -252,6 +261,66 @@ const memberIntro = {
     searchfromchild: function (e) {
       this.$emit('searched', this.searchstring)
       e.preventDefault();
+    },
+    getStatusCounts: function(){
+      let _this = this;
+      this.$http.get('/api/members/statuses')
+      .then(
+        function (res) {
+          _this.items = res.body.rows;
+          _this.loading = false;
+
+          // #region chart
+          let datas = {};
+          let datasets = [{data:[],backgroundColor:[]}];
+          let labels = [];
+          let colors = ["#0074D9", "#FF4136", "#2ECC40", "#FF851B", "#7FDBFF", "#B10DC9", "#FFDC00", "#001f3f", "#39CCCC", "#01FF70", "#85144b", "#F012BE", "#3D9970", "#111111", "#AAAAAA"];
+
+
+          for(let i=0; i < _this.items.length; i++){
+            // scrub out non-members
+            if(_this.items[i].key != 'non-member' && _this.items[i].key != 'deceased'){
+              datasets[0].data.push(_this.items[i].value);
+              datasets[0].backgroundColor.push(colors[i]);
+//              labels.push(_this.items[i].key + ' (' + _this.items[i].value + ')');
+              labels.push(_this.items[i].key);
+              _this.total = _this.total + _this.items[i].value; 
+            }
+          }
+          datas.datasets = datasets;
+          datas.labels = labels;
+
+          // And for a doughnut chart
+          var ctx = document.getElementById("myChart");
+          var myDoughnutChart = new Chart(ctx, {
+              type: 'doughnut',
+              data: datas,
+              options: {
+                legend: {
+                    labels: {
+                      boxWidth: 20
+                    },
+                    display: true,
+                    position: 'top'
+                },
+                title: {
+                  display: true,
+                  text: _this.total + ' people'
+                },
+                layout: {
+                  padding: {
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      bottom: 0
+                  }
+                }    
+
+              }
+          });
+          // #endregion chart
+        }
+      );  
     }
   }
 }

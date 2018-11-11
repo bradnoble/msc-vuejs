@@ -17,6 +17,11 @@
   <script src="vendor/vue/vue-router.min.js"></script>
   <script src="vendor/vuex/vuex.min.js"></script>
   <script src="vendor/vue-cookies/vue-cookies.js"></script>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+
+
   <!--Import Google Icon Font-->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!--Import materialize.css-->
@@ -468,6 +473,28 @@
           <label for="search">Search by name</label>
         </div>
       </form>
+
+
+      <div class="row">
+        <div class="col m6 s6">
+          <canvas id="myChart"></canvas>
+        </div>
+      </div>
+
+      <router-link :to="{name:'member-status', params:{ status:status.key }}" v-for="status in items" class="">
+        {{ status.key }} {{ status.value }}
+      </router-link>
+  
+<!--
+        <div class="col m6 s12">
+          {{ total }}
+          <ul>
+            <li v-for="status in items" class="status">
+              <div class="status-progress" v-bind:style="{ width: status.value + 'px' }"></div>
+              {{ status.key }}
+            </li>
+          </ul>
+        </div>
       <p>
         Search by type:
       </p>
@@ -479,6 +506,8 @@
       <p>
         Or, <router-link :to="{name:'member-emails'}">grab email addresses</router-link> to blast email groups of people.
       </p>
+
+-->  
     </div>
   </script>
 
