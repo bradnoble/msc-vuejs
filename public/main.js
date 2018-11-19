@@ -221,13 +221,12 @@ const members = {
     }
   },
   created: function () {
-    var blacklist = ['deceased'];
+    var blacklist = ['deceased','non-member'];
     this.statuses = getStatuses(blacklist);
   },
   methods: {
     search: function (event) {
-      // console.log('hi from the child', event);
-      this.searchstring = event;
+      this.searchstring = event.trim();
       if (this.searchstring.length > 0) {
         this.$router.push({ name: 'member-name', params: {}, query: { q: this.searchstring } });
       } else {
@@ -243,6 +242,7 @@ const memberIntro = {
   data: function () {
     return {
       items: [],
+      updates: [],
       total: 0
     }
   },
@@ -253,6 +253,7 @@ const memberIntro = {
   ],
   mounted: function () {
     this.getStatusCounts();
+    this.getLastUpdated();
   },
   methods: {
     // this was helpful for talking from a child to a parent
@@ -262,15 +263,43 @@ const memberIntro = {
       this.$emit('searched', this.searchstring)
       e.preventDefault();
     },
+    getLastUpdated: function(){
+      // /api/members/updated      
+      let _this = this;
+      this.$http.get('/api/members/updated')
+      .then(
+        function (res) {
+          _this.updates = res.body.rows;
+        }
+      )
+    },
     getStatusCounts: function(){
       let _this = this;
       this.$http.get('/api/members/statuses')
       .then(
         function (res) {
           _this.items = res.body.rows;
-          _this.loading = false;
+          _this.loading = false;          
 
-          // #region chart
+          // get total
+          for(let i=0; i < _this.items.length; i++){
+            _this.total = _this.total + _this.items[i].value; 
+          }
+
+          // sort the statuses
+          // https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
+          function compare(a,b) {
+            if (a.value < b.value)
+              return 1;
+            if (a.value > b.value)
+              return -1;
+            return 0;
+          }          
+          _this.items.sort(compare);
+
+          // #region doughnut chart
+          // commented out for now (11/15/2018)
+          /*
           let datas = {};
           let datasets = [{data:[],backgroundColor:[]}];
           let labels = [];
@@ -315,9 +344,9 @@ const memberIntro = {
                       bottom: 0
                   }
                 }    
-
               }
           });
+          */
           // #endregion chart
         }
       );  
@@ -358,31 +387,25 @@ const memberSearch = {
       this.searchstring = '';
       this.$router.push({ name: 'members-status', params: { status: 'all' } });
     },
-    onNameSearch: function (e) {
-      let _this = this;
-      _this.items = [];
-
-      if (this.timer) {
-        clearTimeout(this.timer);
-        this.timer = null;
-      }
-      this.timer = setTimeout(() => {
-        this.$emit('searched', _this.searchstring)
-      }, 500);
-
+    searchfromchild: function (e) {
+      this.$emit('searched', this.searchstring)
       e.preventDefault();
     },
     //Invokes search and routes based upoon search mode
+    // necessary, called when the route changes both someone loads the view
+    // and when someone enters a new search query
     search: function () {
       if (this.$route.params.status) {
-        this.statusSearch(this.$route.params.status);
+        this.statusSearch();
       } else if (this.$route.query.q) {
-        this.nameSearch(this.$route.query.q);
+        this.nameSearch();
       }
     },
-    //Search by member status
-    statusSearch: function (status) {
+    statusSearch: function () {
       let _this = this;
+      let status = _this.$route.params.status;
+      // clear out the search input
+      _this.searchstring = '';
 
       if (status) {
         this.$http.get('/api/members/status/' + status)
@@ -397,23 +420,41 @@ const memberSearch = {
         return;
       }
     },
-    //Search by member name(s)
-    nameSearch: function (name) {
+    // onNameSearch() is deprecated for now in favor of a "search" button
+    // TODO add search button; meantime, hitting enter works
+    onNameSearch: function (e) {
+      /*
+            let _this = this;
+            _this.items = [];
+            if (this.timer) {
+              clearTimeout(this.timer);
+              this.timer = null;
+            }
+            this.timer = setTimeout(() => {
+              this.$emit('searched', _this.searchstring)
+            }, 500);
+            console.log(_this.searchstring);
+            e.preventDefault();
+      */
+    },
+    nameSearch: function (searchStr) {
       let _this = this;
-
-      if (name) {
-        this.$http.get('/api/members?name=' + name)
+      // if the page is loaded with a search query in the location bar, put it into the input
+      _this.searchstring = _this.$route.query.q;
+      
+      if (_this.searchstring) {
+        this.$http.get('/api/members?name=' + _this.searchstring)
           .then(
             function (res) {
-              _this.items = res.data.docs;
+              _this.items = res.data;
               _this.loading = false;
             }
           );
       } else {
+        // TODO -- route to 'all'?
         _this.items = [];
         return;
-      }
-
+      }      
     }
   }
 };
@@ -558,7 +599,7 @@ const memberHousehold = {
     this.start();
   },
   updated: function () {
-    console.log(this.back)
+    // console.log(this.back)
   },
   methods: {
     setPageTitle: function () {

@@ -210,14 +210,48 @@ const ddoc = {
     by_status: {
       map: function(doc) {
         if(doc.type == 'person'){
-          emit(doc.status, 1);
+          if(doc.status != 'non-member' && doc.status != 'deceased'){
+            emit(doc.status, 1);
+          }
         }
       },
       reduce: '_sum'
+    },
+    lookup_by_status: {
+      map: function(doc) {
+        if(doc.type == 'person'){
+          if(doc.status != 'non-member' && doc.status != 'deceased'){
+            emit([doc.last, doc.first], 1);
+          }
+        }
+      }
+    },
+    last_updated: {
+      map: function(doc) {
+        if(doc.updated){
+          emit(doc.updated, 1);
+        }
+      }
+    }
+  },
+  indexes: {
+    name: {
+      analyzer: 'standard',
+      index: function(doc) {  
+        if(doc.type == 'person'){    
+          if(doc.last){      
+            index('default', doc.last, {"store": true} );
+          }
+          if(doc.first){      
+            index('default', doc.first, {"store": true} );
+          }  
+        }
+      }
     }
   }
 };
 
+// upload the design doc
 db.get(ddoc._id, function(err, doc){
   if(err){
     console.log('no ddoc');
@@ -244,9 +278,45 @@ db.get(ddoc._id, function(err, doc){
   }
 });
 
+// build the Cloudant Query index for lookups by status
+const first_index = { 
+  name:'status', 
+  type:'text', 
+  index:{}
+};
+db.index(first_index, function(err, response) {
+  if (err) {
+    throw err;
+  }
+  console.log('Index creation result: %s', response.result);
+});
+
 // #endregion
 
-// get counts for the membership landing page
+// get last updated records, for the membership landing page
+app.get('/api/members/updated',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    db.view('foo','last_updated',
+      {
+        descending: true,
+        include_docs: true,
+        limit: 5
+      },
+      function (err, docs) {
+        if(err) {
+          console.log(err);
+        }
+        else {
+          // console.log(docs);
+          res.send(docs);
+        }
+      }
+    );
+  }
+);
+
+// get counts, for the membership landing page
 app.get('/api/members/statuses',
   function (req, res) {
     db.view('foo','by_status',
@@ -440,6 +510,9 @@ app.post('/api/household',
           });
       }
 
+      // datestamp the update
+      household.updated = new Date().toISOString();
+
       // update the household      
       db.insert(household, function (err, doc) {
         if (!err) {
@@ -530,14 +603,6 @@ app.get('/api/members/status/:statusId',
             { "status": "guest" },
             { "status": "non-member" }
           ]
-          // "sort": [
-          //   {
-          //     "last": "asc"
-          //   },
-          //   {
-          //     "first": "asc"
-          //   }
-          // ]
         };
       } else {
         selector = {
@@ -548,10 +613,21 @@ app.get('/api/members/status/:statusId',
         };
       }
 
+      // on sorting with Cloudant query
+      // https://developer.ibm.com/answers/questions/229663/how-to-use-sort-when-searching-the-cloudant-databa.html
+      // note the modified on the field to be sorted
       db.find(
         {
           "selector": selector,
-          "fields": []
+          "fields": [],
+          "sort": [
+             {
+               "last:string": "asc"
+             },
+             {
+               "first:string": "asc"
+             }
+           ]
         }, function (err, data) {
           if (err) {
             throw err;
@@ -572,74 +648,37 @@ app.get('/api/members',
   authentication.users.isAuthenticated,
   function (req, res) {
 
-    console.log(req.query.name);
+    console.log('search query: ', req.query.name);
 
     if (req.query.name) {
+      let namesArray = req.query.name.trim().split(' ');
+      let nameStr = '';
 
-      let nameList = req.query.name;
-
-      if (!Array.isArray(nameList)) {
-        //Case insensitive match on name
-        selector = {
-          // "type": { "$eq": "person" },
-          "$or": [
-            {
-              "first": {
-                "$regex": "^(?i)" + nameList + "*"
-              }
-            },
-            {
-              "last": {
-                "$regex": "^(?i)" + nameList + "*"
-              }
-            }
-          ]
-          // "sort": [
-          //   {
-          //     "last": "asc"
-          //   },
-          //   {
-          //     "first": "asc"
-          //   }
-          // ]
-        };
+      if(namesArray.length >1){
+        // multiple words means drilling in
+        // that means AND
+        nameStr = namesArray.join('* && ');
       } else {
-        selector = {
-          "type": { "$eq": "person" },
-          "$or": [
-            {
-              "$and": [
-                { "first": { "$regex": "^(?i)" + nameList[0] + ".*" } },
-                { "last": { "$regex": "^(?i)" + nameList[nameList.length - 1] + "*" } }
-              ]
-            },
-            {
-              "$and": [
-                { "first": { "$regex": "^(?i)" + nameList[nameList.length - 1] + "*" } },
-                { "last": { "$regex": "^(?i)" + nameList[0] + "*" } }
-              ]
-            }
-          ]
-          // "sort": [
-          //   {
-          //     "last": "asc"
-          //   },
-          //   {
-          //     "first": "asc"
-          //   }
-          // ]
-        };
+        // if there's only one item in the array, add wildcard
+        nameStr = namesArray[0] + '*';
       }
+      // in case the search term has more than word and the second word needs a wildcard
+      nameStr += '*'
 
-      db.find(
-        {
-          "selector": selector,
-          "fields": []
-        }, function (err, data) {
-          if (err) {
-            throw err;
+      db.search('foo', 'name', { 
+        q: nameStr,
+        include_docs: true
+        }, function(err, resp) {
+          if (!err) {
+            // get unnecessary objects out of the response
+            var mapped = function (data) {
+              return data.rows.map(function (row) {
+                return row.doc;
+              });
+            };        
+            let docs = mapped(resp);
+            res.send(docs)
           }
-          res.send(data)
         }
       );
     } else {
@@ -826,6 +865,10 @@ app.post('/api/person',
   function (req, res) {
     if (authentication.users.isInRole(req, 'adimn')) {
       var person = req.body;
+      
+      // datestamp the update
+      person.updated = new Date().toISOString();
+
       db.insert(person, function (err, doc) {
         if (!err) {
           console.log('success updating person, will add people to response next');
