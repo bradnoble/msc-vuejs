@@ -465,12 +465,14 @@
         Membership List
       </h5>
       <form action="#" @submit="searchfromchild">
-        <div class="input-field">
-          <span class="prefix">
-            <i class="material-icons" title="search">search</i>
-          </span>
-          <input id="search" v-model="searchstring" type="text" />
-          <label for="search">Search by name</label>
+        <div class="row">
+          <div class="input-field col m11 s11">
+            <input id="search" v-model="searchstring" type="text" />
+            <label for="search">Search by name</label>
+          </div>
+          <div class="input-field col m1 s1">
+            <button class="btn waves-effect waves-light" type="submit" name="action"><i class="material-icons" title="search">search</i></button>
+          </div>
         </div>
       </form>
 
@@ -478,11 +480,11 @@
         <div class="col m4 s12">
           <h5>Membership</h5>
           <ul>
-            <li>
-              <router-link :to="{name:'member-status', params:{ status:'all' }}">all</router-link> {{ total }}
-            </li>
             <li v-for="status in items">
               <router-link :to="{name:'member-status', params:{ status:status.key }}">{{ status.key }}</router-link> {{ status.value }}
+            </li>
+            <li class="total">
+              <router-link :to="{name:'member-status', params:{ status:'all' }}">all</router-link> {{ total }}
             </li>
           </ul>
           <!-- doughnut chart commented out for now -->
@@ -508,6 +510,11 @@
           </ol>
         </div>
       </div>
+      <div class="row">
+        <div class="col m12 s12">
+          <h5>Email</h5>
+        </div>
+      </div>
       <!--
       <p>
         Or, <router-link :to="{name:'member-emails'}">grab email addresses</router-link> to blast email groups of people.
@@ -523,12 +530,14 @@
       <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Search
     </h5>
     <form action="#" @submit="searchfromchild">
-      <div class="input-field">
-        <span class="prefix">
-          <i class="material-icons" title="search">search</i>
-        </span>
-        <input id="search" v-model="searchstring" type="text" />
-        <label for="search">Search by name</label>
+      <div class="row">
+        <div class="input-field col m11 s11">
+          <input id="search" v-model="searchstring" type="text" />
+          <label for="search">Search by name</label>
+        </div>
+        <div class="input-field col m1 s1">
+          <button class="btn waves-effect waves-light" type="submit" name="action"><i class="material-icons" title="search">search</i></button>
+        </div>
       </div>
     </form>
 
@@ -645,28 +654,31 @@
                 <p>
                   Filter by member category
                 </p>
+                <!--
                 <div id="emailStatusList" class="collection">
                   <a v-for="status in statuses" class="collection-item" @click="onStatusChange(event,status)" >
                     <i class="material-icons small">check_box_outline_blank</i><span>&nbsp;{{status}}</span>
                   </a>
                 </div>
-              <!-- <div class="collection">
+                -->
+                <div class="collection">
                   <a class="collection-item" @click="intercept()" :class="{'active': !$route.query.status}">All</a>
                   <a class="collection-item" v-for="status in statuses" @click="intercept(status)" :class="{active: $route.query.status && $route.query.status.indexOf(status) > -1}">
                     <i class="material-icons tiny" v-if="$route.query.status && $route.query.status.indexOf(status) > -1">check_box</i>
                     <i class="material-icons tiny" v-else>check_box_outline_blank</i> 
                     {{ status }}
                   </a>
-                </div> -->
+                </div> 
               </div>
             </div>
 
             <div class="col m9">
               <p><b><span>Email Addresses&nbsp;</span><span>({{totalEmails}})</span></b></p>
+              {{ items }}
               <div v-if="!loading">
                 <form>
                   <div class="input-field">
-                    <textarea id="textarea-emails" v-model="emailAddresses" class="materialize-textarea">{{emailAddresses}}</textarea>
+                    <textarea id="textarea-emails" v-model="items" class="materialize-textarea">{{ items }}</textarea>
                   </div>
                 </form>
               </div>
@@ -973,7 +985,7 @@
 
   <script type="text/x-template" id="view-person-name">
     <span>
-      <b>{{ item.last }}, {{ item.first }}</b>
+      <span class="name">{{ item.last }}, {{ item.first }}</span>
       <span class="person-status grey-text">{{ item.status }}</span>
     </span>
   </script>

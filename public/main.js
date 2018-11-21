@@ -420,23 +420,6 @@ const memberSearch = {
         return;
       }
     },
-    // onNameSearch() is deprecated for now in favor of a "search" button
-    // TODO add search button; meantime, hitting enter works
-    onNameSearch: function (e) {
-      /*
-            let _this = this;
-            _this.items = [];
-            if (this.timer) {
-              clearTimeout(this.timer);
-              this.timer = null;
-            }
-            this.timer = setTimeout(() => {
-              this.$emit('searched', _this.searchstring)
-            }, 500);
-            console.log(_this.searchstring);
-            e.preventDefault();
-      */
-    },
     nameSearch: function (searchStr) {
       let _this = this;
       // if the page is loaded with a search query in the location bar, put it into the input
@@ -485,32 +468,22 @@ const memberEmails = {
   },
   methods: {
     clearAll: function () {
-      $('#emailStatusList').find('i').each(function () {
-        $(this).text('check_box_outline_blank');
-      });
     },
-    //Get email addresses
     getEmails: function () {
-
-      //Local reference to component
       let _this = this;
+      let obj = {
+        params: {
+          statuses: 'active'
+        }
+      };
 
-      this.$http.get('/api/member/emails', { params: { statuses: this.selectedStatus.join(',') } })
+      this.$http.get('/api/member/emails', obj)
         .then(function (resp) {
-          let data = resp.data.rows;
-
-          if (data.length > 0) {
-            var emails = data.map(function (row) {
-              return row.value[0];
-            });
-            _this.emailAddresses = emails.join(',');
-          } else {
-            _this.emailAddresses = 'No email addresses found';
-          }
+          _this.items = resp.data.rows;
+          console.log(_this.items);
+          _this.totalEmails = resp.data.length;
           _this.loading = false;
-          _this.totalEmails = data.length;
         });
-
     },
     onNewsletter: function (event) {
       this.clearAll();
@@ -909,7 +882,7 @@ const household = {
     '$route': function (to, from) {
       let _this = this;
       // after editing a person or household, update the household and the people
-      if (from.name == 'editPerson' || from.name == 'newPerson' || from.name == 'household-edit') {
+      if (from.name == 'person-edit' || from.name == 'person-new' || from.name == 'household-edit') {
         _this.get();
       }
     }

@@ -217,12 +217,10 @@ const ddoc = {
       },
       reduce: '_sum'
     },
-    lookup_by_status: {
+    emails: {
       map: function(doc) {
-        if(doc.type == 'person'){
-          if(doc.status != 'non-member' && doc.status != 'deceased'){
-            emit([doc.last, doc.first], 1);
-          }
+        if(doc.type == 'person' && doc.email && doc.status && doc.first && doc.last){
+          emit([doc.last, doc.first, doc.email], 1)
         }
       }
     },
@@ -293,6 +291,10 @@ db.index(first_index, function(err, response) {
 
 // #endregion
 
+
+
+// BEGIN ENDPOINTS
+
 // get last updated records, for the membership landing page
 app.get('/api/members/updated',
   authentication.users.isAuthenticated,
@@ -337,6 +339,37 @@ app.get('/api/members/statuses',
   }
 );
 
+// get member emails
+app.get('/api/member/emails',
+  // authentication.users.isAuthenticated,
+  function (req, res) {
+
+    let opts = {};
+
+    console.log('query: ', req.query.statuses);
+
+    //Status values are passed in a comma delimited list and converted to an array
+    if (req.query.statuses) {
+      opts.keys = req.query.statuses.split(',');
+    }
+
+    console.log(opts.keys);
+
+    // get the results of the API call
+    db.view('foo', 'emails', 
+      opts, 
+      function (err, resp) {
+        if (!err) {
+          console.log('resp: ', resp);
+          res.send(resp);
+        } else {
+          console.log('error', err);
+          res.send(err);
+        }
+      }
+    );
+  }
+);
 
 // #region Household Endpoints
 
@@ -422,46 +455,6 @@ app.get('/api/households',
   }
 );
 
-//IS THIS USED ANYWHERE?
-app.get('/household',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    //db.view(designname, viewname, [params], [callback])
-    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
-      if (!err) {
-        var mapped = function (data) {
-          return data.rows.map(function (row) {
-            return row.doc; // this is the entire payload
-          });
-        };
-        // add people to the household
-        var docs = mapped(resp);
-        var households = {};
-        var people = [];
-        var finalArray = [];
-
-        for (i = 0; i < docs.length; i++) {
-          if (docs[i].type == 'person' && docs[i].first && docs[i].last && docs[i].status != 'deceased' && docs[i].status != 'non-member') {
-            // build an object that holds objects that hold arrays of people
-            people.push(docs[i]);
-          } else if (docs[i].type == 'household') {
-            households[docs[i]._id] = docs[i];
-          }
-        }
-        // connect the household info to the person
-        // only if there's a household to connect a person to
-        for (i = 0; i < people.length; i++) {
-          if (households[people[i].household_id]) {
-            people[i].household = households[people[i].household_id];
-            finalArray.push(people[i]);
-          }
-        }
-        res.send(finalArray);
-      }
-    });
-  }
-);
-
 app.post('/api/household',
   authentication.users.isAuthenticated,
   jsonParser,
@@ -471,9 +464,7 @@ app.post('/api/household',
 
       // if we're deleting a household, we should first delete the people
       if (household._deleted == true) {
-        // using cloudant query means we don't have to pre-build our indexes
-        // which means I don't have to worry about keeping mapreduce code in sync 
-        // across the dev and prod database(s), and can instead just update views here
+        // using cloudant query
         db.find(
           {
             "selector": {
@@ -641,9 +632,8 @@ app.get('/api/members/status/:statusId',
   }
 );
 
-/*
-* Get a list of members based upon member name(s)
-*/
+
+// get a list of members based upon member name(s)
 app.get('/api/members',
   authentication.users.isAuthenticated,
   function (req, res) {
@@ -684,33 +674,6 @@ app.get('/api/members',
     } else {
       res.send();
     }
-  }
-);
-
-/*
-* Get a list of member emails based upon one-to-many member status values
-*/
-app.get('/api/member/emails',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-
-    let opts = {};
-    //Status values are passed in a comma delimited list and converted to an array
-    if (req.query.statuses) {
-      opts.keys = req.query.statuses.split(',');
-    }
-
-    // get the results of the API call
-    db.view('app', 'emails', opts, function (err, resp) {
-      if (!err) {
-        // console.log(resp);
-        res.send(resp);
-      }
-      else {
-        console.log('error', err)
-        res.send(err);
-      }
-    });
   }
 );
 
