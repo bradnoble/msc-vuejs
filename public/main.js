@@ -81,8 +81,9 @@ $(function () {
 const login = {
   template: '#login-template',
   props: [
-    'username',
-    'password'
+    'loginMsg',
+    'password',
+    'username'
   ],
   created() {
     document.title = 'Login-MSC ';
@@ -108,11 +109,13 @@ const login = {
             Vue.http.headers.common['api-key'] = user.token;
 
             //Store user info and redirect to Home page
-            $('#loginMsg').text('');
             this.$store.commit('setUser', user);
             this.$router.push('/');
           } else {
-            $('#loginMsg').text('Authenticate failed: either username or password is incorrect.');
+            this.username = '';
+            this.password = '';
+            this.loginMsg = 'Authenticate failed: either username or password is incorrect.';
+            $('#username').focus();
           }
         });
     }
@@ -162,12 +165,12 @@ const home = {
 
       twttr.widgets.createTimeline(
         {
+          screenName: 'msc_madriver',
           sourceType: 'profile',
-          screenName: 'msc_madriver'
         },
         document.getElementById('twitter-timeline'),
         {
-          width: '600',
+          // width: '600',
           height: '600',
           related: 'twitterdev,twitterapi'
         }).then(function (el) {

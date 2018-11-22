@@ -72,7 +72,7 @@ passport.use(new LocalStrategy(
       if (!user) {
         return callback(null, false, { message: 'Incorrect username' });
       }
-      if (!user.password == password) {
+      if (user.password !== password) {
         return callback(null, false, { message: 'Incorrect password' });
       }
       return callback(null, user);
@@ -116,7 +116,8 @@ app.get('/api/login', function (req, res, next) {
   //Authenticate using Local Strategy
   passport.authenticate('local', function (err, user, info) {
     if (err) { return next(err); }
-    if (!user) { return res.redirect('/login'); }
+    if (!user) { return res.end(); }
+//    if (!user) { return res.redirect('/login'); }
     req.logIn(user, function (err) {
       if (err) { return next(err); }
 

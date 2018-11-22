@@ -118,7 +118,7 @@
           </div>
           <div class="row">
             <div class="col">
-              <p id='loginMsg'></p>
+              <p>{{loginMsg}}</p>
             </div>
           </div>
         </div>
@@ -129,48 +129,41 @@
   <script type="text/x-template" id="home-template">
     <div>
       <div class="row">
-        <div class="col m4">
-          <div>&nbsp;</div>
-          <h5>Quick Access</h5>
-          <hr/>
-          <div class="row">
-            <div class="col">
-                <router-link to="/resources/1zy6dcB1aAiIWCvg05fuX60L2s61ejwyH"><h6><a>Signup Chairs</a></h6></router-link>    
-            </div>
-          </div>
-          <div class="row">
-            <div class="col">
-              <router-link to="/resources/1zy6dcB1aAiIWCvg05fuX60L2s61ejwyH"><h6><a>Lodge Rates</a></h6></router-link>              
-            </div>
-          </div>
-          <div class="row">
-            <div class="col">
-                <router-link to="/resources/1qqFt70tPY-zL3wzEFg5F3yE481AaIv22"><h6><a>Newsletters</a></h6></router-link>              
-            </div>
-          </div>
-          <div class="row">
-            <div class="col">
-              <router-link to="/resources/1kLCc0HNuQEXnkUlu9Fcm5d5tSb2kX4eD"><h6><a>Meeting Minutes</a></h6></router-link>              
-            </div>
-          </div>
-          <div class="row">
-            <div class="col">
-                <router-link to="/resources/10BN8b-oKJv-8v8ZrNkDdN-Z4DfSx9eFc"><h6><a>Financial Reports</a></h6></router-link>              
-            </div>
-          </div>
-          <div class="row">
-            <div class="col">
-                <router-link to="/resources/1tcUBBGjktzxpzO_ofIPCyH93gHjoc__n"><h6><a>join.me Info</a></h6></router-link>              
-            </div>
-          </div>
-          <div class="row">
-            <div class="col">
-            </div>
-          </div>
+
+          <div class="col m4">
+              <div>&nbsp;</div>
+              <div class="card">
+                <div class="card-image">
+                  <img src="img/MSC3.jpg">
+                  <span class="card-title">Quick Access</span>
+                </div>
+                <div class="card-content">
+                  <ul>
+                  <li>
+                  <router-link to="/resources/1zy6dcB1aAiIWCvg05fuX60L2s61ejwyH"><h6><a>Signup Chairs</a></h6></router-link> 
+                  </li>
+                  <li>
+                  <router-link to="/resources/1zy6dcB1aAiIWCvg05fuX60L2s61ejwyH"><h6><a>Lodge Rates</a></h6></router-link>              
+                  </li>
+                  <li>
+                  <router-link to="/resources/1qqFt70tPY-zL3wzEFg5F3yE481AaIv22"><h6><a>Newsletters</a></h6></router-link>              
+                  </li>
+                  <li>
+                  <router-link to="/resources/1kLCc0HNuQEXnkUlu9Fcm5d5tSb2kX4eD"><h6><a>Meeting Minutes</a></h6></router-link>              
+                  </li>
+                  <li>
+                  <router-link to="/resources/10BN8b-oKJv-8v8ZrNkDdN-Z4DfSx9eFc"><h6><a>Financial Reports</a></h6></router-link>              
+                  </li>
+                  <li>
+                  <router-link to="/resources/1tcUBBGjktzxpzO_ofIPCyH93gHjoc__n"><h6><a>join.me Info</a></h6></router-link>              
+                  </li>
+                  </ul>
+                </div>
+              </div>
         </div>
-        <div class="col m8">
+        <div class="col m5">
           <div>&nbsp;</div>
-          <div class="">
+          <div>
             <div id="twitter-timeline"></div>
           </div>
         </div>
@@ -661,7 +654,7 @@
           </div>
         </div>
   </script>
-  
+
   <!-- PERSON VIEWS -->
 
   <!-- a form to edit a person in the household -->
@@ -856,7 +849,7 @@
     <iframe id="pdfViewer" name="pdfViewer" src="vendor/pdfjs/web/viewer.html" allowfullscreen="true"
       webkitallowfullscreen=""></iframe>
   </div>
-    
+
   <!--SHARED VIEWS-->
   <script type="text/x-template" id="error">
     <div v-if="error">
