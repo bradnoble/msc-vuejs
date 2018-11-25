@@ -117,7 +117,7 @@ app.get('/api/login', function (req, res, next) {
   passport.authenticate('local', function (err, user, info) {
     if (err) { return next(err); }
     if (!user) { return res.end(); }
-//    if (!user) { return res.redirect('/login'); }
+    //    if (!user) { return res.redirect('/login'); }
     req.logIn(user, function (err) {
       if (err) { return next(err); }
 
@@ -797,7 +797,8 @@ app.get('/api/resources',
 * Download Google Drive file
 */
 app.get('/api/resources/download/:id',
-  authentication.users.isAuthenticated,
+  //FYI-can't authenticate because called to open another window
+  // authentication.users.isAuthenticated, 
   (req, res) => {
 
     gdrive.api.setOAuthClient(gdrive.oauthclient.getOAuthClient());

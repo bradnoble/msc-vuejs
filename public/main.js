@@ -25,9 +25,14 @@ $(function () {
   const store = new Vuex.Store({
     state: {
       //Read user from cookie, null if not present
-      user: window.$cookies.get('msc-user')
+      user: window.$cookies.get('msc-user'),
+      background: ''
     },
     getters: {
+      //Page background class
+      background: state => {
+        return state.background;
+      },
       //List of user roles
       roles: state => {
         return (state.user && state.user.roles ? state.user.roles : '')
@@ -41,6 +46,9 @@ $(function () {
       //Clear user from state
       clearUser(state) {
         state.user = null
+      },
+      setBackground(state, background) {
+        state.background = background
       },
       //Set user in state
       setUser(state, user) {
@@ -58,9 +66,12 @@ $(function () {
     store,
     router,
     template: '#layout-template',
-    data: function () {
-      return {
-        title: 'Montclair Ski Club'
+    computed: {
+      background: function () {
+        let img =this.$store.getters.background; // 'page-background';
+        return {
+          'page-background': img
+        }
       }
     },
     created: function () {
@@ -68,6 +79,11 @@ $(function () {
       let user = window.$cookies.get('msc-user');
       if (user) {
         Vue.http.headers.common['api-key'] = user.token;
+      }
+    },
+    data: function () {
+      return {
+        title: 'Montclair Ski Club'
       }
     }
   })
@@ -148,14 +164,18 @@ const logout = {
 //Home controller
 const home = {
   template: '#home-template',
+  created() {
+    document.title = 'MSC';
+  },
   data() {
     return {
     }
   },
-  created() {
-    document.title = 'MSC';
-  },
   mounted: function () {
+
+    //Change page background
+    this.$store.commit('setBackground', 'page-background');
+
     TwitterWidgetsLoader.load(function (err, twttr) {
       if (err) {
         //do some graceful degradation / fallback
@@ -543,6 +563,10 @@ const resources = {
     document.title = 'Resources-MSC';
   },
   mounted: function () {
+
+    //Change page background
+    this.$store.commit('setBackground', '');
+
     //Hide help text by default
     $('#resourcesHelp').hide();
     this.init();
@@ -603,6 +627,10 @@ const resources = {
       }
     },
     onFileDownload: function (file, event) {
+      // this.$http.get('/api/resources/download/' + file.id)
+      //   .then((res) => {
+      //     console.log('test');
+      //   });
       window.open('/api/resources/download/' + file.id);
     },
     onFileView: function (file, event) {
