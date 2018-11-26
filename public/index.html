@@ -37,7 +37,7 @@
   <script type="text/x-template" id="layout-template">
     <div>
       <app-navbar></app-navbar>
-      <main v-bind:class="background">
+      <main class="page-background" :class="background">
         <div class="container">
         <router-view></router-view>
         </div>

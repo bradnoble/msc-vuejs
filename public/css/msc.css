@@ -18,9 +18,21 @@ i.material-icons {
   cursor: pointer;
 }
 
+.page-background-snowtrees{
+  background-image: url("/img/msc1.jpg");
+}
+
+.page-background-snowdepth{
+  background-image: url("/img/msc2.jpg");
+}
+.page-background-lodgedeck{
+  background-image: url("/img/msc3.jpg");
+}
+.page-background-chalkboard{
+  background-image: url("/img/msc4.jpg");
+}
+
 .page-background{
-    /* The image used */
-    background-image: url("/img/msc1.jpg");
 
     /* Full height */
     height: 100%; 

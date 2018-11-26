@@ -44,6 +44,9 @@ $(function () {
     },
     mutations: {
       //Clear user from state
+      clearBackground(state) {
+        state.background = ''
+      },
       clearUser(state) {
         state.user = null
       },
@@ -68,10 +71,8 @@ $(function () {
     template: '#layout-template',
     computed: {
       background: function () {
-        let img =this.$store.getters.background; // 'page-background';
-        return {
-          'page-background': img
-        }
+        let img =this.$store.getters.background;
+        return img;
       }
     },
     created: function () {
@@ -164,6 +165,10 @@ const logout = {
 //Home controller
 const home = {
   template: '#home-template',
+  beforeDestroy(){
+    //Clear page background
+    this.$store.commit('clearBackground');
+  },
   created() {
     document.title = 'MSC';
   },
@@ -174,7 +179,7 @@ const home = {
   mounted: function () {
 
     //Change page background
-    this.$store.commit('setBackground', 'page-background');
+    this.$store.commit('setBackground', 'page-background-lodgedeck');
 
     TwitterWidgetsLoader.load(function (err, twttr) {
       if (err) {
@@ -194,7 +199,7 @@ const home = {
           height: '600',
           related: 'twitterdev,twitterapi'
         }).then(function (el) {
-          console.log('Embedded a timeline.')
+          //console.log('Embedded a timeline.')
         });
 
     });
@@ -563,9 +568,6 @@ const resources = {
     document.title = 'Resources-MSC';
   },
   mounted: function () {
-
-    //Change page background
-    this.$store.commit('setBackground', '');
 
     //Hide help text by default
     $('#resourcesHelp').hide();
