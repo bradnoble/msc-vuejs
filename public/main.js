@@ -223,6 +223,10 @@ const members = {
   created: function () {
     var blacklist = ['deceased','non-member'];
     this.statuses = getStatuses(blacklist);
+    document.title = "Membership List";
+  },
+  updated: function(){
+    document.title = "Membership List";
   },
   methods: {
     search: function (event) {
@@ -451,12 +455,14 @@ const memberEmails = {
   data: function () {
     return {
       emailsSelected: 'Select emails',
-      emailAddresses: [],
+      items: [],
       loading: true,
-      newsletterStatus: ['active', 'inactive', 'life'],
+      newsletter: ['active', 'inactive', 'life'],
       selected: {},
       selectedStatus: [],
-      totalEmails: 0
+      totalEmails: 0,
+      querystring: '',
+      query_array: []
     }
   },
   mounted: function () {
@@ -465,54 +471,109 @@ const memberEmails = {
   },
   updated: function () {
     M.textareaAutoResize($('#textarea-emails'));
+    document.title = "Emails";
+  },
+  watch: {
+    '$route.query.status' (to, from) {
+      // when the querystring changes, do another search      
+      this.getEmails();
+    }
   },
   methods: {
-    clearAll: function () {
+    clearAll: function () {},
+    intercept: function(str){
+      // this function takes link clicks and pushes them into an array 
+      // for the querystring
+      // .watch() listens for changes to the querystring, and then queries the db
+      var arr = [];
+      var status = str;
+      var querystring = this.$route.query;
+      var index = 0;
+
+      // no param means no search
+      if(!status){
+        this.$router.push({name: 'member-emails'});
+        this.query_array = [];
+      } else {
+        // if there's no querystring, start the array
+        if(!querystring.status){
+          arr.push(status);
+        }
+        // in vuejs, if the querystring already has only one value, it's a string
+        // and we need to change it to an array so it can have other friends
+        if(querystring.status && typeof querystring.status == 'string'){
+          querystring.status = [querystring.status];
+        } 
+        // might not need this check here, b/c anything making it this far will be an object
+        if(typeof querystring.status == 'object') {
+          // if the status is already in the querystring, get it out
+          index = querystring.status.indexOf(status);
+          if (index > -1) {            
+            // create a new querystring array without it
+            for(var i=0; i < querystring.status.length; i++){
+              if(querystring.status[i] != status){
+                arr.push(querystring.status[i]);
+              }
+            }
+          } else {
+            // add the new status to the query array
+            arr.push(status);
+            // console.log('arr', arr, 'querystring.status', querystring.status)
+            arr = arr.concat(querystring.status);
+            // console.log(arr)
+          }
+        }
+        this.$router.push( { query: { status: arr } })
+      }
     },
     getEmails: function () {
       let _this = this;
+      _this.querystring = '';
+      _this.loading = true;
+
+      if(_this.$route.query.status){
+        if(typeof _this.$route.query.status == 'string'){
+          _this.querystring = _this.$route.query.status;
+          _this.query_array = [_this.$route.query.status];
+        } else {
+          _this.querystring = _this.$route.query.status.join(',');
+          _this.query_array = _this.$route.query.status;
+        }
+      }
+
+      // put the comma delimited querystring into the query object
+      // and send it to the API for results
       let obj = {
         params: {
-          statuses: 'active'
+          statuses: _this.querystring
         }
       };
 
-      this.$http.get('/api/member/emails', obj)
+      if(_this.querystring){
+        this.$http.get('/api/member/emails', obj)
         .then(function (resp) {
-          _this.items = resp.data.rows;
-          console.log(_this.items);
-          _this.totalEmails = resp.data.length;
+          let docs = [];
+          let array = [];
+          _this.totalEmails = resp.body.rows.length;
+
+          // extract kv pairs from the function in factories.js
+          docs = mapped(resp.body);
+
+          // loop through docs to build an array that we will turn into a string
+          for(let i=0; i < docs.length; i++){
+            if(docs[i].email)
+              array.push(docs[i].first + ' ' + docs[i].last + ' <' + docs[i].email + '>'); 
+          }
+          // turn the array into a string for the textarea in the page
+          _this.items = array.join(', ');
           _this.loading = false;
         });
-    },
-    onNewsletter: function (event) {
-      this.clearAll();
-      this.selectedStatus = this.newsletterStatus;
-      this.getEmails();
-    },
-    //Event handler for select/deselect of a status value
-    onStatusChange: function (event, status) {
-
-      const $this = $(event.target);
-
-      if (status) {
-        if (this.selectedStatus.includes(status)) {
-          const index = this.selectedStatus.indexOf(status);
-          if (index > -1) {
-            this.setStatus($this, false);
-            this.selectedStatus.splice(index, 1);
-          }
-        } else {
-          this.setStatus($this, true);
-          this.selectedStatus.push(status);
-        }
-      }
-      else {
-        this.clearAll();
-        this.selectedStatus = [];
+      } else {
+        _this.totalEmails = 0;
+        _this.items = "Use the group or status filters to build a list of email addresses."
+        _this.loading = false;
       }
 
-      this.getEmails();
     },
     selectEmails: function () {
       var copyText = $('#emails').select();
@@ -528,16 +589,6 @@ const memberEmails = {
 
       /* Alert the copied text */
       alert("Copied the text: " + copyText.value);
-    },
-    //Set the status list icon based upon selection status
-    setStatus: function ($this, selected) {
-      if ($this.is('a')) {
-        $this.children('i').text((selected ? 'check_box' : 'check_box_outline_blank'));
-      } else if ($this.is('span')) {
-        $this.siblings('i').text((selected ? 'check_box' : 'check_box_outline_blank'));
-      } else {
-        $this.text((selected ? 'check_box' : 'check_box_outline_blank'));
-      }
     }
   }
 }

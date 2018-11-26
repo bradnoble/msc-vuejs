@@ -1,3 +1,21 @@
+// function to convert a querystring into an array
+// used in the emails section
+const querystring_to_array = function(str){
+  let array = [];
+  if(str && typeof str == 'string'){
+    array = [str];
+  } 
+return array;
+}
+
+
+// function to extract docs (ie, include_docs = true) from Cloudant results
+const mapped = function (data) {
+  return data.rows.map(function (row) {
+    return row.doc; 
+  });
+};
+
 // each person can be one of these
 var getStatuses = function(blacklist){
   var statuses = ['active','inactive','life','junior','child','non-member','applicant','honorary','deceased'];  
