@@ -179,7 +179,7 @@ const home = {
   mounted: function () {
 
     //Change page background
-    this.$store.commit('setBackground', 'page-background-lodgedeck');
+    this.$store.commit('setBackground', 'page-background-snowtrees');
 
     TwitterWidgetsLoader.load(function (err, twttr) {
       if (err) {
