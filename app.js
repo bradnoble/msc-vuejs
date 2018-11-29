@@ -923,7 +923,6 @@ app.get('/api/resources/export/:id',
 
         //Get file contents and d/l
         gdrive.api.getFile(req.params.id, res, () => {
-          console.log(fileName + ' sent in response');
           res.send();
           res.end();
         });
@@ -989,11 +988,8 @@ app.get('/api/resources/pdf/:id',
       });
 
       gdrive.api.getFileBase64(req.params.id, res, () => {
-
-        console.log('Base64 file sent in response');
         res.send();
         res.end();
-
       });
     } else {
       res.end();
