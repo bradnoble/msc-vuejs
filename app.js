@@ -292,8 +292,6 @@ db.index(first_index, function(err, response) {
 
 // #endregion
 
-
-
 // BEGIN ENDPOINTS
 
 // get last updated records, for the membership landing page
