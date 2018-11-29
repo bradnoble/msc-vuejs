@@ -221,7 +221,7 @@ const ddoc = {
     emails: {
       map: function(doc) {
         if(doc.type == 'person' && doc.email && doc.status && doc.first && doc.last){
-          emit([doc.last, doc.first, doc.email], 1)
+          emit(doc.status, 1)
         }
       }
     },
@@ -340,26 +340,30 @@ app.get('/api/members/statuses',
 
 // get member emails
 app.get('/api/member/emails',
-  // authentication.users.isAuthenticated,
+  authentication.users.isAuthenticated,
   function (req, res) {
 
+    var params = (req.query.statuses) ? req.query.statuses : null;
     let opts = {};
 
-    console.log('query: ', req.query.statuses);
+    // console.log('query: ', req.query.statuses);
 
     //Status values are passed in a comma delimited list and converted to an array
     if (req.query.statuses) {
-      opts.keys = req.query.statuses.split(',');
+      opts.keys = params.split(',');
     }
 
-    console.log(opts.keys);
+    // console.log(opts.keys);
+    opts.include_docs = true;
 
     // get the results of the API call
+    // can't use Cloudant Query here b/c CQ can't find docs where a field is present but not null
+    // https://stackoverflow.com/questions/42974007/how-to-check-empty-value-in-an-attribute-in-the-cloudant-selector-query-when-the
     db.view('foo', 'emails', 
       opts, 
       function (err, resp) {
         if (!err) {
-          console.log('resp: ', resp);
+          // console.log('resp: ', resp);
           res.send(resp);
         } else {
           console.log('error', err);

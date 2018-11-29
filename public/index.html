@@ -465,20 +465,58 @@
       </form>
 
       <div class="row">
-        <div class="col m4 s12">
-          <h5>Membership</h5>
-          <ul>
-            <li v-for="status in items">
-              <router-link :to="{name:'member-status', params:{ status:status.key }}">{{ status.key }}</router-link> {{ status.value }}
-            </li>
-            <li class="total">
-              <router-link :to="{name:'member-status', params:{ status:'all' }}">all</router-link> {{ total }}
-            </li>
-          </ul>
+        <div class="col m8 s12">
+          <h5>
+            Membership
+          </h5>
+          <div class="row">
+            <div class="col m6 s12" v-for="status in items">
+
+              <div class="card blue">
+                <div class="card-content white-text">
+                  <span class="card-title">
+                    {{ status.key }}
+                    <span class="right">
+                      {{ status.value }}
+                    </span>
+                  </span>
+                </div>
+                <div class="card-action blue darken-2">
+                  <router-link :to="{name: 'member-status', params:{ status:status.key}}" :title="'View all ' + status.key + ' members'" class="">
+                    <i class="material-icons small">search</i>
+                  </router-link>
+                  <router-link :to="{name: 'member-emails', query:{ status:status.key}}" :title="'View ' + status.key + ' emails'" class="">
+                    <i class="material-icons small">email</i>
+                  </router-link>    
+                </div>
+              </div>
+
+            </div>
+            <div class="col m12 s12">
+              <div class="card blue">
+                <div class="card-content white-text">
+                  <span class="card-title">
+                    total
+                    <span class="right">
+                      {{ total }} 
+                    </span>
+                  </span>
+                </div>
+                <div class="card-action blue darken-2">
+                  <router-link :to="{name:'member-status', params:{ status:'all' }}">
+                    <i class="material-icons small">search</i>      
+                  </router-link>
+                  <router-link :to="{name: 'member-emails', query:{ status:statuses}}">
+                    <i class="material-icons small">email</i>
+                  </router-link>              
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- doughnut chart commented out for now -->
           <!-- <canvas id="myChart"></canvas> -->
         </div>
-        <div class="col m8 s12">
+        <div class="col m4 s12">
           <h5>Recent updates</h5>
           <ol>
             <li v-for="update in updates">
@@ -498,16 +536,6 @@
           </ol>
         </div>
       </div>
-      <div class="row">
-        <div class="col m12 s12">
-          <h5>Email</h5>
-        </div>
-      </div>
-      <!--
-      <p>
-        Or, <router-link :to="{name:'member-emails'}">grab email addresses</router-link> to blast email groups of people.
-      </p>
-    -->
     </div>
   </script>
 
@@ -543,7 +571,7 @@
     <div class="row">
       <div class="col m3">
         <p>
-          Search by type
+          Search by status
         </p>
         <div class="collection facets">
           <router-link :to="{name:'member-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
@@ -621,62 +649,70 @@
   <!-- second child of list view -->
   <script type="text/x-template" id="member-emails">
     <div>
-      <h6>
+      <h5>
         <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Emails
-      </h6>      
+      </h5>      
       <div class="">
           <div class="row">
             <div class="col m3">
               <div class="section">
                 <p>
-                  Quicklinks
+                  Group filters
                 </p>
-                <ul>
-                  <li class="">
-                    <a @click="onNewsletter">Newsletter list <i class="material-icons tiny">chevron_right</i></a>
-                  </li>
-                </ul>
-              </div>
-              <div class="section">
-                <a class="btn" id="" @click="onStatusChange(event)">All</a>
-                <p>
-                  Filter by member category
-                </p>
-                <!--
-                <div id="emailStatusList" class="collection">
-                  <a v-for="status in statuses" class="collection-item" @click="onStatusChange(event,status)" >
-                    <i class="material-icons small">check_box_outline_blank</i><span>&nbsp;{{status}}</span>
-                  </a>
-                </div>
-                -->
-                <div class="collection">
-                  <a class="collection-item" @click="intercept()" :class="{'active': !$route.query.status}">All</a>
-                  <a class="collection-item" v-for="status in statuses" @click="intercept(status)" :class="{active: $route.query.status && $route.query.status.indexOf(status) > -1}">
-                    <i class="material-icons tiny" v-if="$route.query.status && $route.query.status.indexOf(status) > -1">check_box</i>
-                    <i class="material-icons tiny" v-else>check_box_outline_blank</i> 
-                    {{ status }}
-                  </a>
+                <div class="">
+                  <p>
+                    <router-link :to="{query: { status: newsletter }}" class="btn-small" :title="'emails for ' + newsletter">Newsletter emails</router-link>
+                  </p>
+                  <p>
+                    <router-link :to="{query: { status: statuses }}" class="btn-small" :title="'emails for ' + statuses">All emails</router-link>
+                  </p>
+                </div>  
+                <div v-if="query_array.length != statuses.length">
+                  <p>
+                    Status filters
+                  </p>
+                  <div>
+                    <a v-for="status in statuses" @click.prevent="intercept(status)" href="#" class="chip" v-if="!query_array.includes(status)">
+                      <i class="material-icons tiny">add</i>
+                      {{ status }}
+                    </a>
+                  </div>
                 </div> 
               </div>
             </div>
 
             <div class="col m9">
-              <p><b><span>Email Addresses&nbsp;</span><span>({{totalEmails}})</span></b></p>
-              {{ items }}
-              <div v-if="!loading">
-                <form>
-                  <div class="input-field">
-                    <textarea id="textarea-emails" v-model="items" class="materialize-textarea">{{ items }}</textarea>
-                  </div>
-                </form>
+              <div class="section">
+                  <div v-if="query_array.length > 0">
+                      <p>
+                        Selected filters | 
+                        <a @click.prevent="intercept()" href="#">
+                            <i class="material-icons tiny">clear</i>
+                            Clear all
+                          </a>
+                          </p>
+                      <div class="">
+                        <a @click.prevent="intercept(status)" href="#" v-for="status in query_array" class="chip blue lighten-5 blue-text" title="remove this filter">
+                          <i class="material-icons tiny">clear</i>
+                          {{ status }}
+                        </a>
+                      </div>
+                    </div>                
+                <p class="hide">
+                  <b>{{totalEmails}} selected: {{ querystring }}</b>
+                </p>
+                <loading :status="loading"></loading>
+                <div v-if="!loading">
+                  <form>
+                    <div class="input-field">
+                      <textarea id="textarea-emails" v-model="items" class="materialize-textarea">{{ items }}</textarea>
+                    </div>
+                  </form>
+                </div>
               </div>
-              <div v-else class="progress">
-                <div class="indeterminate"></div>
-              </div>
-
             </div><!-- col -->
           </div><!-- row -->
-          <router-link to="/list">Back to the list</router-link>
+          <router-link :to="{name: 'member-intro'}">Back to the list</router-link>
         </div><!--card panel-->    
 
     </div>
@@ -684,9 +720,9 @@
 
   <script type="text/x-template" id="member-household">
         <div>
-          <h6>
+          <h5>
             <router-link :to="{name: 'member-intro'}">Membership List</router-link> / {{ item.label_name }}
-          </h6>
+          </h5>
           <div class="card">
             <div class="card-content">
               <span class="card-title">
