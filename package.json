@@ -4,7 +4,7 @@
   "description": "Montclair Ski Club website",
   "main": "app.js",
   "engines": {
-    "node": "^7.0.0"
+    "node": "^8.11.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

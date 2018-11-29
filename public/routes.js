@@ -88,7 +88,7 @@ function initializeVueRouter(store) {
           props: true
         },
         {
-          path: 'search/status/:status',
+          path: 'status/:status',
           name: 'member-status',
           component: memberSearch,
           props: true

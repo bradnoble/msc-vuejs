@@ -17,6 +17,11 @@
   <script src="vendor/vue/vue-router.min.js"></script>
   <script src="vendor/vuex/vuex.min.js"></script>
   <script src="vendor/vue-cookies/vue-cookies.js"></script>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+
+
   <!--Import Google Icon Font-->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!--Import materialize.css-->
@@ -451,25 +456,61 @@
         Membership List
       </h5>
       <form action="#" @submit="searchfromchild">
-        <div class="input-field">
-          <span class="prefix">
-            <i class="material-icons" title="search">search</i>
-          </span>
-          <input id="search" v-model="searchstring" type="text" />
-          <label for="search">Search by name</label>
+        <div class="row">
+          <div class="input-field col m11 s11">
+            <input id="search" v-model="searchstring" type="text" />
+            <label for="search">Search by name</label>
+          </div>
+          <div class="input-field col m1 s1">
+            <button class="btn waves-effect waves-light" type="submit" name="action"><i class="material-icons" title="search">search</i></button>
+          </div>
         </div>
       </form>
-      <p>
-        Search by type:
-      </p>
+
       <div class="row">
-        <router-link :to="{name:'member-status', params:{ status:status }}" v-for="status in statuses" class="btn col m3 s12 center">
-          {{ status }}
-        </router-link>
+        <div class="col m4 s12">
+          <h5>Membership</h5>
+          <ul>
+            <li v-for="status in items">
+              <router-link :to="{name:'member-status', params:{ status:status.key }}">{{ status.key }}</router-link> {{ status.value }}
+            </li>
+            <li class="total">
+              <router-link :to="{name:'member-status', params:{ status:'all' }}">all</router-link> {{ total }}
+            </li>
+          </ul>
+          <!-- doughnut chart commented out for now -->
+          <!-- <canvas id="myChart"></canvas> -->
+        </div>
+        <div class="col m8 s12">
+          <h5>Recent updates</h5>
+          <ol>
+            <li v-for="update in updates">
+
+              <div v-show="update.doc.type == 'household'">
+                <router-link :to="{name:'member-household', params:{ id:update.id }}">{{ update.doc.name }}</router-link>
+                <location v-bind:item="update.doc"></location>
+              </div>
+
+              <div v-show="update.doc.type == 'person'">
+                <router-link :to="{name:'member-household', params:{ id:update.doc.household_id }}">
+                  <person-name v-bind:item="update.doc"></person-name>
+                </router-link>
+              </div>
+  
+            </li>
+          </ol>
+        </div>
       </div>
+      <div class="row">
+        <div class="col m12 s12">
+          <h5>Email</h5>
+        </div>
+      </div>
+      <!--
       <p>
         Or, <router-link :to="{name:'member-emails'}">grab email addresses</router-link> to blast email groups of people.
       </p>
+    -->
     </div>
   </script>
 
@@ -479,14 +520,28 @@
     <h5>
       <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Search
     </h5>
+    <form action="#" @submit="searchfromchild">
+      <div class="row">
+        <div class="input-field col m11 s11">
+          <input id="search" v-model="searchstring" type="text" />
+          <label for="search">Search by name</label>
+        </div>
+        <div class="input-field col m1 s1">
+          <button class="btn waves-effect waves-light" type="submit" name="action"><i class="material-icons" title="search">search</i></button>
+        </div>
+      </div>
+    </form>
+
+    <!--
     <div class="input-field">
       <span class="prefix">
         <i class="material-icons" v-if="searchstring" v-on:click="clearfromchild" title="clear the search input">clear</i>
         <i class="material-icons" v-if="!searchstring" title="search">search</i>
       </span>
-      <input id="search" v-model="searchstring" @keyup="onNameSearch" type="text" />
+      <input id="search" v-model="searchstring" @keyup.enter="search" type="text" />
       <label for="search">Search by name</label>
     </div>
+    -->
 
     <div class="row">
       <div class="col m3">
@@ -590,28 +645,31 @@
                 <p>
                   Filter by member category
                 </p>
+                <!--
                 <div id="emailStatusList" class="collection">
                   <a v-for="status in statuses" class="collection-item" @click="onStatusChange(event,status)" >
                     <i class="material-icons small">check_box_outline_blank</i><span>&nbsp;{{status}}</span>
                   </a>
                 </div>
-              <!-- <div class="collection">
+                -->
+                <div class="collection">
                   <a class="collection-item" @click="intercept()" :class="{'active': !$route.query.status}">All</a>
                   <a class="collection-item" v-for="status in statuses" @click="intercept(status)" :class="{active: $route.query.status && $route.query.status.indexOf(status) > -1}">
                     <i class="material-icons tiny" v-if="$route.query.status && $route.query.status.indexOf(status) > -1">check_box</i>
                     <i class="material-icons tiny" v-else>check_box_outline_blank</i> 
                     {{ status }}
                   </a>
-                </div> -->
+                </div> 
               </div>
             </div>
 
             <div class="col m9">
               <p><b><span>Email Addresses&nbsp;</span><span>({{totalEmails}})</span></b></p>
+              {{ items }}
               <div v-if="!loading">
                 <form>
                   <div class="input-field">
-                    <textarea id="textarea-emails" v-model="emailAddresses" class="materialize-textarea">{{emailAddresses}}</textarea>
+                    <textarea id="textarea-emails" v-model="items" class="materialize-textarea">{{ items }}</textarea>
                   </div>
                 </form>
               </div>
@@ -893,6 +951,8 @@
     </script>
 
   <!-- WHAT ARE THESE VIEWS? -->
+  <!-- these are views that function like includes -->
+  <!-- they go to work all over the place -->
 
   <script type="text/x-template" id="view-location">
     <span>
@@ -903,7 +963,7 @@
       <span v-if="item.city">{{ item.city }}, </span> 
       <span v-if="item.state">{{ item.state }}, </span> 
       <span v-if="item.zip">{{ item.zip }}</span> 
-      <div v-if="item.phone" class=""><i class="material-icons tiny">home</i> {{ item.phone }}</div> 
+      <span v-if="item.phone"> | Home phone: {{ item.phone }}</span> 
     </span>
   </script>
 
@@ -916,7 +976,7 @@
 
   <script type="text/x-template" id="view-person-name">
     <span>
-      <b>{{ item.last }}, {{ item.first }}</b>
+      <span class="name">{{ item.last }}, {{ item.first }}</span>
       <span class="person-status grey-text">{{ item.status }}</span>
     </span>
   </script>

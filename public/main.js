@@ -249,13 +249,12 @@ const members = {
     }
   },
   created: function () {
-    var blacklist = ['deceased'];
+    var blacklist = ['deceased','non-member'];
     this.statuses = getStatuses(blacklist);
   },
   methods: {
     search: function (event) {
-      // console.log('hi from the child', event);
-      this.searchstring = event;
+      this.searchstring = event.trim();
       if (this.searchstring.length > 0) {
         this.$router.push({ name: 'member-name', params: {}, query: { q: this.searchstring } });
       } else {
@@ -268,11 +267,22 @@ const members = {
 // Member intro controller (first child of list)
 const memberIntro = {
   template: '#member-intro',
+  data: function () {
+    return {
+      items: [],
+      updates: [],
+      total: 0
+    }
+  },
   props: [
     'searchstring',
     'timer',
     'statuses'
   ],
+  mounted: function () {
+    this.getStatusCounts();
+    this.getLastUpdated();
+  },
   methods: {
     // this was helpful for talking from a child to a parent
     // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
@@ -280,6 +290,94 @@ const memberIntro = {
     searchfromchild: function (e) {
       this.$emit('searched', this.searchstring)
       e.preventDefault();
+    },
+    getLastUpdated: function(){
+      // /api/members/updated      
+      let _this = this;
+      this.$http.get('/api/members/updated')
+      .then(
+        function (res) {
+          _this.updates = res.body.rows;
+        }
+      )
+    },
+    getStatusCounts: function(){
+      let _this = this;
+      this.$http.get('/api/members/statuses')
+      .then(
+        function (res) {
+          _this.items = res.body.rows;
+          _this.loading = false;          
+
+          // get total
+          for(let i=0; i < _this.items.length; i++){
+            _this.total = _this.total + _this.items[i].value; 
+          }
+
+          // sort the statuses
+          // https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
+          function compare(a,b) {
+            if (a.value < b.value)
+              return 1;
+            if (a.value > b.value)
+              return -1;
+            return 0;
+          }          
+          _this.items.sort(compare);
+
+          // #region doughnut chart
+          // commented out for now (11/15/2018)
+          /*
+          let datas = {};
+          let datasets = [{data:[],backgroundColor:[]}];
+          let labels = [];
+          let colors = ["#0074D9", "#FF4136", "#2ECC40", "#FF851B", "#7FDBFF", "#B10DC9", "#FFDC00", "#001f3f", "#39CCCC", "#01FF70", "#85144b", "#F012BE", "#3D9970", "#111111", "#AAAAAA"];
+
+
+          for(let i=0; i < _this.items.length; i++){
+            // scrub out non-members
+            if(_this.items[i].key != 'non-member' && _this.items[i].key != 'deceased'){
+              datasets[0].data.push(_this.items[i].value);
+              datasets[0].backgroundColor.push(colors[i]);
+//              labels.push(_this.items[i].key + ' (' + _this.items[i].value + ')');
+              labels.push(_this.items[i].key);
+              _this.total = _this.total + _this.items[i].value; 
+            }
+          }
+          datas.datasets = datasets;
+          datas.labels = labels;
+
+          // And for a doughnut chart
+          var ctx = document.getElementById("myChart");
+          var myDoughnutChart = new Chart(ctx, {
+              type: 'doughnut',
+              data: datas,
+              options: {
+                legend: {
+                    labels: {
+                      boxWidth: 20
+                    },
+                    display: true,
+                    position: 'top'
+                },
+                title: {
+                  display: true,
+                  text: _this.total + ' people'
+                },
+                layout: {
+                  padding: {
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      bottom: 0
+                  }
+                }    
+              }
+          });
+          */
+          // #endregion chart
+        }
+      );  
     }
   }
 }
@@ -317,31 +415,25 @@ const memberSearch = {
       this.searchstring = '';
       this.$router.push({ name: 'members-status', params: { status: 'all' } });
     },
-    onNameSearch: function (e) {
-      let _this = this;
-      _this.items = [];
-
-      if (this.timer) {
-        clearTimeout(this.timer);
-        this.timer = null;
-      }
-      this.timer = setTimeout(() => {
-        this.$emit('searched', _this.searchstring)
-      }, 500);
-
+    searchfromchild: function (e) {
+      this.$emit('searched', this.searchstring)
       e.preventDefault();
     },
     //Invokes search and routes based upoon search mode
+    // necessary, called when the route changes both someone loads the view
+    // and when someone enters a new search query
     search: function () {
       if (this.$route.params.status) {
-        this.statusSearch(this.$route.params.status);
+        this.statusSearch();
       } else if (this.$route.query.q) {
-        this.nameSearch(this.$route.query.q);
+        this.nameSearch();
       }
     },
-    //Search by member status
-    statusSearch: function (status) {
+    statusSearch: function () {
       let _this = this;
+      let status = _this.$route.params.status;
+      // clear out the search input
+      _this.searchstring = '';
 
       if (status) {
         this.$http.get('/api/members/status/' + status)
@@ -356,23 +448,24 @@ const memberSearch = {
         return;
       }
     },
-    //Search by member name(s)
-    nameSearch: function (name) {
+    nameSearch: function (searchStr) {
       let _this = this;
-
-      if (name) {
-        this.$http.get('/api/members?name=' + name)
+      // if the page is loaded with a search query in the location bar, put it into the input
+      _this.searchstring = _this.$route.query.q;
+      
+      if (_this.searchstring) {
+        this.$http.get('/api/members?name=' + _this.searchstring)
           .then(
             function (res) {
-              _this.items = res.data.docs;
+              _this.items = res.data;
               _this.loading = false;
             }
           );
       } else {
+        // TODO -- route to 'all'?
         _this.items = [];
         return;
-      }
-
+      }      
     }
   }
 };
@@ -403,32 +496,22 @@ const memberEmails = {
   },
   methods: {
     clearAll: function () {
-      $('#emailStatusList').find('i').each(function () {
-        $(this).text('check_box_outline_blank');
-      });
     },
-    //Get email addresses
     getEmails: function () {
-
-      //Local reference to component
       let _this = this;
+      let obj = {
+        params: {
+          statuses: 'active'
+        }
+      };
 
-      this.$http.get('/api/member/emails', { params: { statuses: this.selectedStatus.join(',') } })
+      this.$http.get('/api/member/emails', obj)
         .then(function (resp) {
-          let data = resp.data.rows;
-
-          if (data.length > 0) {
-            var emails = data.map(function (row) {
-              return row.value[0];
-            });
-            _this.emailAddresses = emails.join(',');
-          } else {
-            _this.emailAddresses = 'No email addresses found';
-          }
+          _this.items = resp.data.rows;
+          console.log(_this.items);
+          _this.totalEmails = resp.data.length;
           _this.loading = false;
-          _this.totalEmails = data.length;
         });
-
     },
     onNewsletter: function (event) {
       this.clearAll();
@@ -517,7 +600,7 @@ const memberHousehold = {
     this.start();
   },
   updated: function () {
-    console.log(this.back)
+    // console.log(this.back)
   },
   methods: {
     setPageTitle: function () {
@@ -832,7 +915,7 @@ const household = {
     '$route': function (to, from) {
       let _this = this;
       // after editing a person or household, update the household and the people
-      if (from.name == 'editPerson' || from.name == 'newPerson' || from.name == 'household-edit') {
+      if (from.name == 'person-edit' || from.name == 'person-new' || from.name == 'household-edit') {
         _this.get();
       }
     }

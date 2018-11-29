@@ -203,6 +203,175 @@ app.get('/',
 
 // #endregion
 
+// #region design docs stuff for managing Cloudant indexes
+// https://stackoverflow.com/questions/38385101/couchdb-update-design-doc
+const ddoc = {
+  _id: "_design/foo",
+  views: {
+    by_status: {
+      map: function(doc) {
+        if(doc.type == 'person'){
+          if(doc.status != 'non-member' && doc.status != 'deceased'){
+            emit(doc.status, 1);
+          }
+        }
+      },
+      reduce: '_sum'
+    },
+    emails: {
+      map: function(doc) {
+        if(doc.type == 'person' && doc.email && doc.status && doc.first && doc.last){
+          emit([doc.last, doc.first, doc.email], 1)
+        }
+      }
+    },
+    last_updated: {
+      map: function(doc) {
+        if(doc.updated){
+          emit(doc.updated, 1);
+        }
+      }
+    }
+  },
+  indexes: {
+    name: {
+      analyzer: 'standard',
+      index: function(doc) {  
+        if(doc.type == 'person'){    
+          if(doc.last){      
+            index('default', doc.last, {"store": true} );
+          }
+          if(doc.first){      
+            index('default', doc.first, {"store": true} );
+          }  
+        }
+      }
+    }
+  }
+};
+
+// upload the design doc
+db.get(ddoc._id, function(err, doc){
+  if(err){
+    console.log('no ddoc');
+    db.insert(ddoc, function (err, doc) {
+      if (!err) {
+        console.log('success: inserted ddoc');
+      }
+      else {
+        console.log('ddoc:' + err.reason);
+      }
+    });
+  }
+  else {
+    ddoc._rev = doc._rev;
+    db.insert(ddoc, function (err, doc) {
+      if (!err) {
+        console.log('success: updated ddoc');
+        console.log(doc);
+      }
+      else {
+        console.log('ddoc:' + err.reason);
+      }
+    });
+  }
+});
+
+// build the Cloudant Query index for lookups by status
+const first_index = { 
+  name:'status', 
+  type:'text', 
+  index:{}
+};
+db.index(first_index, function(err, response) {
+  if (err) {
+    throw err;
+  }
+  console.log('Index creation result: %s', response.result);
+});
+
+// #endregion
+
+
+
+// BEGIN ENDPOINTS
+
+// get last updated records, for the membership landing page
+app.get('/api/members/updated',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    db.view('foo','last_updated',
+      {
+        descending: true,
+        include_docs: true,
+        limit: 5
+      },
+      function (err, docs) {
+        if(err) {
+          console.log(err);
+        }
+        else {
+          // console.log(docs);
+          res.send(docs);
+        }
+      }
+    );
+  }
+);
+
+// get counts, for the membership landing page
+app.get('/api/members/statuses',
+  function (req, res) {
+    db.view('foo','by_status',
+      {
+        reduce: true,
+        group_level: 1
+      },
+      function (err, docs) {
+        if(err) {
+          console.log(err);
+        }
+        else {
+          // console.log(docs);
+          res.send(docs);
+        }
+      }
+    );
+  }
+);
+
+// get member emails
+app.get('/api/member/emails',
+  // authentication.users.isAuthenticated,
+  function (req, res) {
+
+    let opts = {};
+
+    console.log('query: ', req.query.statuses);
+
+    //Status values are passed in a comma delimited list and converted to an array
+    if (req.query.statuses) {
+      opts.keys = req.query.statuses.split(',');
+    }
+
+    console.log(opts.keys);
+
+    // get the results of the API call
+    db.view('foo', 'emails', 
+      opts, 
+      function (err, resp) {
+        if (!err) {
+          console.log('resp: ', resp);
+          res.send(resp);
+        } else {
+          console.log('error', err);
+          res.send(err);
+        }
+      }
+    );
+  }
+);
+
 // #region Household Endpoints
 
 /*
@@ -287,46 +456,6 @@ app.get('/api/households',
   }
 );
 
-//IS THIS USED ANYWHERE?
-app.get('/household',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    //db.view(designname, viewname, [params], [callback])
-    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
-      if (!err) {
-        var mapped = function (data) {
-          return data.rows.map(function (row) {
-            return row.doc; // this is the entire payload
-          });
-        };
-        // add people to the household
-        var docs = mapped(resp);
-        var households = {};
-        var people = [];
-        var finalArray = [];
-
-        for (i = 0; i < docs.length; i++) {
-          if (docs[i].type == 'person' && docs[i].first && docs[i].last && docs[i].status != 'deceased' && docs[i].status != 'non-member') {
-            // build an object that holds objects that hold arrays of people
-            people.push(docs[i]);
-          } else if (docs[i].type == 'household') {
-            households[docs[i]._id] = docs[i];
-          }
-        }
-        // connect the household info to the person
-        // only if there's a household to connect a person to
-        for (i = 0; i < people.length; i++) {
-          if (households[people[i].household_id]) {
-            people[i].household = households[people[i].household_id];
-            finalArray.push(people[i]);
-          }
-        }
-        res.send(finalArray);
-      }
-    });
-  }
-);
-
 app.post('/api/household',
   authentication.users.isAuthenticated,
   jsonParser,
@@ -336,9 +465,7 @@ app.post('/api/household',
 
       // if we're deleting a household, we should first delete the people
       if (household._deleted == true) {
-        // using cloudant query means we don't have to pre-build our indexes
-        // which means I don't have to worry about keeping mapreduce code in sync 
-        // across the dev and prod database(s), and can instead just update views here
+        // using cloudant query
         db.find(
           {
             "selector": {
@@ -374,6 +501,9 @@ app.post('/api/household',
             }
           });
       }
+
+      // datestamp the update
+      household.updated = new Date().toISOString();
 
       // update the household      
       db.insert(household, function (err, doc) {
@@ -465,14 +595,6 @@ app.get('/api/members/status/:statusId',
             { "status": "guest" },
             { "status": "non-member" }
           ]
-          // "sort": [
-          //   {
-          //     "last": "asc"
-          //   },
-          //   {
-          //     "first": "asc"
-          //   }
-          // ]
         };
       } else {
         selector = {
@@ -483,10 +605,21 @@ app.get('/api/members/status/:statusId',
         };
       }
 
+      // on sorting with Cloudant query
+      // https://developer.ibm.com/answers/questions/229663/how-to-use-sort-when-searching-the-cloudant-databa.html
+      // note the modified on the field to be sorted
       db.find(
         {
           "selector": selector,
-          "fields": []
+          "fields": [],
+          "sort": [
+             {
+               "last:string": "asc"
+             },
+             {
+               "first:string": "asc"
+             }
+           ]
         }, function (err, data) {
           if (err) {
             throw err;
@@ -500,113 +633,48 @@ app.get('/api/members/status/:statusId',
   }
 );
 
-/*
-* Get a list of members based upon member name(s)
-*/
+
+// get a list of members based upon member name(s)
 app.get('/api/members',
   authentication.users.isAuthenticated,
   function (req, res) {
 
-    console.log(req.query.name);
+    console.log('search query: ', req.query.name);
 
     if (req.query.name) {
+      let namesArray = req.query.name.trim().split(' ');
+      let nameStr = '';
 
-      let nameList = req.query.name;
-
-      if (!Array.isArray(nameList)) {
-        //Case insensitive match on name
-        selector = {
-          // "type": { "$eq": "person" },
-          "$or": [
-            {
-              "first": {
-                "$regex": "^(?i)" + nameList + "*"
-              }
-            },
-            {
-              "last": {
-                "$regex": "^(?i)" + nameList + "*"
-              }
-            }
-          ]
-          // "sort": [
-          //   {
-          //     "last": "asc"
-          //   },
-          //   {
-          //     "first": "asc"
-          //   }
-          // ]
-        };
+      if(namesArray.length >1){
+        // multiple words means drilling in
+        // that means AND
+        nameStr = namesArray.join('* && ');
       } else {
-        selector = {
-          "type": { "$eq": "person" },
-          "$or": [
-            {
-              "$and": [
-                { "first": { "$regex": "^(?i)" + nameList[0] + ".*" } },
-                { "last": { "$regex": "^(?i)" + nameList[nameList.length - 1] + "*" } }
-              ]
-            },
-            {
-              "$and": [
-                { "first": { "$regex": "^(?i)" + nameList[nameList.length - 1] + "*" } },
-                { "last": { "$regex": "^(?i)" + nameList[0] + "*" } }
-              ]
-            }
-          ]
-          // "sort": [
-          //   {
-          //     "last": "asc"
-          //   },
-          //   {
-          //     "first": "asc"
-          //   }
-          // ]
-        };
+        // if there's only one item in the array, add wildcard
+        nameStr = namesArray[0] + '*';
       }
+      // in case the search term has more than word and the second word needs a wildcard
+      nameStr += '*'
 
-      db.find(
-        {
-          "selector": selector,
-          "fields": []
-        }, function (err, data) {
-          if (err) {
-            throw err;
+      db.search('foo', 'name', { 
+        q: nameStr,
+        include_docs: true
+        }, function(err, resp) {
+          if (!err) {
+            // get unnecessary objects out of the response
+            var mapped = function (data) {
+              return data.rows.map(function (row) {
+                return row.doc;
+              });
+            };        
+            let docs = mapped(resp);
+            res.send(docs)
           }
-          res.send(data)
         }
       );
     } else {
       res.send();
     }
-  }
-);
-
-/*
-* Get a list of member emails based upon one-to-many member status values
-*/
-app.get('/api/member/emails',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-
-    let opts = {};
-    //Status values are passed in a comma delimited list and converted to an array
-    if (req.query.statuses) {
-      opts.keys = req.query.statuses.split(',');
-    }
-
-    // get the results of the API call
-    db.view('app', 'emails', opts, function (err, resp) {
-      if (!err) {
-        // console.log(resp);
-        res.send(resp);
-      }
-      else {
-        console.log('error', err)
-        res.send(err);
-      }
-    });
   }
 );
 
@@ -761,6 +829,10 @@ app.post('/api/person',
   function (req, res) {
     if (authentication.users.isInRole(req, 'adimn')) {
       var person = req.body;
+      
+      // datestamp the update
+      person.updated = new Date().toISOString();
+
       db.insert(person, function (err, doc) {
         if (!err) {
           console.log('success updating person, will add people to response next');
