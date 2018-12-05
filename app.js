@@ -383,7 +383,7 @@ app.get('/api/households/:id',
   authentication.users.isAuthenticated,
   function (req, res) {
     // both admins and members can see these results
-    if (authentication.users.isInRole(req, 'adimn,member')) {
+    if (authentication.users.isInRole(req, 'admin,member')) {
       db.get(req.params.id, function (err, doc) {
         if (!err) {
           // get the people of this householdsAndPeople
@@ -462,7 +462,7 @@ app.post('/api/household',
   authentication.users.isAuthenticated,
   jsonParser,
   function (req, res) {
-    if (authentication.users.isInRole(req, 'adimn')) {
+    if (authentication.users.isInRole(req, 'admin')) {
       var household = req.body;
 
       // if we're deleting a household, we should first delete the people
@@ -686,7 +686,7 @@ app.get('/api/members',
 app.get('/api/member/csv',
   authentication.users.isAuthenticated,
   function (req, res) {
-    if (authentication.users.isInRole(req, 'adimn')) {
+    if (authentication.users.isInRole(req, 'admin')) {
       var households = {},
         people = [],
         filename = '',
@@ -805,7 +805,7 @@ app.get('/api/member/csv',
 app.get('/api/person/:id',
   authentication.users.isAuthenticated,
   function (req, res) {
-    if (authentication.users.isInRole(req, 'adimn')) {
+    if (authentication.users.isInRole(req, 'admin')) {
       // the factory passes the id of the document as a query parameter
       var id = req.params.id;
       db.get(id, function (err, doc) {
@@ -829,7 +829,7 @@ app.post('/api/person',
   authentication.users.isAuthenticated,
   jsonParser,
   function (req, res) {
-    if (authentication.users.isInRole(req, 'adimn')) {
+    if (authentication.users.isInRole(req, 'admin')) {
       var person = req.body;
       
       // datestamp the update
