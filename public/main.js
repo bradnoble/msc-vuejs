@@ -675,7 +675,7 @@ const memberHousehold = {
   },
   watch: {
     '$route'(to, from) {
-      console.log('$route', to, from)
+      //console.log('$route', to, from)
       this.start();
     }
   }
@@ -775,7 +775,7 @@ const resources = {
 
       this.$http.get('/api/resources/pdf/' + file.id)
         .then((res) => {
-          console.log('Response back w/ PDF data');
+          //console.log('Response back w/ PDF data');
 
           //Decode base-64 string
           let pdfData = atob(res.data);
@@ -910,7 +910,7 @@ const households = {
         this.start();
       };
 
-      console.log(str)
+      //console.log(str)
 
       for (i = 0; i < this.items.length; i++) {
         // each item has its own counter
@@ -1042,7 +1042,7 @@ const householdEdit = {
             setTimeout(function () {
               // revert the label of the save button
               $('#save').text(txt);
-              console.log(resp)
+              //console.log(resp)
               // redirect to the summary tab
               _this.$router.replace({ name: 'admin-household', params: { household_id: _this.item._id } });
             }, 200);
@@ -1057,8 +1057,8 @@ const householdEdit = {
       let _this = this;
       var people = _this.item.people;
 
-      console.log(people.length)
-      console.log(people[0]._deleted)
+      //console.log(people.length)
+      //console.log(people[0]._deleted)
 
       for (var i = 0; i < people.length; i++) {
         if (!people[i]._deleted) {

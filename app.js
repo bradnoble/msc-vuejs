@@ -24,8 +24,6 @@ var http = require('http').Server(app);
 global.__basedir = __dirname;
 //console.log('base=' + __basedir);
 
-// console.log(JSON.parse(process.env.USERS));
-
 http.listen(appEnv.port, "0.0.0.0", function () {
   console.log("server starting on " + appEnv.url);     // print a message when the server starts listening
 });
@@ -60,7 +58,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 // app.use(flash());
 
+//Authentication initialization
 let authentication = require('authentication');
+//Initialize app users
+authentication.users.init(process.env.users);
 
 /*
 * Setup Passport Local Strategy to authenticate and return user object
@@ -209,9 +210,9 @@ const ddoc = {
   _id: "_design/foo",
   views: {
     by_status: {
-      map: function(doc) {
-        if(doc.type == 'person'){
-          if(doc.status != 'non-member' && doc.status != 'deceased'){
+      map: function (doc) {
+        if (doc.type == 'person') {
+          if (doc.status != 'non-member' && doc.status != 'deceased') {
             emit(doc.status, 1);
           }
         }
@@ -219,15 +220,15 @@ const ddoc = {
       reduce: '_sum'
     },
     emails: {
-      map: function(doc) {
-        if(doc.type == 'person' && doc.email && doc.status && doc.first && doc.last){
+      map: function (doc) {
+        if (doc.type == 'person' && doc.email && doc.status && doc.first && doc.last) {
           emit(doc.status, 1)
         }
       }
     },
     last_updated: {
-      map: function(doc) {
-        if(doc.updated){
+      map: function (doc) {
+        if (doc.updated) {
           emit(doc.updated, 1);
         }
       }
@@ -236,14 +237,14 @@ const ddoc = {
   indexes: {
     name: {
       analyzer: 'standard',
-      index: function(doc) {  
-        if(doc.type == 'person'){    
-          if(doc.last){      
-            index('default', doc.last, {"store": true} );
+      index: function (doc) {
+        if (doc.type == 'person') {
+          if (doc.last) {
+            index('default', doc.last, { "store": true });
           }
-          if(doc.first){      
-            index('default', doc.first, {"store": true} );
-          }  
+          if (doc.first) {
+            index('default', doc.first, { "store": true });
+          }
         }
       }
     }
@@ -251,12 +252,12 @@ const ddoc = {
 };
 
 // upload the design doc
-db.get(ddoc._id, function(err, doc){
-  if(err){
-    console.log('no ddoc');
+db.get(ddoc._id, function (err, doc) {
+  if (err) {
+    //console.log('no ddoc');
     db.insert(ddoc, function (err, doc) {
       if (!err) {
-        console.log('success: inserted ddoc');
+        //console.log('success: inserted ddoc');
       }
       else {
         console.log('ddoc:' + err.reason);
@@ -267,8 +268,8 @@ db.get(ddoc._id, function(err, doc){
     ddoc._rev = doc._rev;
     db.insert(ddoc, function (err, doc) {
       if (!err) {
-        console.log('success: updated ddoc');
-        console.log(doc);
+        //console.log('success: updated ddoc');
+        //console.log(doc);
       }
       else {
         console.log('ddoc:' + err.reason);
@@ -278,16 +279,16 @@ db.get(ddoc._id, function(err, doc){
 });
 
 // build the Cloudant Query index for lookups by status
-const first_index = { 
-  name:'status', 
-  type:'text', 
-  index:{}
+const first_index = {
+  name: 'status',
+  type: 'text',
+  index: {}
 };
-db.index(first_index, function(err, response) {
+db.index(first_index, function (err, response) {
   if (err) {
     throw err;
   }
-  console.log('Index creation result: %s', response.result);
+  //console.log('Index creation result: %s', response.result);
 });
 
 // #endregion
@@ -298,18 +299,18 @@ db.index(first_index, function(err, response) {
 app.get('/api/members/updated',
   authentication.users.isAuthenticated,
   function (req, res) {
-    db.view('foo','last_updated',
+    db.view('foo', 'last_updated',
       {
         descending: true,
         include_docs: true,
         limit: 5
       },
       function (err, docs) {
-        if(err) {
+        if (err) {
           console.log(err);
         }
         else {
-          // console.log(docs);
+         //console.log(docs);
           res.send(docs);
         }
       }
@@ -320,17 +321,17 @@ app.get('/api/members/updated',
 // get counts, for the membership landing page
 app.get('/api/members/statuses',
   function (req, res) {
-    db.view('foo','by_status',
+    db.view('foo', 'by_status',
       {
         reduce: true,
         group_level: 1
       },
       function (err, docs) {
-        if(err) {
+        if (err) {
           console.log(err);
         }
         else {
-          // console.log(docs);
+         //console.log(docs);
           res.send(docs);
         }
       }
@@ -346,24 +347,24 @@ app.get('/api/member/emails',
     var params = (req.query.statuses) ? req.query.statuses : null;
     let opts = {};
 
-    // console.log('query: ', req.query.statuses);
+   //console.log('query: ', req.query.statuses);
 
     //Status values are passed in a comma delimited list and converted to an array
     if (req.query.statuses) {
       opts.keys = params.split(',');
     }
 
-    // console.log(opts.keys);
+   //console.log(opts.keys);
     opts.include_docs = true;
 
     // get the results of the API call
     // can't use Cloudant Query here b/c CQ can't find docs where a field is present but not null
     // https://stackoverflow.com/questions/42974007/how-to-check-empty-value-in-an-attribute-in-the-cloudant-selector-query-when-the
-    db.view('foo', 'emails', 
-      opts, 
+    db.view('foo', 'emails',
+      opts,
       function (err, resp) {
         if (!err) {
-          // console.log('resp: ', resp);
+         //console.log('resp: ', resp);
           res.send(resp);
         } else {
           console.log('error', err);
@@ -444,14 +445,14 @@ app.get('/api/households',
           } else if (docs[i].type == 'household') {
             households[i] = docs[i];
           }
-          // console.log(people);
+         //console.log(people);
         }
         for (i = 0; i < households.length; i++) {
           var household_id = households[i]._id;
           households[i].people = [];
           households[i].people = people[household_id];
         }
-        // console.log(docs[1]);
+       //console.log(docs[1]);
         res.send(households);
       }
     });
@@ -485,7 +486,7 @@ app.post('/api/household',
             }
             var people = [];
 
-            console.log('Found %d people in this household', data.docs.length);
+            //console.log('Found %d people in this household', data.docs.length);
 
             for (var i = 0; i < data.docs.length; i++) {
               data.docs[i]._deleted = true;
@@ -495,7 +496,7 @@ app.post('/api/household',
             if (people.length > 0) {
               db.bulk({ docs: people }, function (err, docs) {
                 if (!err) {
-                  console.log('deleted this many people', people.length);
+                  //console.log('deleted this many people', people.length);
                 } else {
                   console.log('error deleting people', err.reason);
                 }
@@ -510,7 +511,7 @@ app.post('/api/household',
       // update the household      
       db.insert(household, function (err, doc) {
         if (!err) {
-          console.log('success updating household');
+          //console.log('success updating household');
           res.send(doc);
         }
         else {
@@ -520,7 +521,7 @@ app.post('/api/household',
       });
 
     } else {
-      // console.log('not admin');
+     //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -542,7 +543,7 @@ app.post('/postHouseholdOld',
         db.bulk({ docs: household.people }, function (err, docs) {
           //db.insert(household.people[1], function(err, docs){
           if (!err) {
-            console.log(docs);
+            //console.log(docs);
             // update the new people object with response, including _rev
             newPeople = docs;
             // don't push the people object into the household, b/c people are stored separately
@@ -550,12 +551,12 @@ app.post('/postHouseholdOld',
             // update household
             db.insert(household, function (err, doc) {
               if (!err) {
-                console.log('success updating household, will add people to response next');
+                //console.log('success updating household, will add people to response next');
                 // make sure there are no people in the household object
                 doc.people = [];
                 // append the updated people object to the household before sending the response
                 doc.people = newPeople;
-                console.log(doc);
+                //console.log(doc);
                 res.send(doc);
               }
               else {
@@ -568,7 +569,7 @@ app.post('/postHouseholdOld',
         });
       }
     } else {
-      // console.log('not admin');
+     //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -583,7 +584,7 @@ app.post('/postHouseholdOld',
 app.get('/api/members/status/:statusId',
   authentication.users.isAuthenticated,
   function (req, res) {
-    console.log('status=' + req.params.statusId);
+   //console.log('status=' + req.params.statusId);
 
     if (req.params.statusId) {
 
@@ -615,13 +616,13 @@ app.get('/api/members/status/:statusId',
           "selector": selector,
           "fields": [],
           "sort": [
-             {
-               "last:string": "asc"
-             },
-             {
-               "first:string": "asc"
-             }
-           ]
+            {
+              "last:string": "asc"
+            },
+            {
+              "first:string": "asc"
+            }
+          ]
         }, function (err, data) {
           if (err) {
             throw err;
@@ -641,13 +642,13 @@ app.get('/api/members',
   authentication.users.isAuthenticated,
   function (req, res) {
 
-    console.log('search query: ', req.query.name);
+    //console.log('search query: ', req.query.name);
 
     if (req.query.name) {
       let namesArray = req.query.name.trim().split(' ');
       let nameStr = '';
 
-      if(namesArray.length >1){
+      if (namesArray.length > 1) {
         // multiple words means drilling in
         // that means AND
         nameStr = namesArray.join('* && ');
@@ -658,21 +659,21 @@ app.get('/api/members',
       // in case the search term has more than word and the second word needs a wildcard
       nameStr += '*'
 
-      db.search('foo', 'name', { 
+      db.search('foo', 'name', {
         q: nameStr,
         include_docs: true
-        }, function(err, resp) {
-          if (!err) {
-            // get unnecessary objects out of the response
-            var mapped = function (data) {
-              return data.rows.map(function (row) {
-                return row.doc;
-              });
-            };        
-            let docs = mapped(resp);
-            res.send(docs)
-          }
+      }, function (err, resp) {
+        if (!err) {
+          // get unnecessary objects out of the response
+          var mapped = function (data) {
+            return data.rows.map(function (row) {
+              return row.doc;
+            });
+          };
+          let docs = mapped(resp);
+          res.send(docs)
         }
+      }
       );
     } else {
       res.send();
@@ -831,14 +832,14 @@ app.post('/api/person',
   function (req, res) {
     if (authentication.users.isInRole(req, 'admin')) {
       var person = req.body;
-      
+
       // datestamp the update
       person.updated = new Date().toISOString();
 
       db.insert(person, function (err, doc) {
         if (!err) {
-          console.log('success updating person, will add people to response next');
-          console.log(doc);
+          //console.log('success updating person, will add people to response next');
+          //console.log(doc);
           res.send(doc);
         }
         else {
@@ -846,7 +847,7 @@ app.post('/api/person',
         }
       });
     } else {
-      // console.log('not admin');
+     //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -1006,14 +1007,14 @@ app.get('/getSignups',
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'member' || role === 'admin') {
-      // console.log(role);
+      //console.log(role);
       db.view('app', 'signups', { 'include_docs': true }, function (err, doc) {
         if (!err) {
           res.send(doc);
         }
       });
     } else {
-      // console.log('not admin');
+      //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -1023,14 +1024,14 @@ app.get('/getSignupChairs',
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'admin') {
-      // console.log(role);
+     //console.log(role);
       db.view('app', 'signups', { 'include_docs': true }, function (err, doc) {
         if (!err) {
           res.send(doc);
         }
       });
     } else {
-      // console.log('not admin');
+     //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -1040,7 +1041,7 @@ app.get('/getSignup/',
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'member' || role === 'admin') {
-      // console.log(role);
+     //console.log(role);
       // the factory passes the id of the document as a query parameter
       var doc = req.query.id;
       db.get(doc, function (err, doc) {
@@ -1049,7 +1050,7 @@ app.get('/getSignup/',
         }
       });
     } else {
-      // console.log('not admin');
+     //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -1059,7 +1060,7 @@ app.get('/editSignup/',
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'admin') {
-      // console.log(role);
+     //console.log(role);
       // the factory passes the id of the document as a query parameter
       var doc = req.query.id;
       db.get(doc, function (err, doc) {
@@ -1068,7 +1069,7 @@ app.get('/editSignup/',
         }
       });
     } else {
-      // console.log('not admin');
+     //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
