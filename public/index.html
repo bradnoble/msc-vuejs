@@ -548,7 +548,7 @@
   </script>
 
   <!--search results, child of list-->
-  <script type="text/x-template" id="member-results">
+  <script type="text/x-template" id="member-search">
   <div>
     <h5>
       <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Search
@@ -610,7 +610,7 @@
               <!-- Dropdown Structure -->
             <ul id="actions" class="dropdown-content">
               <li>
-                <a v-bind:href="'/api/member/csv?status=' + $route.params.status">
+                <a @click="onCsvDownload($route.params.status)">
                   <i class="material-icons">file_download</i> Download (CSV)
                 </a>
               </li>

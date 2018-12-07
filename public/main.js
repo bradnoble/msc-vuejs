@@ -71,7 +71,7 @@ $(function () {
     template: '#layout-template',
     computed: {
       background: function () {
-        let img =this.$store.getters.background;
+        let img = this.$store.getters.background;
         return img;
       }
     },
@@ -165,7 +165,7 @@ const logout = {
 //Home controller
 const home = {
   template: '#home-template',
-  beforeDestroy(){
+  beforeDestroy() {
     //Clear page background
     this.$store.commit('clearBackground');
   },
@@ -249,11 +249,11 @@ const members = {
     }
   },
   created: function () {
-    var blacklist = ['deceased','non-member'];
+    var blacklist = ['deceased', 'non-member'];
     this.statuses = getStatuses(blacklist);
     document.title = "Membership List";
   },
-  updated: function(){
+  updated: function () {
     document.title = "Membership List";
   },
   methods: {
@@ -295,100 +295,100 @@ const memberIntro = {
       this.$emit('searched', this.searchstring)
       e.preventDefault();
     },
-    getLastUpdated: function(){
+    getLastUpdated: function () {
       // /api/members/updated      
       let _this = this;
       this.$http.get('/api/members/updated')
-      .then(
-        function (res) {
-          _this.updates = res.body.rows;
-        }
-      )
+        .then(
+          function (res) {
+            _this.updates = res.body.rows;
+          }
+        )
     },
-    getStatusCounts: function(){
+    getStatusCounts: function () {
       let _this = this;
       this.$http.get('/api/members/statuses')
-      .then(
-        function (res) {
-          _this.items = res.body.rows;
-          _this.loading = false;          
+        .then(
+          function (res) {
+            _this.items = res.body.rows;
+            _this.loading = false;
 
-          // get total
-          for(let i=0; i < _this.items.length; i++){
-            _this.total = _this.total + _this.items[i].value; 
-          }
-
-          // sort the statuses
-          // https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
-          function compare(a,b) {
-            if (a.value < b.value)
-              return 1;
-            if (a.value > b.value)
-              return -1;
-            return 0;
-          }          
-          _this.items.sort(compare);
-
-          // #region doughnut chart
-          // commented out for now (11/15/2018)
-          /*
-          let datas = {};
-          let datasets = [{data:[],backgroundColor:[]}];
-          let labels = [];
-          let colors = ["#0074D9", "#FF4136", "#2ECC40", "#FF851B", "#7FDBFF", "#B10DC9", "#FFDC00", "#001f3f", "#39CCCC", "#01FF70", "#85144b", "#F012BE", "#3D9970", "#111111", "#AAAAAA"];
-
-
-          for(let i=0; i < _this.items.length; i++){
-            // scrub out non-members
-            if(_this.items[i].key != 'non-member' && _this.items[i].key != 'deceased'){
-              datasets[0].data.push(_this.items[i].value);
-              datasets[0].backgroundColor.push(colors[i]);
-//              labels.push(_this.items[i].key + ' (' + _this.items[i].value + ')');
-              labels.push(_this.items[i].key);
-              _this.total = _this.total + _this.items[i].value; 
+            // get total
+            for (let i = 0; i < _this.items.length; i++) {
+              _this.total = _this.total + _this.items[i].value;
             }
-          }
-          datas.datasets = datasets;
-          datas.labels = labels;
 
-          // And for a doughnut chart
-          var ctx = document.getElementById("myChart");
-          var myDoughnutChart = new Chart(ctx, {
-              type: 'doughnut',
-              data: datas,
-              options: {
-                legend: {
-                    labels: {
-                      boxWidth: 20
-                    },
-                    display: true,
-                    position: 'top'
-                },
-                title: {
-                  display: true,
-                  text: _this.total + ' people'
-                },
-                layout: {
-                  padding: {
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      bottom: 0
-                  }
-                }    
+            // sort the statuses
+            // https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
+            function compare(a, b) {
+              if (a.value < b.value)
+                return 1;
+              if (a.value > b.value)
+                return -1;
+              return 0;
+            }
+            _this.items.sort(compare);
+
+            // #region doughnut chart
+            // commented out for now (11/15/2018)
+            /*
+            let datas = {};
+            let datasets = [{data:[],backgroundColor:[]}];
+            let labels = [];
+            let colors = ["#0074D9", "#FF4136", "#2ECC40", "#FF851B", "#7FDBFF", "#B10DC9", "#FFDC00", "#001f3f", "#39CCCC", "#01FF70", "#85144b", "#F012BE", "#3D9970", "#111111", "#AAAAAA"];
+  
+  
+            for(let i=0; i < _this.items.length; i++){
+              // scrub out non-members
+              if(_this.items[i].key != 'non-member' && _this.items[i].key != 'deceased'){
+                datasets[0].data.push(_this.items[i].value);
+                datasets[0].backgroundColor.push(colors[i]);
+  //              labels.push(_this.items[i].key + ' (' + _this.items[i].value + ')');
+                labels.push(_this.items[i].key);
+                _this.total = _this.total + _this.items[i].value; 
               }
-          });
-          */
-          // #endregion chart
-        }
-      );  
+            }
+            datas.datasets = datasets;
+            datas.labels = labels;
+  
+            // And for a doughnut chart
+            var ctx = document.getElementById("myChart");
+            var myDoughnutChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: datas,
+                options: {
+                  legend: {
+                      labels: {
+                        boxWidth: 20
+                      },
+                      display: true,
+                      position: 'top'
+                  },
+                  title: {
+                    display: true,
+                    text: _this.total + ' people'
+                  },
+                  layout: {
+                    padding: {
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        bottom: 0
+                    }
+                  }    
+                }
+            });
+            */
+            // #endregion chart
+          }
+        );
     }
   }
 }
 
 // Member search controller (second child of list)
 const memberSearch = {
-  template: '#member-results',
+  template: '#member-search',
   props: [
     'searchstring',
     'timer',
@@ -419,19 +419,42 @@ const memberSearch = {
       this.searchstring = '';
       this.$router.push({ name: 'members-status', params: { status: 'all' } });
     },
-    searchfromchild: function (e) {
-      this.$emit('searched', this.searchstring)
-      e.preventDefault();
-    },
     //Invokes search and routes based upoon search mode
     // necessary, called when the route changes both someone loads the view
     // and when someone enters a new search query
+    nameSearch: function (searchStr) {
+      let _this = this;
+      // if the page is loaded with a search query in the location bar, put it into the input
+      _this.searchstring = _this.$route.query.q;
+
+      if (_this.searchstring) {
+        this.$http.get('/api/members?name=' + _this.searchstring)
+          .then(
+            function (res) {
+              _this.items = res.data;
+              _this.loading = false;
+            }
+          );
+      } else {
+        // TODO -- route to 'all'?
+        _this.items = [];
+        return;
+      }
+    },
+    onCsvDownload: (status, event) => {
+      console.log('***' + status);
+      window.location.href = '/api/member/csv/' + status;
+    },
     search: function () {
       if (this.$route.params.status) {
         this.statusSearch();
       } else if (this.$route.query.q) {
         this.nameSearch();
       }
+    },
+    searchfromchild: function (e) {
+      this.$emit('searched', this.searchstring)
+      e.preventDefault();
     },
     statusSearch: function () {
       let _this = this;
@@ -451,26 +474,8 @@ const memberSearch = {
         _this.items = [];
         return;
       }
-    },
-    nameSearch: function (searchStr) {
-      let _this = this;
-      // if the page is loaded with a search query in the location bar, put it into the input
-      _this.searchstring = _this.$route.query.q;
-      
-      if (_this.searchstring) {
-        this.$http.get('/api/members?name=' + _this.searchstring)
-          .then(
-            function (res) {
-              _this.items = res.data;
-              _this.loading = false;
-            }
-          );
-      } else {
-        // TODO -- route to 'all'?
-        _this.items = [];
-        return;
-      }      
     }
+
   }
 };
 
@@ -502,14 +507,14 @@ const memberEmails = {
     document.title = "Emails";
   },
   watch: {
-    '$route.query.status' (to, from) {
+    '$route.query.status'(to, from) {
       // when the querystring changes, do another search      
       this.getEmails();
     }
   },
   methods: {
-    clearAll: function () {},
-    intercept: function(str){
+    clearAll: function () { },
+    intercept: function (str) {
       // this function takes link clicks and pushes them into an array 
       // for the querystring
       // .watch() listens for changes to the querystring, and then queries the db
@@ -519,27 +524,27 @@ const memberEmails = {
       var index = 0;
 
       // no param means no search
-      if(!status){
-        this.$router.push({name: 'member-emails'});
+      if (!status) {
+        this.$router.push({ name: 'member-emails' });
         this.query_array = [];
       } else {
         // if there's no querystring, start the array
-        if(!querystring.status){
+        if (!querystring.status) {
           arr.push(status);
         }
         // in vuejs, if the querystring already has only one value, it's a string
         // and we need to change it to an array so it can have other friends
-        if(querystring.status && typeof querystring.status == 'string'){
+        if (querystring.status && typeof querystring.status == 'string') {
           querystring.status = [querystring.status];
-        } 
+        }
         // might not need this check here, b/c anything making it this far will be an object
-        if(typeof querystring.status == 'object') {
+        if (typeof querystring.status == 'object') {
           // if the status is already in the querystring, get it out
           index = querystring.status.indexOf(status);
-          if (index > -1) {            
+          if (index > -1) {
             // create a new querystring array without it
-            for(var i=0; i < querystring.status.length; i++){
-              if(querystring.status[i] != status){
+            for (var i = 0; i < querystring.status.length; i++) {
+              if (querystring.status[i] != status) {
                 arr.push(querystring.status[i]);
               }
             }
@@ -551,7 +556,7 @@ const memberEmails = {
             // console.log(arr)
           }
         }
-        this.$router.push( { query: { status: arr } })
+        this.$router.push({ query: { status: arr } })
       }
     },
     getEmails: function () {
@@ -559,8 +564,8 @@ const memberEmails = {
       _this.querystring = '';
       _this.loading = true;
 
-      if(_this.$route.query.status){
-        if(typeof _this.$route.query.status == 'string'){
+      if (_this.$route.query.status) {
+        if (typeof _this.$route.query.status == 'string') {
           _this.querystring = _this.$route.query.status;
           _this.query_array = [_this.$route.query.status];
         } else {
@@ -577,25 +582,25 @@ const memberEmails = {
         }
       };
 
-      if(_this.querystring){
+      if (_this.querystring) {
         this.$http.get('/api/member/emails', obj)
-        .then(function (resp) {
-          let docs = [];
-          let array = [];
-          _this.totalEmails = resp.body.rows.length;
+          .then(function (resp) {
+            let docs = [];
+            let array = [];
+            _this.totalEmails = resp.body.rows.length;
 
-          // extract kv pairs from the function in factories.js
-          docs = mapped(resp.body);
+            // extract kv pairs from the function in factories.js
+            docs = mapped(resp.body);
 
-          // loop through docs to build an array that we will turn into a string
-          for(let i=0; i < docs.length; i++){
-            if(docs[i].email)
-              array.push(docs[i].first + ' ' + docs[i].last + ' <' + docs[i].email + '>'); 
-          }
-          // turn the array into a string for the textarea in the page
-          _this.items = array.join(', ');
-          _this.loading = false;
-        });
+            // loop through docs to build an array that we will turn into a string
+            for (let i = 0; i < docs.length; i++) {
+              if (docs[i].email)
+                array.push(docs[i].first + ' ' + docs[i].last + ' <' + docs[i].email + '>');
+            }
+            // turn the array into a string for the textarea in the page
+            _this.items = array.join(', ');
+            _this.loading = false;
+          });
       } else {
         _this.totalEmails = 0;
         _this.items = "Use the group or status filters to build a list of email addresses."
@@ -619,7 +624,7 @@ const memberEmails = {
       alert("Copied the text: " + copyText.value);
     }
   }
-}
+};
 
 const memberHousehold = {
   template: '#member-household',
@@ -763,11 +768,12 @@ const resources = {
       }
     },
     onFileDownload: function (file, event) {
-      // this.$http.get('/api/resources/download/' + file.id)
+      //this.$http.get('/api/resources/download/' + file.id);
       //   .then((res) => {
       //     console.log('test');
       //   });
-      window.open('/api/resources/download/' + file.id);
+      // window.open('/api/resources/download/' + file.id);
+      window.location.href = '/api/resources/download/' + file.id;
     },
     onFileView: function (file, event) {
 
