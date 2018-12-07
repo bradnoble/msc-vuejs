@@ -93,9 +93,6 @@ passport.serializeUser(function (user, callback) {
 */
 passport.deserializeUser(function (id, callback) {
   authentication.users.findById(id, function (err, user) {
-    if (user) {
-      delete user.password;
-    }
     callback(err, user);
   });
 });
@@ -130,7 +127,9 @@ app.get('/api/login', function (req, res, next) {
       // );
 
       //Pass user object/data to client for local storage
-      res.send(user);
+      const userToReturn={...user};
+      delete userToReturn.password;
+      res.send(userToReturn);
       return res.end();
     });
   })(req, res, next);
