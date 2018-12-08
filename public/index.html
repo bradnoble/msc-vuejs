@@ -84,7 +84,7 @@
         <div class="footer-copyright">
           <div class="container">
           <span>&copy; 2018 Montclair Ski Club</span>
-          <span class="right">Version 2.00.160</span>
+          <span class="right">Version 2.00.170</span>
           </div>
         </div>
       </footer>
@@ -548,7 +548,7 @@
   </script>
 
   <!--search results, child of list-->
-  <script type="text/x-template" id="member-results">
+  <script type="text/x-template" id="member-search">
   <div>
     <h5>
       <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Search
@@ -579,7 +579,7 @@
     <div class="row">
       <div class="col m3">
         <p>
-          Search by status
+          View members by status
         </p>
         <div class="collection facets">
           <router-link :to="{name:'member-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
@@ -598,32 +598,30 @@
       </div>
       <div class="col m9">
         <loading :status="loading"></loading>
-
         <div v-if="!loading">
           <p v-if="$route.params.status">
-            {{ items.length }} {{ $route.params.status }}(s) 
-
-              <a class="dropdown-trigger" href="#" data-target="actions" data-constrainwidth="false" data-alignment="right" title="click to see options">
+            <span>{{ items.length }} {{ $route.params.status }}(s)</span>
+            <span v-if="isAdmin">
+              <a class="dropdown-trigger" href="#" data-target="actions" data-constrainwidth="false" data-alignment="right" title="View CSV file and email options">
                 <i class="material-icons small">more_horiz</i>
               </a>
-
               <!-- Dropdown Structure -->
-            <ul id="actions" class="dropdown-content">
-              <li>
-                <a v-bind:href="'/api/member/csv?status=' + $route.params.status">
-                  <i class="material-icons">file_download</i> Download (CSV)
-                </a>
-              </li>
-              <li>
-                <router-link :to="{name: 'member-emails', query: {status: $route.params.status }}" v-if="$route.params.status != 'all'">
-                  <i class="material-icons">email</i> Get emails for {{ $route.params.status }}(s)
-                </router-link>
-                <router-link v-else :to="{name: 'member-emails'}">
-                  <i class="material-icons">email</i> Get emails for all
-                </router-link>
-              </li>
-            </ul>
-
+              <ul id="actions" class="dropdown-content">
+                <li>
+                  <a v-bind:href="'/api/member/csv?status=' + $route.params.status">
+                    <i class="material-icons">file_download</i> Download (CSV)
+                  </a>
+                </li>
+                <li>
+                  <router-link :to="{name: 'member-emails', query: {status: $route.params.status }}" v-if="$route.params.status != 'all'">
+                    <i class="material-icons">email</i> Get emails for {{ $route.params.status }}(s)
+                  </router-link>
+                  <router-link v-else :to="{name: 'member-emails'}">
+                    <i class="material-icons">email</i> Get emails for all
+                  </router-link>
+                </li>
+              </ul>
+            </span>
           </p>
           <p v-if="$route.query.q">
             {{ items.length }} result(s) 
