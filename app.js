@@ -204,6 +204,7 @@ app.get('/',
 // #endregion
 
 // #region design docs stuff for managing Cloudant indexes
+
 // https://stackoverflow.com/questions/38385101/couchdb-update-design-doc
 const ddoc = {
   _id: "_design/foo",
@@ -292,88 +293,6 @@ db.index(first_index, function (err, response) {
 
 // #endregion
 
-// BEGIN ENDPOINTS
-
-// get last updated records, for the membership landing page
-app.get('/api/members/updated',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    db.view('foo', 'last_updated',
-      {
-        descending: true,
-        include_docs: true,
-        limit: 5
-      },
-      function (err, docs) {
-        if (err) {
-          console.log(err);
-        }
-        else {
-         //console.log(docs);
-          res.send(docs);
-        }
-      }
-    );
-  }
-);
-
-// get counts, for the membership landing page
-app.get('/api/members/statuses',
-  function (req, res) {
-    db.view('foo', 'by_status',
-      {
-        reduce: true,
-        group_level: 1
-      },
-      function (err, docs) {
-        if (err) {
-          console.log(err);
-        }
-        else {
-         //console.log(docs);
-          res.send(docs);
-        }
-      }
-    );
-  }
-);
-
-// get member emails
-app.get('/api/member/emails',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-
-    var params = (req.query.statuses) ? req.query.statuses : null;
-    let opts = {};
-
-   //console.log('query: ', req.query.statuses);
-
-    //Status values are passed in a comma delimited list and converted to an array
-    if (req.query.statuses) {
-      opts.keys = params.split(',');
-    }
-
-   //console.log(opts.keys);
-    opts.include_docs = true;
-
-    // get the results of the API call
-    // can't use Cloudant Query here b/c CQ can't find docs where a field is present but not null
-    // https://stackoverflow.com/questions/42974007/how-to-check-empty-value-in-an-attribute-in-the-cloudant-selector-query-when-the
-    db.view('foo', 'emails',
-      opts,
-      function (err, resp) {
-        if (!err) {
-         //console.log('resp: ', resp);
-          res.send(resp);
-        } else {
-          console.log('error', err);
-          res.send(err);
-        }
-      }
-    );
-  }
-);
-
 // #region Household Endpoints
 
 /*
@@ -444,14 +363,14 @@ app.get('/api/households',
           } else if (docs[i].type == 'household') {
             households[i] = docs[i];
           }
-         //console.log(people);
+          //console.log(people);
         }
         for (i = 0; i < households.length; i++) {
           var household_id = households[i]._id;
           households[i].people = [];
           households[i].people = people[household_id];
         }
-       //console.log(docs[1]);
+        //console.log(docs[1]);
         res.send(households);
       }
     });
@@ -520,7 +439,7 @@ app.post('/api/household',
       });
 
     } else {
-     //console.log('not admin');
+      //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -568,7 +487,7 @@ app.post('/postHouseholdOld',
         });
       }
     } else {
-     //console.log('not admin');
+      //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -577,13 +496,93 @@ app.post('/postHouseholdOld',
 
 // #region Members Endpoints
 
+// get last updated records, for the membership landing page
+app.get('/api/members/updated',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    db.view('foo', 'last_updated',
+      {
+        descending: true,
+        include_docs: true,
+        limit: 5
+      },
+      function (err, docs) {
+        if (err) {
+          console.log(err);
+        }
+        else {
+          //console.log(docs);
+          res.send(docs);
+        }
+      }
+    );
+  }
+);
+
+// get counts, for the membership landing page
+app.get('/api/members/statuses',
+  function (req, res) {
+    db.view('foo', 'by_status',
+      {
+        reduce: true,
+        group_level: 1
+      },
+      function (err, docs) {
+        if (err) {
+          console.log(err);
+        }
+        else {
+          //console.log(docs);
+          res.send(docs);
+        }
+      }
+    );
+  }
+);
+
+// get member emails
+app.get('/api/member/emails',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+
+    var params = (req.query.statuses) ? req.query.statuses : null;
+    let opts = {};
+
+    //console.log('query: ', req.query.statuses);
+
+    //Status values are passed in a comma delimited list and converted to an array
+    if (req.query.statuses) {
+      opts.keys = params.split(',');
+    }
+
+    //console.log(opts.keys);
+    opts.include_docs = true;
+
+    // get the results of the API call
+    // can't use Cloudant Query here b/c CQ can't find docs where a field is present but not null
+    // https://stackoverflow.com/questions/42974007/how-to-check-empty-value-in-an-attribute-in-the-cloudant-selector-query-when-the
+    db.view('foo', 'emails',
+      opts,
+      function (err, resp) {
+        if (!err) {
+          //console.log('resp: ', resp);
+          res.send(resp);
+        } else {
+          console.log('error', err);
+          res.send(err);
+        }
+      }
+    );
+  }
+);
+
 /*
 * Get a list of members based upon member status
 */
 app.get('/api/members/status/:statusId',
   authentication.users.isAuthenticated,
   function (req, res) {
-   //console.log('status=' + req.params.statusId);
+    //console.log('status=' + req.params.statusId);
 
     if (req.params.statusId) {
 
@@ -683,10 +682,11 @@ app.get('/api/members',
 /*
 * Get a list of member data for use in a .csv file based upon  member status
 */
-app.get('/api/member/csv',
-  authentication.users.isAuthenticated,
+app.get('/api/member/csv/:status',
+  //authentication.users.isAuthenticated,
   function (req, res) {
-    if (authentication.users.isInRole(req, 'admin')) {
+    if (true) { //authentication.users.isInRole(req, 'admin')) {
+
       var households = {},
         people = [],
         filename = '',
@@ -711,7 +711,7 @@ app.get('/api/member/csv',
           "household_id",
           "type"
         ],
-        status = req.query.status,
+        status = req.params.status,
         selector_array = [
           { "status": { "$ne": "deceased" } },
           { "status": { "$ne": "non-member" } },
@@ -786,9 +786,19 @@ app.get('/api/member/csv',
           const json2csvParser = new Json2csvParser({ fields });
           const csv = json2csvParser.parse(people);
 
-          res.set('Content-disposition', 'attachment; filename=' + filename + '.csv');
-          res.set('Content-Type', 'text/csv');
-          res.status(200).send(csv);
+          res.writeHead(200, {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'X-Requested-With',
+            'Content-Disposition': 'attachment;filename=' + filename + '.csv',
+            'Content-Type': 'text/csv'
+          });
+
+          res.write(csv);
+          res.end();
+          
+          // res.set('Content-disposition', 'attachment; filename=' + filename + '.csv');
+          // res.set('Content-Type', 'text/csv');
+          // res.status(200).send(csv);
 
         }
       );
@@ -846,7 +856,7 @@ app.post('/api/person',
         }
       });
     } else {
-     //console.log('not admin');
+      //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -886,10 +896,10 @@ app.get('/api/resources/download/:id',
       //   fileName = metadata.name;
 
       //Get file contents and d/l
-      gdrive.api.getFile(req.params.id, res, () => {
-        res.send();
-        res.end();
-      });
+      gdrive.api.getFile(req.params.id, res);
+      // gdrive.api.getFile(req.params.id, res, () => {
+      //   res.send();
+      //   res.end();
       // });
     } else {
       res.end();
@@ -1023,14 +1033,14 @@ app.get('/getSignupChairs',
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'admin') {
-     //console.log(role);
+      //console.log(role);
       db.view('app', 'signups', { 'include_docs': true }, function (err, doc) {
         if (!err) {
           res.send(doc);
         }
       });
     } else {
-     //console.log('not admin');
+      //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -1040,7 +1050,7 @@ app.get('/getSignup/',
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'member' || role === 'admin') {
-     //console.log(role);
+      //console.log(role);
       // the factory passes the id of the document as a query parameter
       var doc = req.query.id;
       db.get(doc, function (err, doc) {
@@ -1049,7 +1059,7 @@ app.get('/getSignup/',
         }
       });
     } else {
-     //console.log('not admin');
+      //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
@@ -1059,7 +1069,7 @@ app.get('/editSignup/',
   function (req, res) {
     var role = req.user.role[0].value;
     if (role === 'admin') {
-     //console.log(role);
+      //console.log(role);
       // the factory passes the id of the document as a query parameter
       var doc = req.query.id;
       db.get(doc, function (err, doc) {
@@ -1068,7 +1078,7 @@ app.get('/editSignup/',
         }
       });
     } else {
-     //console.log('not admin');
+      //console.log('not admin');
       return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
     }
   });
