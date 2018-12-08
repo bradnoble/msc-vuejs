@@ -634,7 +634,6 @@ app.get('/api/members/status/:statusId',
   }
 );
 
-
 // get a list of members based upon member name(s)
 app.get('/api/members',
   authentication.users.isAuthenticated,

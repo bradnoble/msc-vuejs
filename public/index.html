@@ -608,8 +608,8 @@
               <!-- Dropdown Structure -->
               <ul id="actions" class="dropdown-content">
                 <li>
-                  <a v-bind:href="'/api/member/csv?status=' + $route.params.status">
-                    <i class="material-icons">file_download</i> Download (CSV)
+                  <a @click="onCsvDownload($route.params.status)">
+                    <i class="material-icons">file_download</i>&nbsp;Download (CSV)
                   </a>
                 </li>
                 <li>

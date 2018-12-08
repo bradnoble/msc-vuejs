@@ -424,38 +424,8 @@ const memberSearch = {
       this.searchstring = '';
       this.$router.push({ name: 'members-status', params: { status: 'all' } });
     },
-    searchfromchild: function (e) {
-      this.$emit('searched', this.searchstring)
-      e.preventDefault();
-    },
-    //Invokes search and routes based upoon search mode
-    // necessary, called when the route changes both someone loads the view
-    // and when someone enters a new search query
-    search: function () {
-      if (this.$route.params.status) {
-        this.statusSearch();
-      } else if (this.$route.query.q) {
-        this.nameSearch();
-      }
-    },
-    statusSearch: function () {
-      let _this = this;
-      let status = _this.$route.params.status;
-      // clear out the search input
-      _this.searchstring = '';
-
-      if (status) {
-        this.$http.get('/api/members/status/' + status)
-          .then(
-            function (res) {
-              _this.items = res.data.docs;
-              _this.loading = false;
-            }
-          );
-      } else {
-        _this.items = [];
-        return;
-      }
+    onCsvDownload: function (status, event) {
+      window.location.href = '/api/member/csv/' + status;
     },
     nameSearch: function (searchStr) {
       let _this = this;
@@ -472,6 +442,39 @@ const memberSearch = {
           );
       } else {
         // TODO -- route to 'all'?
+        _this.items = [];
+        return;
+      }
+    },
+    //Invokes search and routes based upoon search mode
+    // necessary, called when the route changes both someone loads the view
+    // and when someone enters a new search query
+    search: function () {
+      if (this.$route.params.status) {
+        this.statusSearch();
+      } else if (this.$route.query.q) {
+        this.nameSearch();
+      }
+    },
+    searchfromchild: function (e) {
+      this.$emit('searched', this.searchstring)
+      e.preventDefault();
+    },
+    statusSearch: function () {
+      let _this = this;
+      let status = _this.$route.params.status;
+      // clear out the search input
+      _this.searchstring = '';
+
+      if (status) {
+        this.$http.get('/api/members/status/' + status)
+          .then(
+            function (res) {
+              _this.items = res.data.docs;
+              _this.loading = false;
+            }
+          );
+      } else {
         _this.items = [];
         return;
       }
