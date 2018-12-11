@@ -493,7 +493,7 @@
                   <router-link :to="{name: 'member-status', params:{ status:status.key}}" :title="'View all ' + status.key + ' members'" class="">
                     <i class="material-icons small">search</i>
                   </router-link>
-                  <router-link :to="{name: 'member-emails', query:{ status:status.key}}" :title="'View ' + status.key + ' emails'" class="">
+                  <router-link v-if="isAdmin" :to="{name: 'member-emails', query:{ status:status.key}}" :title="'View ' + status.key + ' emails'" class="">
                     <i class="material-icons small">email</i>
                   </router-link>    
                 </div>

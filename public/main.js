@@ -283,6 +283,11 @@ const memberIntro = {
     'timer',
     'statuses'
   ],
+  computed: {
+    isAdmin: function () {
+      return (this.$store.getters.roles.includes('admin'));
+    }
+  },
   mounted: function () {
     this.getStatusCounts();
     this.getLastUpdated();
@@ -745,7 +750,8 @@ const resources = {
         });
     },
     loadRoot: function () {
-      this.$http.get('/api/resources')
+      //-1 is root
+      this.$http.get('/api/resources/-1')
         .then((res) => {
           //Pushes root breadcrumb
           this.path.push({ name: 'MSC Drive', id: '-1' });
