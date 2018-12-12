@@ -515,7 +515,7 @@
                   <router-link :to="{name:'member-status', params:{ status:'all' }}">
                     <i class="material-icons small">search</i>      
                   </router-link>
-                  <router-link :to="{name: 'member-emails', query:{ status:statuses}}">
+                  <router-link v-if="isAdmin" :to="{name: 'member-emails', query:{ status:statuses}}">
                     <i class="material-icons small">email</i>
                   </router-link>              
                 </div>
