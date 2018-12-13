@@ -494,7 +494,7 @@
                   <router-link :to="{name: 'member-status', params:{ status:status.key}}" :title="'View all ' + status.key + ' members'" class="">
                     <i class="material-icons small">search</i>
                   </router-link>
-                  <router-link v-if="isAdmin" :to="{name: 'member-emails', query:{ status:status.key}}" :title="'View ' + status.key + ' emails'" class="">
+                  <router-link :to="{name: 'member-emails', query:{ status:status.key}}" :title="'View ' + status.key + ' emails'" class="">
                     <i class="material-icons small">email</i>
                   </router-link>    
                 </div>
@@ -515,7 +515,7 @@
                   <router-link :to="{name:'member-status', params:{ status:'all' }}">
                     <i class="material-icons small">search</i>      
                   </router-link>
-                  <router-link v-if="isAdmin" :to="{name: 'member-emails', query:{ status:statuses}}">
+                  <router-link :to="{name: 'member-emails', query:{ status:statuses}}">
                     <i class="material-icons small">email</i>
                   </router-link>              
                 </div>
@@ -602,13 +602,13 @@
         <div v-if="!loading">
           <p v-if="$route.params.status">
             <span>{{ items.length }} {{ $route.params.status }}(s)</span>
-            <span v-if="isAdmin">
-              <a class="dropdown-trigger" href="#" data-target="actions" data-constrainwidth="false" data-alignment="right" title="View CSV file and email options">
+            <span>
+              <a class="dropdown-trigger" href="#" data-target="actions" data-constrainwidth="false" data-alignment="right" title="View additional member options">
                 <i class="material-icons small">more_horiz</i>
               </a>
               <!-- Dropdown Structure -->
               <ul id="actions" class="dropdown-content">
-                <li>
+                <li  v-if="isAdmin">
                   <a @click="onCsvDownload($route.params.status)">
                     <i class="material-icons">file_download</i>&nbsp;Download (CSV)
                   </a>
