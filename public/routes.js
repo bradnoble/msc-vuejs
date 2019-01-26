@@ -16,7 +16,7 @@ function initializeVueRouter(store) {
       path: '/households',
       name: 'households',
       component: households,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, roles: 'admin' }
     },
     {
       path: '/households/new',
@@ -126,7 +126,7 @@ function initializeVueRouter(store) {
   ]
 
   // #endregion
-  
+
   // #region Initialization and metnhods
 
   const router = new VueRouter({
@@ -142,18 +142,38 @@ function initializeVueRouter(store) {
 
     //TEMP-for testing
     //return next();
+    let testme = store.getters.roles.includes('admin')
 
     //If route metadata require authorization
     if (to.matched.some(record => record.meta.requiresAuth)) {
-      //Presence of user object in cookie indicates user is authenticated
-      //TBD-could expand this to allow access to routes based upon roles
-      if (this.$cookies.get('msc-user')) {
-        next();
+
+      //Presence of user object authenticated
+      const user = store.getters.user;
+      if (user) {
+        //See if route contains role authorization
+        const record = to.matched.find((record) => {
+          return record.meta.roles;
+        });
+        if (record) {
+          const routeRoles = record.meta.roles;
+          //See if user has at least one of the roles required for authorization
+          let found = user.roles.split(',').some(r => routeRoles.includes(r));
+          //Allow route if authorized otherwise redirect to home page
+          if (found) {
+            next();
+          } else {
+            next({ path: '/' });
+          }
+        } else {
+          next();
+        }
       } else {
         //Redirect to login page if not authenticated
         next({
           path: '/login',
-          query: { redirect: to.fullPath },
+          query: {
+            redirect: to.fullPath
+          },
         });
       }
     } else {
