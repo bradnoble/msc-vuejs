@@ -10,9 +10,10 @@ applications:
   buildpack: sdk-for-nodejs
   disk_quota: 512M
   memory: 256M
-  host: msc
-  domain: mybluemix.net
-  random-route: true
+  routes:
+  - route: msc.mybluemix.net/
+  - route: montclairskiclub.com/
+  - route: www.montclairskiclub.com/
   command: node app.js
   services:
   - msc-cloudant
