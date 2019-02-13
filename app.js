@@ -582,7 +582,6 @@ app.get('/api/member/emails',
 app.get('/api/members/status/:statusId',
   authentication.users.isAuthenticated,
   function (req, res) {
-    //console.log('status=' + req.params.statusId);
 
     if (req.params.statusId) {
 
@@ -608,28 +607,29 @@ app.get('/api/members/status/:statusId',
 
       // on sorting with Cloudant query
       // https://developer.ibm.com/answers/questions/229663/how-to-use-sort-when-searching-the-cloudant-databa.html
-      // note the modified on the field to be sorted
-      db.find(
-        {
-          "selector": selector,
-          "fields": [],
-          "sort": [
-            {
-              "last:string": "asc"
-            },
-            {
-              "first:string": "asc"
-            }
-          ]
-        }, function (err, data) {
-          if (err) {
-            throw err;
+      // note the :string modifier on the field to be sorted
+      const q = {
+        selector: selector,
+        fields: [],
+        sort: [
+          {
+            "last:string": "asc"
+          },
+          {
+            "first:string": "asc"
           }
-          res.send(data);
-        }
-      );
-    } else {
-      res.send();
+        ],
+        use_index: "status"
+      };
+
+      // since nodejs-cloudant 3.0, use promises instead of callbacks
+      // https://github.com/cloudant/nodejs-cloudant/blob/master/CHANGES.md#300-2018-11-20
+      db.find(q).then((data) => {
+        res.send(data);
+      }).catch((err) => {
+        console.log(err);
+      });
+
     }
   }
 );

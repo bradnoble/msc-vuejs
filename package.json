@@ -12,7 +12,7 @@
   "author": "Brad Noble @bradnoble",
   "license": "Apache-2.0",
   "dependencies": {
-    "@cloudant/cloudant": "^2.3.0",
+    "@cloudant/cloudant": "^3.0.2",
     "authentication": "file:lib/authentication",
     "body-parser": "^1.18.3",
     "cfenv": "1.0.4",
