@@ -478,50 +478,68 @@
           <h5>
             Membership
           </h5>
-          <div class="row">
-            <div class="col m6 s12" v-for="status in items">
-
-              <div class="card blue">
-                <div class="card-content white-text">
-                  <span class="card-title">
-                    {{ status.key }}
-                    <span class="right">
-                      {{ status.value }}
-                    </span>
+          <table class="responsive striped">
+            <thead>
+              <tr>
+                <th>
+                  Status
+                </th>
+                <th>
+                  <span class="right">
+                    Count 
                   </span>
-                </div>
-                <div class="card-action blue darken-2">
+                </th>
+                <th>
+                  <span class="right">
+                    Actions
+                  </span>
+                </th>
+            </thead>
+            <tbody>
+              <tr v-for="status in items">
+                <td>
                   <router-link :to="{name: 'member-status', params:{ status:status.key}}" :title="'View all ' + status.key + ' members'" class="">
-                    <i class="material-icons small">search</i>
+                    {{ status.key }}
                   </router-link>
-                  <router-link :to="{name: 'member-emails', query:{ status:status.key}}" :title="'View ' + status.key + ' emails'" class="">
-                    <i class="material-icons small">email</i>
-                  </router-link>    
-                </div>
-              </div>
-
-            </div>
-            <div class="col m12 s12">
-              <div class="card blue">
-                <div class="card-content white-text">
-                  <span class="card-title">
-                    total
-                    <span class="right">
-                      {{ total }} 
-                    </span>
+                </td>
+                <td>
+                  <span class="right">
+                    {{ status.value }}
                   </span>
-                </div>
-                <div class="card-action blue darken-2">
-                  <router-link :to="{name:'member-status', params:{ status:'all' }}">
-                    <i class="material-icons small">search</i>      
-                  </router-link>
-                  <router-link :to="{name: 'member-emails', query:{ status:statuses}}">
-                    <i class="material-icons small">email</i>
-                  </router-link>              
-                </div>
-              </div>
-            </div>
-          </div>
+                </td>
+                <td>
+                  <span class="right">
+                    <router-link :to="{name: 'member-status', params:{ status:status.key}}" :title="'View all ' + status.key + ' members'" class="">
+                      <i class="material-icons xs">search</i>
+                    </router-link>
+                    <router-link :to="{name: 'member-emails', query:{ status:status.key}}" :title="'View ' + status.key + ' emails'" class="">
+                      <i class="material-icons xs">email</i>
+                    </router-link>            
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  total
+                </td>
+                <td>
+                  <span class="right">
+                    {{ total }} 
+                  </span>
+                </td>
+                <td>
+                  <span class="right">
+                    <router-link :to="{name:'member-status', params:{ status:'all' }}">
+                      <i class="material-icons xs">search</i>      
+                    </router-link>
+                    <router-link :to="{name: 'member-emails', query:{ status:statuses}}">
+                      <i class="material-icons xs">email</i>
+                    </router-link>             
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
           <!-- doughnut chart commented out for now -->
           <!-- <canvas id="myChart"></canvas> -->
         </div>
@@ -580,7 +598,7 @@
     <div class="row">
       <div class="col m3">
         <p>
-          View members by status
+          Search by status
         </p>
         <div class="collection facets">
           <router-link :to="{name:'member-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
