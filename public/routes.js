@@ -30,7 +30,7 @@ function initializeVueRouter(store) {
           props: true
         }
       ],
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, roles: 'admin' }
     },
     {
       path: '/households/:household_id',
@@ -62,7 +62,7 @@ function initializeVueRouter(store) {
           props: true
         }
       ],
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, roles: 'admin' }
     },
     {
       name: 'login',
