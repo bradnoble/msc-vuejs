@@ -244,17 +244,23 @@ const members = {
   data: function () {
     return {
       searchstring: '',
-      timer: null,
-      statuses: []
+      statuses: [],
+      total: 0,
+      statuses_array: []
+    }
+  },
+  computed: {
+    isAdmin: function () {
+      return (this.$store.getters.roles.includes('admin'));
     }
   },
   created: function () {
-    var blacklist = ['deceased', 'non-member'];
-    this.statuses = getStatuses(blacklist);
     document.title = "Membership List";
   },
   updated: function () {
-    document.title = "Membership List";
+  },
+  mounted: function(){
+    this.getStatusesWithCounts();
   },
   methods: {
     search: function (event) {
@@ -264,64 +270,22 @@ const members = {
       } else {
         this.$router.push({ name: 'member-status', params: { status: 'all' } });
       }
-    }
-  }
-}
-
-// Member intro controller (first child of list)
-const memberIntro = {
-  template: '#member-intro',
-  data: function () {
-    return {
-      items: [],
-      updates: [],
-      total: 0
-    }
-  },
-  props: [
-    'searchstring',
-    'timer',
-    'statuses'
-  ],
-  computed: {
-    isAdmin: function () {
-      return (this.$store.getters.roles.includes('admin'));
-    }
-  },
-  mounted: function () {
-    this.getStatusCounts();
-    this.getLastUpdated();
-  },
-  methods: {
-    // this was helpful for talking from a child to a parent
-    // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
-    // also this https://laracasts.com/discuss/channels/vue/how-to-catch-a-childs-emit-in-the-parent-with-vue/replies/289920
-    searchfromchild: function (e) {
-      this.$emit('searched', this.searchstring)
-      e.preventDefault();
     },
-    getLastUpdated: function () {
-      // /api/members/updated      
-      let _this = this;
-      this.$http.get('/api/members/updated')
-        .then(
-          function (res) {
-            _this.updates = res.body.rows;
-          }
-        )
-    },
-    getStatusCounts: function () {
+    getStatusesWithCounts: function(){
       let _this = this;
       this.$http.get('/api/members/statuses')
         .then(
           function (res) {
-            _this.items = res.body.rows;
+            _this.statuses = res.body.rows;
             _this.loading = false;
 
             // get total
-            for (let i = 0; i < _this.items.length; i++) {
-              _this.total = _this.total + _this.items[i].value;
+            for (let i = 0; i < _this.statuses.length; i++) {
+              _this.total = _this.total + _this.statuses[i].value;
+              _this.statuses_array.push(_this.statuses[i].key);
             }
+            
+            console.log(_this.statuses_array);
 
             // sort the statuses
             // https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
@@ -332,61 +296,55 @@ const memberIntro = {
                 return -1;
               return 0;
             }
-            _this.items.sort(compare);
-
-            // #region doughnut chart
-            // commented out for now (11/15/2018)
-            /*
-            let datas = {};
-            let datasets = [{data:[],backgroundColor:[]}];
-            let labels = [];
-            let colors = ["#0074D9", "#FF4136", "#2ECC40", "#FF851B", "#7FDBFF", "#B10DC9", "#FFDC00", "#001f3f", "#39CCCC", "#01FF70", "#85144b", "#F012BE", "#3D9970", "#111111", "#AAAAAA"];
-  
-  
-            for(let i=0; i < _this.items.length; i++){
-              // scrub out non-members
-              if(_this.items[i].key != 'non-member' && _this.items[i].key != 'deceased'){
-                datasets[0].data.push(_this.items[i].value);
-                datasets[0].backgroundColor.push(colors[i]);
-  //              labels.push(_this.items[i].key + ' (' + _this.items[i].value + ')');
-                labels.push(_this.items[i].key);
-                _this.total = _this.total + _this.items[i].value; 
-              }
-            }
-            datas.datasets = datasets;
-            datas.labels = labels;
-  
-            // And for a doughnut chart
-            var ctx = document.getElementById("myChart");
-            var myDoughnutChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: datas,
-                options: {
-                  legend: {
-                      labels: {
-                        boxWidth: 20
-                      },
-                      display: true,
-                      position: 'top'
-                  },
-                  title: {
-                    display: true,
-                    text: _this.total + ' people'
-                  },
-                  layout: {
-                    padding: {
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0
-                    }
-                  }    
-                }
-            });
-            */
-            // #endregion chart
+            _this.statuses.sort(compare);
           }
         );
+    }
+  }
+}
+
+// Member intro controller (first child of list)
+const memberIntro = {
+  template: '#member-intro',
+  data: function () {
+    return {
+      updates: []
+    }
+  },
+  props: [
+    'searchstring',
+    'timer',
+    'statuses',
+    'total',
+    'statuses_array'
+  ],
+  computed: {
+    isAdmin: function () {
+      return (this.$store.getters.roles.includes('admin'));
+    }
+  },
+  mounted: function () {
+    this.getLastUpdated();
+  },
+  updated: function(){
+    $('.dropdown-trigger').dropdown({ constrainWidth: false });
+  },
+  methods: {
+    // this was helpful for talking from a child to a parent
+    // https://medium.com/@sky790312/about-vue-2-parent-to-child-props-af3b5bb59829
+    // also this https://laracasts.com/discuss/channels/vue/how-to-catch-a-childs-emit-in-the-parent-with-vue/replies/289920
+    searchfromchild: function (e) {
+      this.$emit('searched', this.searchstring)
+      e.preventDefault();
+    },
+    getLastUpdated: function () {
+      let _this = this;
+      this.$http.get('/api/members/updated')
+        .then(
+          function (res) {
+            _this.updates = res.body.rows;
+          }
+        )
     }
   }
 }
@@ -397,13 +355,11 @@ const memberSearch = {
   props: [
     'searchstring',
     'timer',
-    'statuses'
+    'statuses',
+    'total',
+    'isAdmin',
+    'statuses_array'
   ],
-  computed: {
-    isAdmin: function () {
-      return (this.$store.getters.roles.includes('admin'));
-    }
-  },
   data: function () {
     return {
       items: [],
@@ -416,7 +372,7 @@ const memberSearch = {
   },
   updated: function () {
     M.updateTextFields();
-    $('.dropdown-trigger').dropdown();
+    $('.dropdown-trigger').dropdown({ constrainWidth: false });
   },
   watch: {
     '$route'(to, from) {
@@ -428,9 +384,6 @@ const memberSearch = {
     clearfromchild: function () {
       this.searchstring = '';
       this.$router.push({ name: 'members-status', params: { status: 'all' } });
-    },
-    onCsvDownload: function (status, event) {
-      window.location.href = '/api/member/csv/' + status;
     },
     nameSearch: function (searchStr) {
       let _this = this;
@@ -491,7 +444,8 @@ const memberSearch = {
 const memberEmails = {
   template: '#member-emails',
   props: [
-    'statuses'
+    'statuses',
+    'statuses_array'
   ],
   data: function () {
     return {
@@ -1232,6 +1186,15 @@ function formatBytes(bytes, decimals) {
 // #endregion
 
 // #region Shared components
+
+Vue.component('dropdown', {
+  template: '#dropdown',
+  props: [
+    'status',
+    'isAdmin',
+    'statuses_array'
+  ]
+});
 
 Vue.component('location', {
   template: '#view-location',

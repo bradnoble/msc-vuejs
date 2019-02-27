@@ -8,13 +8,12 @@ var cfenv = require("cfenv"),
   jsonParser = bodyParser.json(),
   Json2csvParser = require('json2csv').Parser,
   // Combinatorics = require('js-combinatorics'),
-  opts = { url: process.env.URL },
-  env = (process.env.mode) ? process.env.mode : 'prod' // are we in dev mode?
+  opts = { url: process.env.URL }
   ;
 
 // Initialize Cloudant
 var cloudant = require('@cloudant/cloudant')(opts);
-var db = (env == 'dev') ? cloudant.db.use("msc-dev") : cloudant.db.use("msc");
+var db = cloudant.db.use("msc");
 
 // Create a new Express application.
 var app = express();
@@ -221,16 +220,46 @@ const ddoc = {
     },
     emails: {
       map: function (doc) {
-        if (doc.type == 'person' && doc.email && doc.status && doc.first && doc.last) {
+        if(doc.type == 'person' && doc.email && doc.status && doc.first && doc.last) {
           emit(doc.status, 1)
         }
       }
     },
     last_updated: {
       map: function (doc) {
-        if (doc.updated) {
+        if(doc.updated) {
           emit(doc.updated, 1);
         }
+      }
+    },
+    householdsAndPeople: {
+      map: function(doc){    
+        if(doc.type == "household"){      
+          emit([doc.type, doc.name, doc._id], 1);
+        }    
+        if(doc.type == "person"){      
+          emit([doc.type, doc.household_id, doc.first], 1);
+        }  
+      }
+    },
+    join_people_to_household: {
+      map: function(doc){    
+        if(doc.type == "person" && doc.household_id){      
+          emit(doc.household_id, 1);    
+        }  
+      }
+    },
+/*
+    signups: {
+      map: function (doc){
+        var split = doc.arrive.split(\"T\");\n    split = split[0].split(\"-\");\n\n    // take out leading zeros from month and day here before parseInt\n    // http://stackoverflow.com/questions/8763396/javascript-parseint-with-leading-zeros\n\n    var arrive = [\n      parseInt(split[0], 10),\n      parseInt(split[1], 10),\n      parseInt(split[2], 10)\n      ];\n    if(doc.type == 'signup'){\n      emit(arrive, 1);\n    }\n  }"
+    },
+*/
+    people: {
+      map: function (doc) {    
+        if (doc.type == "person"){      
+          emit(doc._id, 1);    
+        }  
       }
     }
   },
@@ -279,12 +308,14 @@ db.get(ddoc._id, function (err, doc) {
 });
 
 // build the Cloudant Query index for lookups by status
-const first_index = {
+const query_index = {
   name: 'status',
   type: 'text',
-  index: {}
-};
-db.index(first_index, function (err, response) {
+  index: {},
+  ddoc: 'query-index'
+}
+
+db.index(query_index, function (err, response) {
   if (err) {
     throw err;
   }
@@ -307,7 +338,7 @@ app.get('/api/households/:id',
         if (!err) {
           // get the people of this householdsAndPeople
           db.view(
-            'app',
+            'foo',
             'join_people_to_household',
             {
               'include_docs': true,
@@ -342,7 +373,7 @@ app.get('/api/households',
   authentication.users.isAuthenticated,
   function (req, res) {
     //db.view(designname, viewname, [params], [callback])
-    db.view('app', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
+    db.view('foo', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
       if (!err) {
         var mapped = function (data) {
           return data.rows.map(function (row) {
@@ -582,7 +613,6 @@ app.get('/api/member/emails',
 app.get('/api/members/status/:statusId',
   authentication.users.isAuthenticated,
   function (req, res) {
-    //console.log('status=' + req.params.statusId);
 
     if (req.params.statusId) {
 
@@ -608,28 +638,29 @@ app.get('/api/members/status/:statusId',
 
       // on sorting with Cloudant query
       // https://developer.ibm.com/answers/questions/229663/how-to-use-sort-when-searching-the-cloudant-databa.html
-      // note the modified on the field to be sorted
-      db.find(
-        {
-          "selector": selector,
-          "fields": [],
-          "sort": [
-            {
-              "last:string": "asc"
-            },
-            {
-              "first:string": "asc"
-            }
-          ]
-        }, function (err, data) {
-          if (err) {
-            throw err;
+      // note the :string modifier on the field to be sorted
+      const q = {
+        selector: selector,
+        fields: [],
+        sort: [
+          {
+            "last:string": "asc"
+          },
+          {
+            "first:string": "asc"
           }
-          res.send(data);
-        }
-      );
-    } else {
-      res.send();
+        ],
+        use_index: "status"
+      };
+
+      // since nodejs-cloudant 3.0, use promises instead of callbacks
+      // https://github.com/cloudant/nodejs-cloudant/blob/master/CHANGES.md#300-2018-11-20
+      db.find(q).then((data) => {
+        res.send(data);
+      }).catch((err) => {
+        console.log(err);
+      });
+
     }
   }
 );
@@ -1016,7 +1047,7 @@ app.get('/getSignups',
     var role = req.user.role[0].value;
     if (role === 'member' || role === 'admin') {
       //console.log(role);
-      db.view('app', 'signups', { 'include_docs': true }, function (err, doc) {
+      db.view('foo', 'signups', { 'include_docs': true }, function (err, doc) {
         if (!err) {
           res.send(doc);
         }
@@ -1033,7 +1064,7 @@ app.get('/getSignupChairs',
     var role = req.user.role[0].value;
     if (role === 'admin') {
       //console.log(role);
-      db.view('app', 'signups', { 'include_docs': true }, function (err, doc) {
+      db.view('foo', 'signups', { 'include_docs': true }, function (err, doc) {
         if (!err) {
           res.send(doc);
         }
@@ -1084,7 +1115,7 @@ app.get('/editSignup/',
 
 app.get('/getPeople',
   function (req, res) {
-    db.view('app', 'people', { 'include_docs': true }, function (err, resp) {
+    db.view('foo', 'people', { 'include_docs': true }, function (err, resp) {
       var mapped = function (data) {
         return data.rows.map(function (row) {
           var trimmed = {};
