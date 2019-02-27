@@ -452,8 +452,50 @@
 
   <script type="text/x-template" id="members">
     <div>
-      <router-view @searched="search" :statuses="statuses" :searchstring="searchstring"></router-view>
+      <router-view 
+        @searched="search" 
+        :statuses="statuses" 
+        :searchstring="searchstring" 
+        :total="total"
+        :isAdmin="isAdmin"
+        :statuses_array="statuses_array"
+        >
+      </router-view>
     </div>
+  </script>
+
+  <!-- DROPDOWN TEMPLATE for use on /list and /search, for actions like search, download, email -->
+  <script type="text/x-template" id="dropdown">
+    <span>
+      <!-- Dropdown Trigger -->
+      <a class='dropdown-trigger' href='#' :data-target="'dropdown-' + status">
+        <i class="material-icons small">more_horiz</i>
+      </a>
+
+      <!-- Dropdown Structure -->
+      <ul :id="'dropdown-' + status" class='dropdown-content'>
+        <li v-if="isAdmin">
+          <a :href="'/api/member/csv/' + status">
+            <i class="material-icons">file_download</i> Download {{ status }} info (CSV)
+          </a>
+        </li>
+        <li class="divider" tabindex="-1"></li>
+        <li>
+          <router-link :to="{name: 'member-status', params:{ status:status }}" :title="'View all ' + status + ' members'">
+            <i class="material-icons">search</i> View {{ status }} members
+          </router-link>
+        </li>
+        <li class="divider" tabindex="-1"></li>
+        <li>
+          <router-link v-if="status != 'all'" :to="{name: 'member-emails', query:{ status:status }}" :title="'View ' + status + ' emails'">
+              <i class="material-icons">email</i> View {{ status }} member emails
+            </router-link>            
+            <router-link v-else :to="{name: 'member-emails', query:{ status:statuses_array }}" :title="'View ' + status + ' emails'">
+                <i class="material-icons">email</i> View {{ status }} member emails
+              </router-link>            
+            </li>
+      </ul>
+    </span>
   </script>
 
   <script type="text/x-template" id="member-intro">
@@ -474,68 +516,55 @@
       </form>
 
       <div class="row">
-        <div class="col m8 s12">
+
+        <div class="col m4 s12">
           <h5>
-            Membership
+            Breakdown
           </h5>
-          <table class="responsive striped">
-            <thead>
+
+          <table class="responsive striped counts">
+            <thead class="hide">
               <tr>
                 <th>
                   Status
                 </th>
-                <th>
-                  <span class="right">
-                    Count 
-                  </span>
+                <th class="right-align">
+                  Count 
                 </th>
                 <th>
-                  <span class="right">
-                    Actions
-                  </span>
                 </th>
             </thead>
             <tbody>
-              <tr v-for="status in items">
+              <tr v-for="status in statuses">
                 <td>
                   <router-link :to="{name: 'member-status', params:{ status:status.key}}" :title="'View all ' + status.key + ' members'" class="">
                     {{ status.key }}
                   </router-link>
                 </td>
-                <td>
-                  <span class="right">
-                    {{ status.value }}
-                  </span>
+                <td class="right-align">
+                  {{ status.value }}
                 </td>
                 <td>
-                  <span class="right">
-                    <router-link :to="{name: 'member-status', params:{ status:status.key}}" :title="'View all ' + status.key + ' members'" class="">
-                      <i class="material-icons xs">search</i>
-                    </router-link>
-                    <router-link :to="{name: 'member-emails', query:{ status:status.key}}" :title="'View ' + status.key + ' emails'" class="">
-                      <i class="material-icons xs">email</i>
-                    </router-link>            
-                  </span>
+
+                  <dropdown :status="status.key" :isAdmin="isAdmin">
+                  </dropdown>
+
                 </td>
               </tr>
-              <tr>
+              <tr class="">
                 <td>
-                  total
+                  <router-link :to="{name: 'member-status', params:{ status:'all'}}" :title="'View all members'" class="">
+                    All
+                  </router-link>            
                 </td>
-                <td>
-                  <span class="right">
+                <td class="right-align">
                     {{ total }} 
-                  </span>
                 </td>
                 <td>
-                  <span class="right">
-                    <router-link :to="{name:'member-status', params:{ status:'all' }}">
-                      <i class="material-icons xs">search</i>      
-                    </router-link>
-                    <router-link :to="{name: 'member-emails', query:{ status:statuses}}">
-                      <i class="material-icons xs">email</i>
-                    </router-link>             
-                  </span>
+
+                  <dropdown :status="'all'" :statuses_array="statuses_array" :isAdmin="isAdmin">
+                  </dropdown>
+
                 </td>
               </tr>
             </tbody>
@@ -543,7 +572,7 @@
           <!-- doughnut chart commented out for now -->
           <!-- <canvas id="myChart"></canvas> -->
         </div>
-        <div class="col m4 s12">
+        <div class="col m8 s12">
           <h5>Recent updates</h5>
           <ol>
             <li v-for="update in updates">
@@ -600,18 +629,12 @@
         <p>
           Search by status
         </p>
-        <div class="collection facets">
+        <div class="collection counts">
           <router-link :to="{name:'member-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
-            all
-            <span class="secondary-content" v-if="$route.params.status == 'all'">
-              <i class="material-icons">chevron_right</i>
-            </span>
+            <span class="">all</span> <span class="right">{{ total }}</span> 
           </router-link>              
-          <router-link :to="{name:'member-status', params:{ status:status }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
-            {{ status }}
-            <span class="secondary-content" v-if="$route.params.status == status">
-              <i class="material-icons">chevron_right</i>
-            </span>
+          <router-link :to="{name:'member-status', params:{ status:status.key }}" v-if="status != 'deceased'" v-for="status in statuses" class="collection-item" :class="{active: $route.params.status == status}">
+            <span class="">{{ status.key }}</span> <span class="right">{{ status.value }}</span>
           </router-link>
         </div>
       </div>
@@ -619,28 +642,13 @@
         <loading :status="loading"></loading>
         <div v-if="!loading">
           <p v-if="$route.params.status">
-            <span>{{ items.length }} {{ $route.params.status }}(s)</span>
-            <span>
-              <a class="dropdown-trigger" href="#" data-target="actions" data-constrainwidth="false" data-alignment="right" title="View additional member options">
-                <i class="material-icons small">more_horiz</i>
-              </a>
-              <!-- Dropdown Structure -->
-              <ul id="actions" class="dropdown-content">
-                <li  v-if="isAdmin">
-                  <a @click="onCsvDownload($route.params.status)">
-                    <i class="material-icons">file_download</i>&nbsp;Download (CSV)
-                  </a>
-                </li>
-                <li>
-                  <router-link :to="{name: 'member-emails', query: {status: $route.params.status }}" v-if="$route.params.status != 'all'">
-                    <i class="material-icons">email</i> Get emails for {{ $route.params.status }}(s)
-                  </router-link>
-                  <router-link v-else :to="{name: 'member-emails'}">
-                    <i class="material-icons">email</i> Get emails for all
-                  </router-link>
-                </li>
-              </ul>
-            </span>
+            <span class="">
+                Results
+
+                <dropdown :status="$route.params.status" :isAdmin="isAdmin" :statuses_array="statuses_array">
+                </dropdown>
+
+              </span>
           </p>
           <p v-if="$route.query.q">
             {{ items.length }} result(s) 
@@ -697,9 +705,9 @@
                     Status filters
                   </p>
                   <div>
-                    <a v-for="status in statuses" @click.prevent="intercept(status)" href="#" class="chip" v-if="!query_array.includes(status)">
+                    <a v-for="status in statuses" @click.prevent="intercept(status.key)" href="#" class="chip" v-if="!query_array.includes(status.key)">
                       <i class="material-icons tiny">add</i>
-                      {{ status }}
+                      {{ status.key }} ({{ status.value }})
                     </a>
                   </div>
                 </div> 

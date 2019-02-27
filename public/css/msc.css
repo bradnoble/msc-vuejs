@@ -48,7 +48,7 @@ i.material-icons {
   background-color: #ffebee
 }
 */
-.facets {
+.counts { /* modifies presentation of statuses on /list and /search */
   text-transform: capitalize
 }
 .nowrap {
