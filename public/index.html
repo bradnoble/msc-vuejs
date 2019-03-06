@@ -42,11 +42,10 @@
   </script>
 
   <script type="text/x-template" id="navbar-template">
-    <header v-show="isAuthenticated"  class="navbar-fixedsss">
+    <header v-show="isAuthenticated">
       <nav>
-        <div class="nav-wrapper white black-text">
+        <div class="nav-wrapper navbar-fixed white black-text">
           <a href="/#/" class="brand-logo">
-            <span>&nbsp;&nbsp;</span>
             <img src="img/MSC_Logo_60X60.png">
           </a>
           <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">menu</i></a>
@@ -54,29 +53,32 @@
             <router-link :to="{name:'member-intro'}" tag="li">
               <a>Membership List</a>
             </router-link>
-            <router-link to="/resources" tag="li">
+            <router-link :to="{name:'resources'}" tag="li">
               <a>Resources</a>
             </router-link>
             <router-link v-if="isAdmin" :to="{name:'households'}" tag="li">
               <a>Admin</a>
             </router-link>
-            <router-link to="/logout" tag="li">
+            <router-link :to="{name:'logout'}" tag="li">
               <a>Logout</a>
             </router-link>
           </ul>
         </div>
       </nav>
       <ul class="sidenav" id="mobile-demo">
-        <router-link :to="{name:'member-intro'}" tag="li">
+        <router-link :to="{name:'home'}" tag="li" class="sidenav-close">
+          <a>MSC Home</a>
+        </router-link>
+        <router-link :to="{name:'member-intro'}" tag="li" class="sidenav-close">
           <a>Membership List</a>
         </router-link>
-        <router-link to="/resources" tag="li">
+        <router-link :to="{name:'resources'}" tag="li" class="sidenav-close">
           <a>Resources</a>
         </router-link>
-        <router-link v-if="isAdmin" :to="{name:'households'}" tag="li">
+        <router-link v-if="isAdmin" :to="{name:'households'}" tag="li" class="sidenav-close">
           <a>Admin</a>
         </router-link>
-        <router-link to="/logout" tag="li">
+        <router-link :to="{name:'logout'}" tag="li" class="sidenav-close">
           <a>Logout</a>
         </router-link>
       </ul>
