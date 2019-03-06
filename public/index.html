@@ -489,7 +489,7 @@
           </a>
         </li>
         <li class="divider" tabindex="-1"></li>
-        <li>
+        <li v-if="!$route.params.status">
           <router-link :to="{name: 'member-status', params:{ status:status }}" :title="'View all ' + status + ' members'">
             <i class="material-icons">search</i> View {{ status }} members
           </router-link>
