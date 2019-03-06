@@ -3,14 +3,7 @@
 
 <head>
   <title>{{ title }}</title>
-  <!--
-  <script src="/js/pouchdb-6.3.4.min.js"></script>
-  <script src="/js/pouchdb.find.min.js"></script>
-  <script src="/js/pouchdb.silverlining.min.js"></script>
-  <script>
-    var db = new PouchDB('msc');
-  </script>
--->
+
   <!-- Vue components -->
   <script src="vendor/vue/vue.min.js"></script>
   <script src="vendor/vue/vue-resource.min.js"></script>
@@ -49,14 +42,15 @@
   </script>
 
   <script type="text/x-template" id="navbar-template">
-    <header v-show="isAuthenticated"  class="navbar-fixed">
+    <header v-show="isAuthenticated"  class="navbar-fixedsss">
       <nav>
         <div class="nav-wrapper white black-text">
           <a href="/#/" class="brand-logo">
             <span>&nbsp;&nbsp;</span>
             <img src="img/MSC_Logo_60X60.png">
           </a>
-          <ul id="nav-mobile" class="right hide-on-med-and-down">
+          <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">menu</i></a>
+          <ul class="right hide-on-med-and-down">
             <router-link :to="{name:'member-intro'}" tag="li">
               <a>Membership List</a>
             </router-link>
@@ -69,10 +63,23 @@
             <router-link to="/logout" tag="li">
               <a>Logout</a>
             </router-link>
-            </li>
           </ul>
         </div>
       </nav>
+      <ul class="sidenav" id="mobile-demo">
+        <router-link :to="{name:'member-intro'}" tag="li">
+          <a>Membership List</a>
+        </router-link>
+        <router-link to="/resources" tag="li">
+          <a>Resources</a>
+        </router-link>
+        <router-link v-if="isAdmin" :to="{name:'households'}" tag="li">
+          <a>Admin</a>
+        </router-link>
+        <router-link to="/logout" tag="li">
+          <a>Logout</a>
+        </router-link>
+      </ul>
     </header>
   </script>
 
@@ -1067,6 +1074,12 @@
   <script type="text/javascript" src="factories.js"></script>
   <script type="text/javascript" src="routes.js"></script>
   <script type="text/javascript" src="main.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function(){
+      $('.sidenav').sidenav();
+    });
+  </script>
 </body>
 
 </html>

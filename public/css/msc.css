@@ -3,12 +3,6 @@ body .nav-wrapper a {
   color: #333;
 }
 
-/* body .navbar-fixed nav {}
-
-body {}
-
-body .container {} */
-
 i.material-icons {
   vertical-align: middle !important;
 }
@@ -43,14 +37,12 @@ i.material-icons {
     background-size: cover;
   }
 
-/*
-.tabs .router-link-exact-active {
-  background-color: #ffebee
-}
-*/
-.counts { /* modifies presentation of statuses on /list and /search */
+.counts { 
+  /* modifies presentation of statuses on /list and /search */
   text-transform: capitalize
 }
+
 .nowrap {
+  /* keeps icons next to values in membership list */
   white-space: nowrap;
 }
