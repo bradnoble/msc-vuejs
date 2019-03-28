@@ -63,6 +63,12 @@ $(function () {
   // Router setup and initialize Vue app
   const router = initializeVueRouter(store);
 
+  Vue.filter('capitalize', function (value) {
+    if (!value) return ''
+    value = value.toString()
+    return value.charAt(0).toUpperCase() + value.slice(1)
+  })
+
   //App initialization
   var vm = new Vue({
     el: '#app-container',
@@ -404,7 +410,7 @@ const memberSearch = {
         return;
       }
     },
-    //Invokes search and routes based upoon search mode
+    // Invokes search and routes based upoon search mode
     // necessary, called when the route changes both someone loads the view
     // and when someone enters a new search query
     search: function () {
@@ -552,7 +558,7 @@ const memberEmails = {
             _this.totalEmails = resp.body.rows.length;
 
             // extract kv pairs from the function in factories.js
-            docs = mapped(resp.body);
+            docs = getDocs(resp.body);
 
             // loop through docs to build an array that we will turn into a string
             for (let i = 0; i < docs.length; i++) {
@@ -820,7 +826,219 @@ const resources = {
 
 // #endregion
 
+// #region admin
+
+const admin = {
+  template: '#admin',
+  data: function(){
+    return {
+      searchstring: '',
+      searchFacets: '',
+      error: '',
+      loading: true
+    }
+  },
+  mounted: function(){
+  },
+  updated: function(){
+    M.updateTextFields();
+  },
+  /*
+  watch: {
+    loading: function(to, from){
+      console.log('loading - to: ' + to, 'from: ' + from)
+    }
+  },
+  */
+  methods: {
+    search: function (e) {
+      e.preventDefault();
+      // if this is a new keyword search, clear the facets
+      this.searchFacets = '';
+      this.pushToRouter();
+    },
+    clickedFromChild: function(value){
+      if(this.searchFacets == value){
+        this.searchFacets = '';
+      } else {
+        this.searchFacets = value;
+      }
+      this.pushToRouter();
+    },
+    setSearchString: function(){
+      this.searchstring = this.$route.query.q;
+    },
+    pushToRouter: function(){
+      let _this = this;
+      let obj = {};
+
+      if(_this.searchstring.length > 0){
+        obj.q = _this.searchstring.trim()
+      }
+      if(_this.searchFacets){
+        obj.drilldown = _this.searchFacets
+      }
+
+      if (_this.searchstring.length > 0) {
+        _this.$router.push({ 
+          name: 'admin-search', 
+          params: {}, 
+          query: obj
+          }
+        );
+      }
+    },
+    errorMsg: function(val){
+      this.error = val;
+    },
+    loadingCheck: function(val){
+      this.loading = val;
+    }
+  }
+}
+
+const adminIntro = {
+  template: '#admin-intro',
+  data: function(){
+    return {
+      people: [],
+      households: []
+    }
+  },
+  props: [
+  ],
+  mounted: function(){
+    document.title = "MSC Admin";
+    this.getReport();
+    // clear the searchstring
+    this.$emit('setSearchString');
+  },
+  methods: {
+    getReport: function(){
+      let _this = this;
+      _this.$http.get('/api/admin/report',
+        ).then(function(res){
+          // console.log(res)
+          let array = getDocs(res.data);
+          for(let i=0; i<array.length; i++){
+            if(array[i].type == "person"){
+              _this.people.push(array[i]);
+            }
+            else if (array[i].type == "household"){
+              _this.households.push(array[i])
+            }
+          }
+          _this.$emit('loading', false);
+        }, function(error){
+          console.log(error);
+          _this.$emit('error', error);
+        });
+  
+    }
+  }
+}
+
+const adminSearch = {
+  template: '#admin-search',
+  data: function(){
+    return {
+      items: [],
+      counts: {}
+    }
+  },
+  props: [
+    'error',
+    'loading'
+  ],
+  mounted: function(){
+    let _this = this;
+    document.title = "MSC Admin > Search";
+    _this.$emit('setSearchString');
+    _this.$emit('loading', true);
+    _this.searchAPI();
+  },
+  watch: {
+    '$route'(to, from) {
+      this.searchAPI();
+    }
+  },
+  methods: {
+    addFacet: function(facet, value){
+      let _this = this;
+      let array = [];
+      array[0] = facet;
+      array[1] = value;
+      // push array to the parent
+      // which pushes it to the querystring, which is watched
+      // we will call searchAPI from there, not here
+      // stringify so that the drilldown arrays are preserved the way Cloudant needs them
+      // ie, drilldown=["status","active"] instead of drilldown=["status"]&drilldown=["active"]
+      _this.$emit('clicked', JSON.stringify(array));
+    },
+    clearFacets: function(){
+      let _this = this;
+      _this.$emit('clicked', '');
+    },
+    searchAPI: function(){
+      let _this = this;
+      let query = _this.$route.query;
+
+      // send the query value back to the parent to fill the search input
+      // https://forum.vuejs.org/t/passing-data-back-to-parent/1201
+      // necessary, if the user arrives via a deep link to search results
+      // otherwise, the search input will be empty
+      // _this.$emit('searched', query)
+      // this.$emit('clicked', this.$route.query.drilldown)
+
+      if (query) {
+        _this.$http.get('/api/admin/search',
+          {
+            params: query
+          }
+        ).then(function(res){
+            _this.items = getDocs(res.data);
+            _this.counts = res.data.counts;
+            _this.$emit('loading', false);
+            document.title = 'MSC Admin > Search > ' + _this.$route.query.q;
+          }, function(error){
+            _this.$emit('error', error);
+          }
+        );
+      } else {
+        _this.items = [];
+        return;
+      }
+    }
+  }
+}
+
+const adminEditHousehold = {
+  template: '#admin-edit-household',
+  data: function(){
+    return {
+    }
+  },
+  props: [
+      'items',
+      'counts',
+      'searchstring',
+      'searchFacets'
+    ],
+  mounted: function(){
+  },
+  watch: {
+    '$route'(to, from) {
+    }
+  },
+  methods: {
+  }
+}
+
+// #endregion
+
 // #region Admin-Household
+
+
 
 // list of households
 const households = {

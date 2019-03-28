@@ -77,6 +77,32 @@ function initializeVueRouter(store) {
       meta: { requiresAuth: true }
     },
     {
+      path: '/admin',
+      component: admin,
+      props: true,
+      children: [
+        {
+          path: '',
+          name: 'admin',
+          component: adminIntro,
+          props: true
+        },
+        {
+          path: 'search',
+          name: 'admin-search',
+          component: adminSearch,
+          props: true
+        },
+        {
+          path: 'edit/household/:id',
+          name: 'edit-household',
+          component: adminEditHousehold,
+          props: true
+        }
+      ],
+      meta: { requiresAuth: true, roles: 'admin' }
+    },
+    {
       path: '/members',
       component: members,
       props: true,

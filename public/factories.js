@@ -10,7 +10,7 @@ return array;
 
 
 // function to extract docs (ie, include_docs = true) from Cloudant results
-const mapped = function (data) {
+const getDocs = function (data) {
   return data.rows.map(function (row) {
     return row.doc; 
   });
@@ -39,21 +39,21 @@ var getGenders = function(){
 var docDefaults = function(type) {
   var now = new Date(),
     stamp = [
-    type,
-    now.getFullYear(),
-    now.getMonth() + 1,
-    now.getDate() + 1,
-    now.getMilliseconds()
+      type,
+      now.getFullYear(),
+      now.getMonth() + 1,
+      now.getDate() + 1,
+      now.getMilliseconds()
     ],
     obj = {
-    _id: stamp.join('-'),
-    type: type
+      _id: stamp.join('-'),
+      type: type
     };
 
   return obj;
 };
 
-// to populate the compoenent for the household form,
+// to populate the component for the household form,
 // each person needs to be loaded an object with keys but no values
 var getPersonObject = function(){
   var array = ['first', 'last', 'email', 'status', 'phone', 'work_phone', 'dob', 'gender'];

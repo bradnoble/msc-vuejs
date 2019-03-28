@@ -261,6 +261,27 @@ const ddoc = {
           emit(doc._id, 1);    
         }  
       }
+    },
+    adminReport: {
+      map: function(doc){
+        if(doc.type == "person"){
+          if(
+            doc.first == '' || !doc.first 
+            || doc.last == '' || !doc.last
+          ){
+            emit(doc._id, 1);
+          }
+        }
+        if(doc.type == "household"){
+          if(
+            doc.name == '' || !doc.name 
+            || doc.street1 == '' || !doc.street1
+            || doc.zip == '' || !doc.zip
+          ){
+            emit(doc._id, 1);
+          }
+        }
+      }
     }
   },
   indexes: {
@@ -274,6 +295,19 @@ const ddoc = {
           if (doc.first) {
             index('default', doc.first, { "store": true });
           }
+        }
+      }
+    },
+    admin: {
+      analyzer: 'standard',
+      index: function (doc) {
+        if (typeof doc.type === "string") {
+          index('status', doc.status, { "store": true, "facet": true });
+          index('type', doc.type, { "store": true, "facet": true });
+          index('last', doc.last, { "store": true, "facet": true });
+          index('first', doc.first, { "store": true });
+          index('default', doc.last, { "store": true });
+          index('default', doc.first, { "store": true });
         }
       }
     }
@@ -708,6 +742,90 @@ app.get('/api/members',
     }
   }
 );
+
+// get a report of docs in the db that are missing required data
+app.get('/api/admin/report',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    
+    let params = {
+      include_docs: true,
+      limit: 200,
+    }
+
+    if (req.query) {
+      db.view('foo', 'adminReport',
+        params
+        , function (err, resp) {
+          if (!err) {
+            let docs = resp;
+            res.send(docs)
+          } else {
+            console.log(err);
+            res.send(err)
+          }
+        }
+      );
+    } else {
+      res.send();
+    }
+  }
+);
+
+
+// get a list of members based upon member name(s)
+app.get('/api/admin/search',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    
+    let obj = req.query;
+
+    let querystring = req.query.q.trim();
+    // convert default Lucene query from OR to AND
+    // and add wildcards so that users don't have to get searches exactly right
+    // 1. split the querystring into an array
+    let queryarray = querystring.split(' ');
+    // 2. add the wildcard operator to every element in the array
+    queryarray = queryarray.map(function(e) {return e + '*'});
+    // turn the array into one long string, with AND between the wildcard strings
+    queryarray = queryarray.join(' AND ');
+
+    obj.q = queryarray;
+
+    let params = {
+      include_docs: true,
+      limit: 200,
+      sort: ["last<string>","first<string>"], // https://developer.ibm.com/answers/questions/178330/sorting-cloudant-data-in-node-red/
+      counts: [
+        "status"
+        // ,"type"
+        // ,"last"
+      ]
+    }
+
+    Object.assign(obj,params);
+
+    if (req.query) {
+      db.search('foo', 'admin',
+        obj
+        , function (err, resp) {
+          if (!err) {
+            let docs = resp;
+            res.send(docs)
+          } else {
+            console.log(err);
+            res.send(err)
+          }
+        }
+      );
+    } else {
+      res.send();
+    }
+  }
+);
+
+
+
 
 /*
 * Get a list of member data for use in a .csv file based upon  member status
