@@ -82,6 +82,7 @@ const getNewHousehold = function(){
     "street2": "",
     "city": "",
     "state": "",
+    "country": "",
     "zip": "",
     "phone": "",
     "mail_news": false,
@@ -90,3 +91,9 @@ const getNewHousehold = function(){
   Object.assign(obj, household);
   return obj;
 };
+
+const setPageTitleTag = function(array){
+  let domain = ['MSC'];
+  document.title = domain.concat(array).join(' > ')
+//  return domain.concat(array).join(' > ');
+}

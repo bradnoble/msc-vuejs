@@ -636,7 +636,7 @@ const memberHousehold = {
         .then(function (resp) {
           // console.log('start', resp)        
           _this.item = resp.data;
-          _this.setPageTitle();
+          _this.setPageTitleTag();
         },
           function (error) {
             _this.item = {
@@ -826,7 +826,9 @@ const resources = {
 
 // #endregion
 
-// #region admin
+////////////////
+// #region ADMIN
+////////////////
 
 const admin = {
   template: '#admin',
@@ -835,7 +837,8 @@ const admin = {
       searchstring: '',
       searchFacets: '',
       error: '',
-      loading: true
+      loading: true,
+      sectionTitle: "Admin"
     }
   },
   mounted: function(){
@@ -843,13 +846,6 @@ const admin = {
   updated: function(){
     M.updateTextFields();
   },
-  /*
-  watch: {
-    loading: function(to, from){
-      console.log('loading - to: ' + to, 'from: ' + from)
-    }
-  },
-  */
   methods: {
     search: function (e) {
       e.preventDefault();
@@ -906,9 +902,10 @@ const adminIntro = {
     }
   },
   props: [
+    'sectionTitle'
   ],
   mounted: function(){
-    document.title = "MSC Admin";
+    setPageTitleTag([this.sectionTitle]);
     this.getReport();
     // clear the searchstring
     this.$emit('setSearchString');
@@ -948,14 +945,19 @@ const adminSearch = {
   },
   props: [
     'error',
-    'loading'
+    'loading',
+    'sectionTitle'
   ],
   mounted: function(){
     let _this = this;
-    document.title = "MSC Admin > Search";
+    setPageTitleTag([_this.sectionTitle, "Search"]);
+
     _this.$emit('setSearchString');
     _this.$emit('loading', true);
     _this.searchAPI();
+  },
+  updated: function(){
+    $('.dropdown-trigger').dropdown({ constrainWidth: false });
   },
   watch: {
     '$route'(to, from) {
@@ -973,6 +975,7 @@ const adminSearch = {
       // we will call searchAPI from there, not here
       // stringify so that the drilldown arrays are preserved the way Cloudant needs them
       // ie, drilldown=["status","active"] instead of drilldown=["status"]&drilldown=["active"]
+      // https://forum.vuejs.org/t/passing-data-back-to-parent/1201
       _this.$emit('clicked', JSON.stringify(array));
     },
     clearFacets: function(){
@@ -982,14 +985,6 @@ const adminSearch = {
     searchAPI: function(){
       let _this = this;
       let query = _this.$route.query;
-
-      // send the query value back to the parent to fill the search input
-      // https://forum.vuejs.org/t/passing-data-back-to-parent/1201
-      // necessary, if the user arrives via a deep link to search results
-      // otherwise, the search input will be empty
-      // _this.$emit('searched', query)
-      // this.$emit('clicked', this.$route.query.drilldown)
-
       if (query) {
         _this.$http.get('/api/admin/search',
           {
@@ -999,7 +994,6 @@ const adminSearch = {
             _this.items = getDocs(res.data);
             _this.counts = res.data.counts;
             _this.$emit('loading', false);
-            document.title = 'MSC Admin > Search > ' + _this.$route.query.q;
           }, function(error){
             _this.$emit('error', error);
           }
@@ -1016,28 +1010,234 @@ const adminEditHousehold = {
   template: '#admin-edit-household',
   data: function(){
     return {
+      id: '',
+      item: {},
+      error: '',
+      errors: []
     }
   },
   props: [
-      'items',
-      'counts',
-      'searchstring',
-      'searchFacets'
-    ],
+    'sectionTitle'
+  ],
   mounted: function(){
+    setPageTitleTag([this.sectionTitle, "Edit Household"]);
+    if(this.$route.name == "add-household"){
+      this.item = getNewHousehold();
+    } else {
+      this.getHousehold();
+    }
+  },
+  updated: function(){
+    M.updateTextFields()
   },
   watch: {
     '$route'(to, from) {
+      this.getHousehold();
     }
   },
   methods: {
+    getHousehold: function(){
+      let _this = this;
+      _this.id = this.$route.params.id;
+
+      _this.$http.get('/api/admin/household/' + _this.id,
+      ).then(
+        function(res){
+          // console.log(res);
+          _this.item = res.body;
+          _this.error = '';
+        }, function(error){
+          // console.log(error);
+          _this.error = error;
+          _this.items = [];
+        }
+      );
+    },
+    checkform: function () {
+      this.errors = [];
+      if (this.item.name.length > 0 && this.item.city.length > 0 && this.item.state.length > 0 && this.item.zip.length > 0) {
+        return true;
+      }
+      if (this.item.name == '') this.errors.push('Please provide a name for this household.')
+      if (this.item.city == '') this.errors.push('Please provide a city for this household.')
+      if (this.item.state == '') this.errors.push('Please provide a state for this household.')
+      if (this.item.zip == '') this.errors.push('Please provide a zip for this household.')
+    },
+    save: function(){
+      let _this = this;
+
+      if (_this.item.people) {
+        delete _this.item.people;
+      };
+
+      if (this.checkform()) {
+
+        // starting label for the save button
+        const txt = $('#save').text();
+        // temporary message that shows
+        $('#save').text('Saving...');
+
+        this.$http.post('/api/admin/save/household', _this.item)
+          .then(function (resp) {
+            // console.log('item', _this.item)
+            setTimeout(function () {
+              // revert the label of the save button
+              $('#save').text(txt);
+              //console.log(resp)
+              // redirect to the summary tab
+              _this.$router.replace({ name: 'admin-view-household', params: { id: _this.item._id } });
+            }, 200);
+          }, function (error) {
+            console.log('error', error);
+          }
+          );
+      }
+    },
+    removeHousehold: function(){
+      let _this = this;
+      Vue.set(_this.item, '_deleted', true);  
+    }
+  }
+}
+
+const adminEditPerson = {
+  template: '#admin-edit-person',
+  data: function(){
+    return {
+      id: '',
+      item: {},
+      statuses: getStatuses(),
+      genders: getGenders(),
+      error: '',
+      errors: []
+    }
+  },
+  props: [
+    'sectionTitle'
+  ],
+  mounted: function(){
+    setPageTitleTag([this.sectionTitle, "Edit Person"]);
+    if(this.$route.name == "add-person"){
+      this.id = this.$route.params.id;
+      this.item = getPersonObject();
+      this.item.household_id = this.$route.params.id;
+    } else {
+      this.getPerson();
+    }
+  },
+  updated: function(){
+    M.updateTextFields()
+  },
+  watch: {
+    '$route'(to, from) {
+      this.getPerson();
+    }
+  },
+  methods: {
+    getPerson: function(){
+      let _this = this;
+      _this.id = this.$route.params.id;
+
+      _this.$http.get('/api/admin/person/' + _this.id,
+      ).then(
+        function(res){
+          // console.log(res);
+          _this.item = res.body;
+          _this.error = '';
+        }, function(error){
+          // console.log(error);
+          _this.error = error;
+          _this.item = [];
+        }
+      );
+    },
+    checkform: function () {
+      this.errors = [];
+      if (this.item.last.length > 0 && this.item.first.length > 0) {
+        return true;
+      }
+      if (this.item.last == '' || this.item.first == '') {
+        this.errors.push('Please provide a first and last name.')
+      }
+    },
+    save: function(){
+      let _this = this;
+
+      console.log('saving...')
+
+      if (this.checkform()) {
+
+        // starting label for the save button
+        const txt = $('#save').text();
+        // temporary message that shows
+        $('#save').text('Saving...');
+
+        this.$http.post('/api/admin/save/person', _this.item)
+          .then(function (resp) {
+            // console.log('item', _this.item)
+            setTimeout(function () {
+              // revert the label of the save button
+              $('#save').text(txt);
+              //console.log(resp)
+              // redirect to the summary tab
+              _this.$router.replace({ name: 'admin-view-household', params: { id: _this.item.household_id } });
+            }, 200);
+          }, function (error) {
+            console.log('error', error);
+          }
+          );
+      }
+    },
+    removePerson: function () {
+      let _this = this;
+      Vue.set(_this.item, '_deleted', true);
+    }
+  }
+}
+
+const adminViewHousehold = {
+  template: '#admin-view-household',
+  data: function(){
+    return {
+      id: '',
+      item: {},
+      error: ''
+    }
+  },
+  props: [],
+  mounted: function(){
+    this.getHouseholdWithPeople();
+  },
+  updated: function(){},
+  watch: {
+    '$route'(to, from) {
+      this.getHouseholdWithPeople();
+    }
+  },
+  methods: {
+    getHouseholdWithPeople: function(){
+      let _this = this;
+      _this.id = this.$route.params.id;
+      // console.log('getHouseholdWithPeople: ', _this.id);
+
+      _this.$http.get('/api/admin/householdAndPeople/' + _this.id)
+        .then(function (resp) {
+          _this.item = resp.data;
+          _this.error = '';
+        }, function (error) {
+          _this.error = error;
+        });
+
+    }
   }
 }
 
 // #endregion
 
+//////////////////////////
 // #region Admin-Household
-
+// TODO: deprecate
+//////////////////////////
 
 
 // list of households
@@ -1161,6 +1361,7 @@ const household = {
     get: function () {
       const _this = this;
 
+      // /api/admin/household/:id
       this.$http.get('/api/households/' + _this.household_id)
         .then(function (resp) {
           _this.item = resp.data;
@@ -1277,10 +1478,6 @@ const householdNew = {
     $('.dropdown-trigger').dropdown();
   }
 };
-
-// #endregion
-
-// #region Admin-Person
 
 // IS USED??? list people, child of adminHousehold
 const firstChild = {

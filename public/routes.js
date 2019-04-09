@@ -92,14 +92,43 @@ function initializeVueRouter(store) {
           name: 'admin-search',
           component: adminSearch,
           props: true
-        },
-        {
-          path: 'edit/household/:id',
-          name: 'edit-household',
-          component: adminEditHousehold,
-          props: true
         }
       ],
+      meta: { requiresAuth: true, roles: 'admin' }
+    },
+    {
+      path: '/admin/edit/household/:id',
+      name: 'edit-household',
+      component: adminEditHousehold,
+      props: true,
+      meta: { requiresAuth: true, roles: 'admin' }
+    },
+    {
+      path: '/admin/add/household/',
+      name: 'add-household',
+      component: adminEditHousehold,
+      props: true,
+      meta: { requiresAuth: true, roles: 'admin' }
+    },
+    {
+      path: '/admin/household/:id/add-person/',
+      name: 'add-person',
+      component: adminEditPerson,
+      props: true,
+      meta: { requiresAuth: true, roles: 'admin' }
+    },
+    {
+      path: '/admin/edit/person/:id',
+      name: 'edit-person',
+      component: adminEditPerson,
+      props: true,
+      meta: { requiresAuth: true, roles: 'admin' }
+    },
+    {
+      path: '/admin/household/:id',
+      name: 'admin-view-household',
+      component: adminViewHousehold,
+      props: true,
       meta: { requiresAuth: true, roles: 'admin' }
     },
     {
@@ -135,6 +164,7 @@ function initializeVueRouter(store) {
       meta: { requiresAuth: true }
     },
     {
+      // this is the link you land on in the member section from the recent updates
       name: 'member-household',
       path: '/household/:id',
       components: {
