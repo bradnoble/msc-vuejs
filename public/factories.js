@@ -20,6 +20,9 @@ const getDocs = function (data) {
 var getStatuses = function(blacklist){
   var statuses = ['active','inactive','life','junior','child','non-member','applicant','honorary','deceased'];  
   if(blacklist){
+    if(typeof blacklist == "string"){
+      blacklist = [blacklist]
+    }
     // remove unnecessary fields
     for (var i = 0; i < blacklist.length; i++) {
       var index = statuses.indexOf(blacklist[i]);

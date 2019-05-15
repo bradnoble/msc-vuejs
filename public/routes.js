@@ -13,58 +13,6 @@ function initializeVueRouter(store) {
       meta: { requiresAuth: true }
     },
     {
-      path: '/households',
-      name: 'households',
-      component: households,
-      meta: { requiresAuth: true, roles: 'admin' }
-    },
-    {
-      path: '/households/new',
-      component: householdNew,
-      props: true,
-      children: [
-        {
-          path: '',
-          name: 'household-new',
-          component: householdEdit,
-          props: true
-        }
-      ],
-      meta: { requiresAuth: true, roles: 'admin' }
-    },
-    {
-      path: '/households/:household_id',
-      component: household,
-      props: true,
-      children: [
-        {
-          path: '',
-          name: 'admin-household',
-          component: firstChild,
-          props: true
-        },
-        {
-          path: 'person/:person_id',
-          name: 'person-edit',
-          component: personEdit,
-          props: true
-        },
-        {
-          path: 'person/new',
-          name: 'person-new',
-          component: personEdit,
-          props: true
-        },
-        {
-          path: 'edit',
-          name: 'household-edit',
-          component: householdEdit,
-          props: true
-        }
-      ],
-      meta: { requiresAuth: true, roles: 'admin' }
-    },
-    {
       name: 'login',
       path: '/login',
       component: login,
@@ -78,6 +26,7 @@ function initializeVueRouter(store) {
     },
     {
       path: '/admin',
+      name: 'admin',
       component: admin,
       props: true,
       children: [
@@ -91,48 +40,66 @@ function initializeVueRouter(store) {
           path: 'search',
           name: 'admin-search',
           component: adminSearch,
+          meta: { 
+            breadcrumb: "Search",
+          },
+          props: true
+        },
+        {
+          path: 'edit/household/:id',
+          name: 'edit-household',
+          component: adminEditHousehold,
+          meta: { 
+            breadcrumb: "Edit Household",
+          },
+          props: true
+        },
+        {
+          path: 'add/household/',
+          name: 'add-household',
+          component: adminEditHousehold,
+          meta: { 
+            breadcrumb: "Add Household",
+          },
+          props: true
+        },
+        {
+          path: 'household/:id/add-person/',
+          name: 'add-person',
+          component: adminEditPerson,
+          meta: { 
+            breadcrumb: "Add Person",
+          },
+          props: true
+        },
+        {
+          path: 'edit/person/:id',
+          name: 'edit-person',
+          component: adminEditPerson,
+          meta: { 
+            breadcrumb: "Edit Person",
+          },
+          props: true
+        },
+        {
+          path: 'household/:id',
+          name: 'admin-view-household',
+          component: adminViewHousehold,
+          meta: { 
+            breadcrumb: "Household",
+          },
           props: true
         }
       ],
-      meta: { requiresAuth: true, roles: 'admin' }
-    },
-    {
-      path: '/admin/edit/household/:id',
-      name: 'edit-household',
-      component: adminEditHousehold,
-      props: true,
-      meta: { requiresAuth: true, roles: 'admin' }
-    },
-    {
-      path: '/admin/add/household/',
-      name: 'add-household',
-      component: adminEditHousehold,
-      props: true,
-      meta: { requiresAuth: true, roles: 'admin' }
-    },
-    {
-      path: '/admin/household/:id/add-person/',
-      name: 'add-person',
-      component: adminEditPerson,
-      props: true,
-      meta: { requiresAuth: true, roles: 'admin' }
-    },
-    {
-      path: '/admin/edit/person/:id',
-      name: 'edit-person',
-      component: adminEditPerson,
-      props: true,
-      meta: { requiresAuth: true, roles: 'admin' }
-    },
-    {
-      path: '/admin/household/:id',
-      name: 'admin-view-household',
-      component: adminViewHousehold,
-      props: true,
-      meta: { requiresAuth: true, roles: 'admin' }
+      meta: { 
+        breadcrumb: "Admin",
+        requiresAuth: true, 
+        roles: 'admin' 
+      }
     },
     {
       path: '/members',
+      name: 'member-intro',
       component: members,
       props: true,
       children: [
@@ -143,35 +110,48 @@ function initializeVueRouter(store) {
           props: true
         },
         {
-          path: 'status/:status',
-          name: 'member-status',
-          component: memberSearch,
-          props: true
-        },
-        {
           path: 'search',
-          name: 'member-name',
+          name: 'member-search',
           component: memberSearch,
+          meta: {
+            breadcrumb: "Search by name"
+          },
           props: true
         },
         {
           path: 'emails',
           name: 'member-emails',
           component: memberEmails,
+          meta: {
+            breadcrumb: "Emails"
+          },
           props: true
+        },
+        {
+          path: 'reports',
+          name: 'member-reports',
+          component: memberReports,
+          meta: {
+            breadcrumb: "Reports"
+          },
+          props: true
+        },
+        {
+          path: 'household/:id',
+          name: 'member-household',
+          components: {
+            default: memberHousehold
+          },
+          props: true,
+          meta: { 
+            breadcrumb: "Household"
+          }
         }
       ],
-      meta: { requiresAuth: true }
-    },
-    {
-      // this is the link you land on in the member section from the recent updates
-      name: 'member-household',
-      path: '/household/:id',
-      components: {
-        default: memberHousehold
-      },
-      props: true,
-      meta: { requiresAuth: true }
+      meta: { 
+        breadcrumb: "Membership List",
+        requiresAuth: true 
+      }
     },
     {
       name: 'resources',

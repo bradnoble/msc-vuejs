@@ -196,20 +196,38 @@
 
 <script type="text/x-template" id="admin">
   <div>
-    <h5>
-      Admin
-    </h5>
-    <form action="#" @submit="search">
       <div class="row">
-        <div class="input-field col m11 s11">
-          <input id="search" v-model="searchstring" type="text" />
-          <label for="search">Search by name</label>
-        </div>
-        <div class="input-field col m1 s1">
-          <button class="btn btn-small waves-effect waves-light" type="submit" name="action"><i class="material-icons" title="search">search</i></button>
-        </div>
-      </div>
-    </form>
+          <div class="col s12">
+            <p class="breadcrumbs">
+              <span v-for="route in $route.matched">
+                  <span v-if="route.name != $route.name">
+                    <router-link :to="{name: route.name}">
+                      {{ route.meta.breadcrumb }}
+                    </router-link> / 
+                  </span>
+                  <span v-else>
+                    <b>{{ route.meta.breadcrumb }}</b>
+                  </span>
+              </span>              
+            </p>
+          </div><!--col-->
+        </div><!--row-->
+  
+
+        <form action="#" @submit="search" v-if="searchForm">
+          <div class="row">
+            <div class="input-field col m11 s9">
+              <input id="search" v-model="searchstring" type="text" />
+              <label for="search">Search by name</label>
+            </div>
+            <div class="input-field col m1 s3">
+              <button class="btn waves-effect waves-light" type="submit" name="action">
+                <i class="material-icons" title="search">search</i>
+              </button>
+            </div>
+          </div>
+        </form>
+
     <error :error="error"></error>
     <loading :status="loading"></loading>
 
@@ -218,50 +236,131 @@
       @clicked="clickedFromChild"
       @loading="loadingCheck"
       @error="errorMsg"
-      :sectionTitle="sectionTitle"
+      @searchForm="toggleSearchForm"
       >
     </router-view>
   </div>
 </script>
 
 <script type="text/x-template" id="admin-intro">
-  <div>
-    <!-- TODO show a conditional message when there is nothing to fix -->
-    <router-link :to="{name: 'add-household'}">
-      <i class="material-icons tiny">add_box</i> Add household
-    </router-link>
-    <div class="section">
-      <div class="divider"></div>
-      <p>
-        These records are missing required information:
-      </p>
-      <div class="row">
-        <div class="col sm12 m6">
-          <h6>
-            People
-          </h6>
-          <ul class="browser-default">
-            <li v-for="person in people" :key="person._id">
-              <router-link :to="{ name: 'edit-person', params: { id: person._id } }" title="Edit person" class="">
-                {{ person._id }}
-              </router-link>
-            </li>
-          </ul>
-        </div>
-        <div class="col sm12 m6">
-          <h6>
-            Households
-          </h6>
-          <ul class="browser-default">
-            <li v-for="household in households" :key="household._id">
-              <router-link :to="{ name: 'edit-household', params: { id: household._id } }" title="Edit household" class="">
-                {{ household._id }}
-              </router-link>
-            </li>
-          </ul>    
-        </div>
-      </div>
-    </div><!--section-->
+  <div class="row">
+
+      <div class="section col s12" v-if="people.length > 0 || households.length > 0">
+        <h2 class="red-text">
+            <!--<i class="material-icons medium red-text">error</i>-->
+            Hang on!
+        </h2>            
+        <p>
+          Before you do anything else, please correct these records. They are missing required information.
+        </p>
+
+          <div class="row">
+            <div class="col m6 s12" v-if="people.length > 0">
+              <div class="collection with-header">
+                <div class="collection-header ">
+                  <i class="material-icons tiny">people</i> 
+                  People
+                </div>
+                <router-link :to="{ name: 'edit-person', params: { id: person._id } }" v-for="person in people" :key="person._id" title="Edit person" class="collection-item" >
+                  {{ person._id }}
+                  <span class="secondary-content">
+                    <i class="material-icons">chevron_right</i>
+                  </span>
+                </router-link>
+              </div><!--collection-->
+            </div><!--col-->
+            <div class="col m6 s12" v-if="households.length > 0">
+              <div class="collection with-header">
+                <div class="collection-header ">
+                    <i class="material-icons tiny">home</i> 
+                  Households
+                </div>
+                <router-link :to="{ name: 'edit-household', params: { id: household._id } }"  v-for="household in households" :key="household._id" title="Edit household" class="collection-item">
+                  {{ household._id }}
+                  <span class="secondary-content">
+                    <i class="material-icons">chevron_right</i>
+                  </span>
+                </router-link>
+              </div><!--collection-->    
+            </div><!--col-->
+          </div><!--row-->
+        </div><!--section-->
+    
+        <p>
+          <router-link :to="{name: 'add-household'}" class="btn">
+            Add household
+          </router-link>      
+        </p>
+
+        <div class="section col s12 hide">
+          <div class="divider"></div>
+          <h2>
+            Actions
+          </h2>
+          <p>
+            Beyond searching for and updating records in the membership list, you can also do these things:
+          </p>
+            <div class="row">
+                <div class="col m4">
+                  <div class="card blue-grey darken-1">
+                    <div class="card-content white-text">
+                      <span class="card-title">
+                        <i class="material-icons small">add_location</i> 
+                        Households
+                      </span>
+                      <p>
+                        Search first. If you can't find 'em, go ahead and add 'em.
+                      </p>
+                    </div><!--content-->
+                    <div class="card-action blue-grey darken-2">
+                      <router-link :to="{name: 'add-household'}" class="">
+                        Add household
+                      </router-link>      
+                    </div><!--actions-->
+                  </div><!--card-->
+                </div>
+                <div class="col m4">
+                    <div class="card blue-grey darken-1">
+                      <div class="card-content white-text">
+                        <span class="card-title">
+                          <i class="material-icons small">email</i> 
+                          Email blasts
+                        </span>
+                        <p>
+                          For email blasts to groups in our membership.
+                        </p>
+                      </div><!--content-->
+                      <div class="card-action blue-grey darken-2">
+                        <router-link :to="{name: 'member-emails'}" class="">
+                          Build email list
+                        </router-link>      
+                      </div><!--actions-->
+                    </div><!--card-->
+                  </div>
+                  <div class="col m4">
+                      <div class="card blue-grey darken-1">
+                        <div class="card-content white-text">
+                          <span class="card-title">
+                            <i class="material-icons small">file_download</i>                            
+                            Reports
+                          </span>
+                          <p>
+                            Download the list for mailings &amp; other ad hoc reports.
+                          </p>
+                        </div><!--content-->
+                        <div class="card-action blue-grey darken-2">
+                          <router-link :to="{name: 'member-reports'}" class="">
+                            Build report
+                          </router-link>      
+                        </div><!--actions-->
+                      </div><!--card-->
+                    </div>
+              </div><!--row-->          
+
+        </div><!--section-->
+
+
+
   </div>
 </script>
 
@@ -274,68 +373,78 @@
       </router-link>    
     </p>
     <div v-else>
-      <h6>
-        Results | 
-        <span v-if="!$route.query.drilldown">
-          <a href="#" class="dropdown-trigger" data-target="facet-dropdown">
-            <i class="material-icons tiny">filter_list</i> Filter
-          </a>
-          <div id="facet-dropdown" v-for="(value, key) in counts" class="dropdown-content">
-              {{ key | capitalize }}
-              <ul>
-                <li v-for="(value2, key2) in value">
-                  <a href="#" @click.prevent="addFacet(key, key2)">{{ key2 }}<span class="badge">{{ value2 }}</span></a>
+
+      <div class="row">
+        <div class="col s12 m3">
+          <h6>
+            Filters
+          </h6>
+
+            <div v-for="(value, key) in counts" :key="key" class="collection with-header">
+              <div class="collection-header">
+                {{ key | capitalize }}
+              </div>
+              <a href="#" @click.prevent="addFacet(key, key2)" v-for="(value2, key2) in value" class="collection-item">{{ key2 }}
+                <span class="count">({{ value2 }})</span>
+              </a>
+            </div>
+    
+        </div><!--col-->
+        <div class="col s12 m9">
+            <h6>
+              Showing {{ items.length }} Results
+            </h6>
+    
+            <ul class="collection">
+                <li class="collection-item" v-for="item in items" v-bind:id="item._id" :key="item._id">    
+                    <!-- if this link causes problems: https://github.com/vuejs/vue-router/issues/986 -->                    
+                    <router-link :to="{name: 'admin-view-household', params: { id: item.household_id }}" title="view household">
+                      <person-name :item="item"></person-name>
+                    </router-link>
+
+                    <!-- Dropdown Trigger -->
+                    <a class='dropdown-trigger right' href='#' :data-target="'dropdown-' + item._id">
+                      <i class="material-icons small">more_horiz</i>
+                    </a>
+                
+                    <!-- Dropdown Structure -->
+                    <ul :id="'dropdown-' + item._id" class='dropdown-content'>
+                      <li>
+                        <router-link :to="{ name: 'edit-person', params: { id: item._id } }" title="Edit person" class="">
+                          <i class="material-icons tiny">person</i> Edit person
+                        </router-link>
+                      </li>
+                      <li class="divider"></li>
+                      <li>
+                        <router-link :to="{ name: 'edit-household', params: { id: item.household._id } }" title="Edit household" class="">
+                          <i class="material-icons tiny">home</i> Edit household
+                        </router-link>
+                      </li>
+                    </ul>                    
+                    
+                  <div class="row">
+                    <div class="col s12 m5">
+                      <person-contact-info :item="item"></person-contact-info>      
+                    </div>
+                    <div class="col s12 m7">
+                      <location :item="item.household"></location>
+                    </div><!--col-->
+                  </div>
                 </li>
               </ul>
-          </div>
-        </span>
-        <span v-else> 
-          
-          <span v-for="(value, key) in counts">
-            <span v-for="(value2, key2) in value">
-                <a href="#" @click.prevent="clearFacets()" v-if="$route.query.drilldown" class="red-text" title="clear filters">
-                    {{ key | capitalize }}: {{ key2 | capitalize }}
-                    <i class="material-icons tiny">remove_circle</i>
-                  </a>
-            </span>
-          </span>
-        </span> 
-          
-      </h6>
 
-      <ul class="collection">
-        <li class="collection-item" v-for="item in items" v-bind:id="item._id" :key="item._id">    
-          <h6 class="">
-            <!-- if this link causes problems: https://github.com/vuejs/vue-router/issues/986 -->
-            <router-link :to="{ name: 'edit-person', params: { id: item._id } }" title="Edit person" class="">
-                <person-name :item="item"></person-name>
-            </router-link>
-          </h6>
-          <div class="row">
-            <div class="col s12 m5">
-              <person-contact-info :item="item"></person-contact-info>      
-            </div>
-            <div class="col s12 m7">
-              <router-link :to="{ name: 'edit-household', params: { id: item.household._id } }" title="Edit household" class="">
-                <location :item="item.household"></location>
-              </router-link>
-            </div><!--col-->
-          </div>
-        </li>
-      </ul>
+        </div><!--col-->
+      </div><!--row-->
     </div><!-- velse -->
   </div>
 </script>
 
 <script type="text/x-template" id="admin-edit-household">
   <div>
-    <pre class="">
+    <pre class="hide">
       {{ item }}
     </pre>
-    <error :error="error"></error>
-    <h5>
-      Admin > Edit Household
-    </h5>
+
     <div class="card">
       <form id="form-edit-household" name="form-edit-household" v-on:submit.prevent="save" action="#" method="post">
         <div class="card-content">
@@ -441,10 +550,6 @@
     <pre class="hide">
       {{ item }}
     </pre>
-    <error :error="error"></error>
-    <h5>
-      Admin > Edit Person
-    </h5>
     <div class="card">
 
         <form id="form-edit-person" name="form-edit-person" v-on:submit.prevent="save" action="#" method="post">
@@ -547,35 +652,33 @@
     <pre class="hide">
       {{ item }}
     </pre>
-    <error :error="error"></error>
-    <h5>
-      Admin > Household Summary
-    </h5>
     <div class="row">
       <div class="col m5 s12">
         <h6>
           {{ item.name }}
         </h6>
-        <router-link :to="{ name: 'edit-household', params: { id: item._id } }" title="Edit household" class="">
           <location :item="item"></location>
-        </router-link>
+          <p>
+            <router-link :to="{ name: 'edit-household', params: { id: item._id } }" title="Edit household" class="">
+              <i class="material-icons tiny">edit</i> Edit location            
+            </router-link>
+          </p>
       </div>
       <div class="col m7 s12">
         <ul class="collection">
           <li class="collection-item " v-for="item in item.people" v-bind:id="item._id" :key="item._id">    
-            <h6 class="">
               <!-- if this link causes problems: https://github.com/vuejs/vue-router/issues/986 -->
-              <router-link :to="{ name: 'edit-person', params: { id: item._id } }" title="Edit person" class="">
-                <person-name :item="item"></person-name>
+              <person-name :item="item"></person-name>
+              <router-link :to="{ name: 'edit-person', params: { id: item._id } }" title="Edit person" class="right">
+                <i class="material-icons tiny">edit</i> Edit
               </router-link>
-            </h6>
             <div class="">
               <person-contact-info :item="item"></person-contact-info>      
             </div>
           </li>
         </ul>
         <p>
-          <router-link :to="{name: 'add-person', params: {id: item._id}}">
+          <router-link :to="{name: 'add-person', params: {id: item._id}}" class="btn btn-small">
             <i class="material-icons tiny">person_add</i> Add person
           </router-link>
         </p>  
@@ -591,13 +694,51 @@
 <!--parent view of member section-->
 <script type="text/x-template" id="members">
   <div>
+
+      <div class="row">
+        <div class="col s12">
+          
+          <h5 class="breadcrumbs">
+            <span v-for="route in $route.matched">
+                <span v-if="route.name != $route.name">
+                  <router-link :to="{name: route.name}">
+                    {{ route.meta.breadcrumb }}
+                  </router-link> / 
+                </span>
+                <span v-else>
+                  {{ route.meta.breadcrumb }}
+                </span>
+            </span>              
+          </h5>
+        
+        </div><!--col-->
+      </div><!--row-->
+
+      <form action="#" @submit="search" v-if="searchForm">
+        <div class="row">
+          <div class="input-field col m11 s9">
+            <input id="search" v-model="searchstring" type="text" />
+            <label for="search">Search by name</label>
+          </div>
+          <div class="input-field col m1 s3">
+            <button class="btn waves-effect waves-light" type="submit" name="action">
+              <i class="material-icons" title="search">search</i>
+            </button>
+          </div>
+        </div>
+      </form>
+
+
+      <error :error="error"></error>
+      <loading :status="loading"></loading>        
+
     <router-view 
-      @searched="search" 
-      :statuses="statuses" 
-      :searchstring="searchstring" 
-      :total="total"
+      @setSearchString="setSearchString" 
+      @clicked="clickedFromChild"
+      @searchForm="toggleSearchForm"
       :isAdmin="isAdmin"
-      :statuses_array="statuses_array"
+      @loading="loadingCheck"
+      @error="errorMsg"
       >
     </router-view>
   </div>
@@ -606,71 +747,38 @@
 <!--list landing page, includes breakdown & recent updates, child of members-->
 <script type="text/x-template" id="member-intro">
   <div>
-    <h5>
-      Membership List
-    </h5>
-    <form action="#" @submit="searchfromchild">
-      <div class="row">
-        <div class="input-field col m11 s11">
-          <input id="search" v-model="searchstring" type="text" />
-          <label for="search">Search by name</label>
-        </div>
-        <div class="input-field col m1 s1">
-          <button class="btn waves-effect waves-light" type="submit" name="action"><i class="material-icons" title="search">search</i></button>
-        </div>
-      </div>
-    </form>
-
     <div class="row">
 
       <div class="col m4 s12">
         <h5>
-          Breakdown
+          Tally
         </h5>
-
         <table class="responsive striped counts">
           <thead class="hide">
             <tr>
               <th>
-                Status
+                Count
               </th>
               <th class="right-align">
-                Count 
-              </th>
-              <th>
+                Status 
               </th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="status in statuses" :key="status.key">
-              <td>
-                <router-link :to="{name: 'member-status', params:{ status:status.key}}" :title="'View all ' + status.key + ' members'" class="">
-                  {{ status.key }}
-                </router-link>
-              </td>
               <td class="right-align">
                 {{ status.value }}
               </td>
-              <td>
-
-                <dropdown :status="status.key" :isAdmin="isAdmin"></dropdown>
-
+              <td class="">
+                  {{ status.key }}
               </td>
             </tr>
             <tr class="">
-              <td>
-                <router-link :to="{name: 'member-status', params:{ status:'all'}}" :title="'View all members'" class="">
-                  All
-                </router-link>            
-              </td>
               <td class="right-align">
-                  {{ total }} 
+                {{ total }} 
               </td>
               <td>
-
-                <dropdown :status="'all'" :statuses_array="statuses_array" :isAdmin="isAdmin">
-                </dropdown>
-
+                  Total (all)
               </td>
             </tr>
           </tbody>
@@ -678,7 +786,26 @@
         <!-- doughnut chart commented out for now -->
         <!-- <canvas id="myChart"></canvas> -->
       </div>
-      <div class="col m8 s12">
+      <div class="col m4 s12">
+        <h5>
+          Actions
+        </h5>
+        <ul class="collection">
+          <li class="collection-item">
+            <router-link :to="{name: 'member-emails'}">
+              <i class="material-icons tiny">email</i> 
+              Build a list of email addresses
+            </router-link>
+          </li>
+          <li class="collection-item">
+            <router-link :to="{name: 'member-reports'}">
+              <i class="material-icons tiny">file_download</i> 
+              Generate a report to download (CSV) 
+            </router-link>
+          </li>
+        </ul>
+      </div>
+      <div class="col m4 s12">
         <h5>Recent updates</h5>
         <ol>
           <li v-for="update in updates">
@@ -703,98 +830,64 @@
 
 <!--search results, child of members-->
 <script type="text/x-template" id="member-search">
-<div>
-  <h5>
-    <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Search
-  </h5>
-  <form action="#" @submit="searchfromchild">
-    <div class="row">
-      <div class="input-field col m11 s11">
-        <input id="search" v-model="searchstring" type="text" />
-        <label for="search">Search by name</label>
-      </div>
-      <div class="input-field col m1 s1">
-        <button class="btn waves-effect waves-light" type="submit" name="action"><i class="material-icons" title="search">search</i></button>
-      </div>
-    </div>
-  </form>
+  <div>
+    <p v-if="items && items.length == 0">
+      No results for {{ $route.query.q }}.
+    </p>
+    <div v-else>
+        <div class="row">
+            <div class="col s12 m3">
+              <h6>
+                Filters
+              </h6>
+    
+                <div v-for="(value, key) in counts" :key="key" class="collection with-header">
+                  <div class="collection-header">
+                    {{ key | capitalize }}
+                  </div>
+                  <a href="#" @click.prevent="addFacet(key, key2)" v-for="(value2, key2) in value" class="collection-item">{{ key2 }}
+                    <span class="count">({{ value2 }})</span>
+                  </a>
+                </div>
+        
+            </div><!--col-->
+            <div class="col s12 m9">
+                <h6>
+                  Showing {{ items.length }} Results
+                </h6>
+        
+                <ul class="collection">
+                    <li class="collection-item" v-for="item in items" v-bind:id="item._id" :key="item._id">    
+                        <!-- if this link causes problems: https://github.com/vuejs/vue-router/issues/986 -->                    
+                        <router-link :to="{name: 'member-household', params: { id: item.household_id }}" title="view household">
+                          <person-name :item="item"></person-name>
+                        </router-link>
+                            
+                      <div class="row">
+                        <div class="col s12 m5">
+                          <person-contact-info :item="item"></person-contact-info>      
+                        </div>
+                        <div class="col s12 m7">
+                          <location :item="item.household"></location>
+                        </div><!--col-->
+                      </div>
+                    </li>
+                  </ul>
+    
+            </div><!--col-->
+          </div><!--row-->
+        </div><!-- velse -->
 
-  <!--
-  <div class="input-field">
-    <span class="prefix">
-      <i class="material-icons" v-if="searchstring" v-on:click="clearfromchild" title="clear the search input">clear</i>
-      <i class="material-icons" v-if="!searchstring" title="search">search</i>
-    </span>
-    <input id="search" v-model="searchstring" @keyup.enter="search" type="text" />
-    <label for="search">Search by name</label>
   </div>
-  -->
-
-  <div class="row">
-    <div class="col m3">
-      <p>
-        Search by status
-      </p>
-      <div class="collection counts">
-        <router-link :to="{name:'member-status', params:{ status:'all' }}" class="collection-item" :class="{active: $route.params.status == 'all'}">
-          <span class="">all</span> <span class="right">{{ total }}</span> 
-        </router-link>              
-        <router-link :to="{name:'member-status', params:{ status:status.key }}" v-if="status != 'deceased'" v-for="status in statuses" :key="status.key" class="collection-item" :class="{active: $route.params.status == status}">
-          <span class="">{{ status.key }}</span> <span class="right">{{ status.value }}</span>
-        </router-link>
-      </div>
-    </div>
-    <div class="col m9">
-      <loading :status="loading"></loading>
-      <div v-if="!loading">
-        <p v-if="$route.params.status">
-          <span class="">
-              Results
-
-              <dropdown :status="$route.params.status" :isAdmin="isAdmin" :statuses_array="statuses_array">
-              </dropdown>
-
-            </span>
-        </p>
-        <p v-if="$route.query.q">
-          {{ items.length }} result(s) 
-        </p>
-      </div>
-
-      <ul class="collection" v-if="!loading">
-        <li class="collection-item row" v-for="item in items" v-bind:id="item._id">
-
-          <div class="col m5">
-            <person-name :item="item"></person-name>
-          </div>
-          <div class="col m6">
-            <person-contact-info :item="item"></person-contact-info>
-          </div>
-          <div class="col m1">
-            <span class="secondary-content" v-if="item.household_id">
-              <!-- protected by v-if b/c https://github.com/vuejs/vue-router/issues/986 -->
-              <router-link :to="{ name: 'member-household', params: { id: item.household_id } }" title="View household" class="btn btn-flat btn-small waves-effect waves-teal teal-text">
-                <i class="material-icons tiny">home</i>
-              </router-link>  
-            </span>
-          </div>
-        </li>
-      </ul>
-    </div>
-  </div>
-</div>
 </script>
 
 <!-- email list builder, child of members -->
 <script type="text/x-template" id="member-emails">
   <div>
-    <h5>
-      <router-link :to="{name: 'member-intro'}">Membership List</router-link> / Emails
-    </h5>      
-    <div class="">
         <div class="row">
-          <div class="col m3">
-            <div class="section">
+          <div class="col s12 m12">
+            <!--
+            <div class="">
               <p>
                 Group filters
               </p>
@@ -806,63 +899,122 @@
                   <router-link :to="{query: { status: statuses }}" class="btn-small" :title="'emails for ' + statuses">All emails</router-link>
                 </p>
               </div>  
-              <div v-if="query_array.length != statuses.length">
+
+              
+              
+              // WHAT IS THIS AND CAN WE USE IT IN REPORTS?
+              v-if="!query_array.includes(status.key)"
+
+
+            -->
                 <p>
-                  Status filters
+                  Select statuses to build your email list.
                 </p>
                 <div>
-                  <a v-for="status in statuses" @click.prevent="intercept(status.key)" href="#" class="chip" v-if="!query_array.includes(status.key)">
-                    <i class="material-icons tiny">add</i>
-                    {{ status.key }} ({{ status.value }})
+                  <a v-for="status in statuses" @click.prevent="intercept(status.key)" href="#" class="chip status-param nowrap blue-text" :class="{'blue darken-2, white-text': $route.query && $route.query.status && $route.query.status.indexOf(status.key) > -1}">
+                      <i class="material-icons tiny" v-if="$route.query && $route.query.status && $route.query.status.indexOf(status.key) > -1">
+                          check
+                        </i>
+                        <i class="material-icons tiny" v-else>
+                          add_circle
+                        </i>
+                        {{ status.key | capitalize }} ({{ status.value }})
                   </a>
+                  <router-link :to="{name: 'member-emails'}" class="chip white red-text" v-if="$route.query && $route.query.status">
+                    <i class="material-icons tiny">
+                      clear
+                    </i>
+                    Clear
+                  </router-link>
                 </div>
-              </div> 
-            </div>
-          </div>
+            </div><!--col-->
+          </div><!--row-->
 
-          <div class="col m9">
-            <div class="section">
-                <div v-if="query_array.length > 0">
-                    <p>
-                      Selected filters | 
-                      <a @click.prevent="intercept()" href="#">
-                          <i class="material-icons tiny">clear</i>
-                          Clear all
-                        </a>
-                        </p>
-                    <div class="">
-                      <a @click.prevent="intercept(status)" href="#" v-for="status in query_array" class="chip blue lighten-5 blue-text" title="remove this filter">
-                        <i class="material-icons tiny">clear</i>
-                        {{ status }}
-                      </a>
-                    </div>
-                  </div>                
-              <p class="hide">
-                <b>{{totalEmails}} selected: {{ querystring }}</b>
-              </p>
-              <loading :status="loading"></loading>
-              <div v-if="!loading">
+          <div class="row">
+
+              <div class="col s12 m12" v-if="items.length > 0">
+                <h5>
+                  Email addresses
+                </h5>
+                <p>
+                  Select and copy these emails, and paste them into your email application.
+                </p>
                 <form>
                   <div class="input-field">
                     <textarea id="textarea-emails" v-model="items" class="materialize-textarea">{{ items }}</textarea>
                   </div>
                 </form>
               </div>
-            </div>
-          </div><!-- col -->
+
         </div><!-- row -->
-        <router-link :to="{name: 'member-intro'}">Back to the list</router-link>
-      </div><!--card panel-->    
 
   </div>
 </script>
 
+<!-- report builder, child of members -->
+<script type="text/x-template" id="member-reports">
+  <div>
+    <div class="row">
+      <div class="col s12 m12">
+        <p>
+          Select statuses to prepare your report for download.
+        </p>
+        <a v-for="status in statuses" href="#" v-on:click.prevent="addStatusParam(status)" class="chip status-param nowrap blue-text" :class="{'blue darken-2, white-text': $route.query && $route.query.status && $route.query.status.indexOf(status) > -1}">
+          <i class="material-icons tiny" v-if="$route.query && $route.query.status && $route.query.status.indexOf(status) > -1">
+            check
+          </i>
+          <i class="material-icons tiny" v-else>
+            add_circle
+          </i>
+          {{ status | capitalize }}
+        </a>
+        <router-link :to="{name: 'member-reports'}" class="chip white red-text" v-if="$route.query && $route.query.status">
+          <i class="material-icons tiny">
+            clear
+          </i>
+          Clear
+        </router-link>
+      </div>
+    </div>
+    <div class="row" v-if="items.length > 0">
+      <div class="col s12 m12">
+        <h5>
+          Report preview ({{ items.length }} records)
+        </h5>
+
+        <div class="preview-container">
+          <table class="responsive-table striped">
+            <thead>
+              <tr v-for="(person, index) in items.slice(0,1)">
+                <th v-for="(value, key) in person">
+                    {{ key }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(person, index) in items">
+                <td v-for="(value, key) in person">
+                    {{ value }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <pre class="hide">{{ items }}</pre>
+        </div>
+        <p>
+          <a :href="'/api/member/csv?' + $route.fullPath.split('?')[1] " class="btn btn-small" v-if="items.length > 0">
+            <i class="material-icons tiny">file_download</i> Download Report (CSV)
+          </a>
+        </p>    
+      </div>
+    </div><!--row-->
+  </div>
+</script>
+
+
 <!-- household landing page, child of members -->
 <script type="text/x-template" id="member-household">
       <div>
-        <h5>
-          <router-link :to="{name: 'member-intro'}">Membership List</router-link> / {{ item.label_name }}
-        </h5>
         <div class="card">
           <div class="card-content">
             <span class="card-title">
@@ -898,12 +1050,6 @@
         <a :href="'/api/member/csv/' + status">
           <i class="material-icons">file_download</i> Download {{ status }} info (CSV)
         </a>
-      </li>
-      <li class="divider" tabindex="-1"></li>
-      <li v-if="!$route.params.status">
-        <router-link :to="{name: 'member-status', params:{ status:status }}" :title="'View all ' + status + ' members'">
-          <i class="material-icons">search</i> View {{ status }} members
-        </router-link>
       </li>
       <li class="divider" tabindex="-1"></li>
       <li>
@@ -1100,279 +1246,6 @@
     <div v-if="item.work_phone" class="nowrap"><i class="material-icons tiny grey-text">work</i>&nbsp;{{ item.work_phone }}</div>
   </span>
   </script>
-
-
-
-  
-
-<!--DEPRECATED-->
-
-  <!-- IS USED??? a list of people in the household -->
-  <script type="text/x-template" id="first-child">
-    <div>
-      <ul class="collection" v-show="item.people.length > 0">
-        <household-person 
-          v-for="person in item.people" 
-          v-bind:key="person._id" 
-          v-bind:item="person">
-        </household-person>                
-      </ul>
-      <p v-if="item.people.length == 0">
-        <router-link :to="{ name: 'newPerson', params: { household_id: item._id }}" class="btn">
-          <i class="material-icons">person_add</i> Add a person
-        </router-link>
-      </p>
-    </div>
-  </script>
-
-  <!-- parent view for each household -->
-  <script type="text/x-template" id="household">
-    <div>
-
-      <loading :status="loading"></loading>
-      <error :error="error"></error>
-
-      <div v-if="!error">
-        <h6>
-          <router-link :to="{name: 'households'}">Admin</router-link> / {{ item.name }}
-        </h6>
-        <div class="row">
-          <div class="col s12 m10">
-            <div class="card">
-              <div class="card-content">
-                <span class="card-title">
-                    {{ item.name }}
-                    <span v-if="$route.name != 'person-edit' && $route.name != 'person-new' && $route.name != 'household-edit'">
-                      <!-- Dropdown Trigger -->
-                      <span class="secondary-content">
-                        <a class="dropdown-trigger" href="#" data-target="dropdown1" data-constrainwidth="false" data-alignment="right" title="click to see options">
-                          <i class="material-icons small">more_horiz</i>
-                        </a>
-                      </span>
-                      <!-- Dropdown Structure -->
-                      <ul id="dropdown1" class="dropdown-content">
-                        <li>
-                          <router-link :to="{ name: 'person-new', params: { household_id: item._id }}" title="Add a person to this household">
-                            <i class="material-icons">person_add</i> Add a person
-                          </router-link>
-                        </li>
-                        <li>
-                          <router-link :to="{ name: 'household-edit', params: { household_id: item._id }}" title="Edit household">
-                            <i class="material-icons">edit</i> Edit household
-                          </router-link>
-                        </li>
-                      </ul>
-                    </span><!-- route guard -->
-                </span><!-- card title -->
-                <location v-bind:item="item"></location>
-    
-                <router-view :item="item"></router-view>
-              </div>
-            </div><!-- card -->
-          </div><!-- col -->          
-        </div><!--row-->
-      </div><!--!error-->
-      <a href="#/households">&larr; Back to Admin</a>
-    </div><!-- container -->
-  </script>
-
-  <!-- a form to edit a household -->
-  <script type="text/x-template" id="household-edit">
-    <div>
-      <form id="form-edit-household" name="form-edit-household" v-on:submit="save" action="#" method="post">
-        <div class="card-content grey lighten-4">
-          <span class="card-title">{{ title.content }}</span>
-          <form-errors :errors="errors"></form-errors>
-          <div class="row">
-            <div class="input-field col m4 s12">
-              <input type="text" id="household_name" v-model="item.name" class="validate" />
-              <label for="household_name" class="active">Household name</label>
-              <span class="helper-text red-text text-darken-2">Required</span>
-            </div>
-            <div class="input-field col m8 s12">
-              <input type="text" id="household_label_name" v-model="item.label_name"  />
-              <label for="household_label_name" class="active">Mailing label name</label>
-            </div>
-          </div>
-          <div class="row">
-            <div class="input-field col m8 s12">
-              <input type="text" id="household_street1" v-model="item.street1"  />
-              <label for="household_street1" class="active">Street 1</label>
-            </div>
-            <div class="input-field col m4 s12">
-              <input type="text" id="household_street2" v-model="item.street2"  />
-              <label for="household_street2" class="active">Street 2</label>
-            </div>
-          </div>
-          <div class="row">
-            <div class="input-field col m6 s12">
-              <input type="text" id="household_city" v-model="item.city"  />
-              <label for="household_city" class="active">City</label>
-              <span class="helper-text red-text text-darken-2">Required</span>
-            </div>
-            <div class="input-field col m2 s12">
-              <input type="text" id="household_state" v-model="item.state"  />
-              <label for="household_state" class="active">State</label>
-              <span class="helper-text red-text text-darken-2">Required</span>
-            </div>
-            <div class="input-field col m4 s12">
-              <input type="text" id="household_zip" v-model="item.zip"  />
-              <label for="household_zip" class="active">ZIP</label>
-              <span class="helper-text red-text text-darken-2">Required</span>
-            </div>
-          </div>
-          <div class="input-field">              
-            <input type="text" id="household_phone" v-model="item.phone"  />
-            <label for="household_phone" class="active">Household Phone</label>
-          </div>
-          <div class="section">
-            <h5>
-              Hardcopies
-            </h5>
-          </div>
-          <div class="row">              
-            <div class="col m6 s12 switch">
-              Mail a hardcopy of the newsletter?<br />
-              <label>
-                No
-                <input type="checkbox" id="mail_news" v-model="item.mail_news">
-                <span class="lever"></span>
-                Yes
-              </label>
-            </div>
-            <div class="col m6 s12 switch">
-              Mail a hardcopy of the membership list?<br />
-              <label>
-                No
-                <input type="checkbox" id="mail_list" v-model="item.mail_list">
-                <span class="lever"></span>
-                Yes
-              </label>
-            </div>
-          </div><!--row-->
-        </div><!--card content-->
-        <div class="card-content red lighten-4" v-if="$route.params.household_id">
-          <p>
-            <label  class="red-text text-darken-2">
-              <input type="checkbox" v-model="item._deleted" />
-              <span>Remove this household</span>
-            </label>
-          </p>
-          <p>
-            Only remove households that have been added in error. Deleting the household deletes the people in the household, too. This can not be undone.
-          </p>
-        </div><!-- card-content -->
-        <div class="card-action grey lighten-4">
-          <input type="hidden" v-model="item.household_id"  />
-          <button id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action">Submit</button>
-          <router-link v-if="$route.name == 'editHousehold'" :to="{name: 'admin-household', params: {id: item._id}}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</router-link>
-          <router-link v-if="$route.name == 'new-household'" :to="{name: 'admin'}" class="waves-effect waves-light btn-flat grey-text" title="cancel changes, and return to the list">Cancel</router-link>
-        </div>
-      </form>
-    </div>
-  </script>
-
-  <!-- a form to add a new household -->
-  <script type="text/x-template" id="household-new">
-    <div>        
-      <h6>
-        <a href="#/households">Admin</a> / Add a household
-      </h6>
-      <div class="row">
-        <div class="col s12 m8">
-          <div class="card">
-            <div class="card-content">
-              <span class="card-title">
-                Add household
-              </span>
-              <router-view :item="item"></router-view>
-            </div><!--card-content-->
-          </div><!--card-->
-        </div><!--col-->
-      </div><!--row-->
-    </div>
-  </script>
-
-  <script type="text/x-template" id="household-person">
-    <div class="collection-item avatar">
-      <i class="material-icons circle green">person</i>
-      <span class="title">
-        <person-name :item="item"></person-name>
-      </span>
-      <p>
-        <person-contact-info :item="item"></person-contact-info>
-      </p>
-      <router-link :to="{ name: 'person-edit', params: {household_id: item.household_id, person_id: item._id }}" class="">
-        <span class="secondary-content"><i class="material-icons">edit</i></span>
-      </router-link>
-    </div>
-  </script>
-
-  <script type="text/x-template" id="households">
-    <div>
-      <h6>
-        Admin
-      </h6>
-      <div v-if="!loading">
-        <ul class="collection">
-          <li class="collection-item grey lighten-4 row">
-            <div class="input-field col m8 s12">
-              <i class="material-icons prefix">search</i>
-              <input id="search" v-model="searchStr" @keyup="search()" placeholder="First or last name..." />
-              <label for="search" class="active">Search by household name or first/last name of a person in the household </label>
-            </div>            
-            <div class="col m4">
-              <router-link :to="{name:'household-new'}" class="btn right">
-                <i class="material-icons">add_location</i> Add household
-              </router-link>
-            </div>
-          </li>
-          <li v-for="(item, index) in items" :key="item._id" v-if="!item.hide" class="collection-item">
-            <h5>
-              {{ item.name }}
-              <!-- Dropdown Trigger -->
-              <span class="secondary-content">
-                <a class="dropdown-trigger" href="#" :data-target="item._id" data-constrainwidth="false" data-alignment="right" title="click to see options">
-                  <i class="material-icons small">more_horiz</i>
-                </a>
-              </span>
-              <!-- Dropdown Structure -->
-              <ul :id="item._id" class="dropdown-content">
-                <li>
-                  <router-link :to="{ name: 'person-new', params: { household_id: item._id }}" title="Add a person to this household">
-                    <i class="material-icons">person_add</i> Add a person
-                  </router-link>
-                </li>
-                <li>
-                  <router-link :to="{ name: 'household-edit', params: { household_id: item._id }}" title="Edit household">
-                    <i class="material-icons">edit</i> Edit household
-                  </router-link>
-                </li>
-              </ul>
-            </h5>
-            <div class="row">
-              <div class="col m3">
-                <location :item="item"></location>
-              </div>
-              <div class="col m9">
-                <ul class="collection">
-                    <household-person 
-                    v-for="person in item.people" 
-                    v-bind:key="person._id" 
-                    v-bind:item="person">
-                  </household-person>
-                </ul>
-              </div>
-            </div><!--row-->
-          </li>
-        </ul>
-      </div>
-      <div v-else class="progress">
-          <div class="indeterminate"></div>
-      </div>
-    </div>
-  </script>
-
 
 
 

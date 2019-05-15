@@ -7,6 +7,7 @@ var cfenv = require("cfenv"),
   bodyParser = require('body-parser'),
   jsonParser = bodyParser.json(),
   Json2csvParser = require('json2csv').Parser,
+  qrate = require('qrate'),
   // Combinatorics = require('js-combinatorics'),
   opts = { url: process.env.URL }
   ;
@@ -218,6 +219,17 @@ const ddoc = {
       },
       reduce: '_sum'
     },
+    by_status_with_email: {
+      map: function (doc) {
+        if (doc.type == 'person' && doc.email) {
+          if (doc.status != 'deceased') {
+            emit(doc.status, 1);
+          }
+        }
+      },
+      reduce: '_sum'
+
+    },
     emails: {
       map: function (doc) {
         if(doc.type == 'person' && doc.email && doc.status && doc.first && doc.last) {
@@ -327,6 +339,19 @@ const ddoc = {
           index('default', doc.first, { "store": true });
         }
       }
+    },
+    member: {
+      analyzer: 'standard',
+      index: function (doc) {
+        if (typeof doc.type === "string") {
+          index('status', doc.status, { "store": true, "facet": true });
+          index('type', doc.type, { "store": true, "facet": true });
+          index('last', doc.last, { "store": true, "facet": true });
+          index('first', doc.first, { "store": true });
+          index('default', doc.last, { "store": true });
+          index('default', doc.first, { "store": true });
+        }
+      }
     }
   }
 };
@@ -374,18 +399,6 @@ db.index(query_index, function (err, response) {
 });
 
 // #endregion
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 //////////////////////////
@@ -678,193 +691,91 @@ app.post('/api/admin/save/person',
     }
   });
 
-
-// TODO: deprecate
-// get household by ID
-app.get('/api/households/:id',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    // both admins and members can see these results
-    if (authentication.users.isInRole(req, 'admin,member')) {
-      db.get(req.params.id, function (err, doc) {
-        if (!err) {
-          // get the people of this householdsAndPeople
-          db.view(
-            'foo',
-            'join_people_to_household',
-            {
-              'include_docs': true,
-              'key': req.params.id
-            },
-            function (err, people) {
-              if (!err) {
-                var mapped = function (data) {
-                  return data.rows.map(function (row) {
-                    return row.doc; // this is the entire payload
-                  });
-                };
-                // add people to the household
-                doc.people = mapped(people);
-                res.send(doc);
-              }
-            }
-          );
-          //console.log(doc);
-          //res.send(doc);
-        } else {
-          return res.status(404).json({ "error": "Sorry, we don't have a household with that id." });
-        }
-      });
-    } else {
-      return res.status(401).json({ "error": "Sorry, you don't have permission to access households." });
-    }
-  });
-
-// TODO: deprecate
-app.get('/api/households',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    //db.view(designname, viewname, [params], [callback])
-    db.view('foo', 'householdsAndPeople', { 'include_docs': true }, function (err, resp) {
-      if (!err) {
-        var mapped = function (data) {
-          return data.rows.map(function (row) {
-            return row.doc; // this is the entire payload
-          });
-        };
-        // add people to the household
-        var docs = mapped(resp);
-        var households = [];
-        var people = {};
-        for (i = 0; i < docs.length; i++) {
-          if (docs[i].type == 'person') {
-            // build an object that holds objects that hold arrays of people
-            if (!people[docs[i].household_id]) {
-              people[docs[i].household_id] = [];
-            }
-            people[docs[i].household_id].push(docs[i]);
-          } else if (docs[i].type == 'household') {
-            households[i] = docs[i];
-          }
-          //console.log(people);
-        }
-        for (i = 0; i < households.length; i++) {
-          var household_id = households[i]._id;
-          households[i].people = [];
-          households[i].people = people[household_id];
-        }
-        //console.log(docs[1]);
-        res.send(households);
-      }
-    });
-  }
-);
-
-// TODO: deprecate
-app.post('/postHouseholdOld',
-  authentication.users.isAuthenticated,
-  jsonParser,
-  function (req, res) {
-    var role = req.user.role[0].value;
-    if (role === 'admin') {
-
-      var household = req.body,
-        newPeople = [];
-      // bulk insert people
-      // todo: make sure this works when a household has zero people, even though that's very unlikely
-      // might even wanna prevent saving a household until there's a person
-      if (household.people.length > 0) {
-        // update people in bulk
-        db.bulk({ docs: household.people }, function (err, docs) {
-          //db.insert(household.people[1], function(err, docs){
-          if (!err) {
-            //console.log(docs);
-            // update the new people object with response, including _rev
-            newPeople = docs;
-            // don't push the people object into the household, b/c people are stored separately
-            delete household.people;
-            // update household
-            db.insert(household, function (err, doc) {
-              if (!err) {
-                //console.log('success updating household, will add people to response next');
-                // make sure there are no people in the household object
-                doc.people = [];
-                // append the updated people object to the household before sending the response
-                doc.people = newPeople;
-                //console.log(doc);
-                res.send(doc);
-              }
-              else {
-                console.log('household:' + err.reason);
-              }
-            });
-          } else {
-            console.log('people: ' + err.reason);
-          }
-        });
-      }
-    } else {
-      //console.log('not admin');
-      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
-    }
-  });
-
 // #endregion
-
-
-
-
-
-
-
-
-
-
 
 
 // #region Members Endpoints
 
-// get a list of members based upon member name(s)
-app.get('/api/members',
+// new member search, built to follow faceted design of admin search 
+app.get('/api/members/search',
   authentication.users.isAuthenticated,
   function (req, res) {
+    
+    let obj = req.query;
 
-    //console.log('search query: ', req.query.name);
+    let querystring = req.query.q.trim();
+    // convert default Lucene query from OR to AND
+    // and add wildcards so that users don't have to get searches exactly right
+    // 1. split the querystring into an array
+    let queryarray = querystring.split(' ');
+    // 2. add the wildcard operator to every element in the array
+    queryarray = queryarray.map(function(e) {return e + '*'});
+    // turn the array into one long string, with AND between the wildcard strings
+    queryarray = queryarray.join(' AND ');
 
-    if (req.query.name) {
-      let namesArray = req.query.name.trim().split(' ');
-      let nameStr = '';
+    obj.q = queryarray;
 
-      if (namesArray.length > 1) {
-        // multiple words means drilling in
-        // that means AND
-        nameStr = namesArray.join('* && ');
-      } else {
-        // if there's only one item in the array, add wildcard
-        nameStr = namesArray[0] + '*';
-      }
-      // in case the search term has more than word and the second word needs a wildcard
-      nameStr += '*'
-
-      db.search('foo', 'name', {
-        q: nameStr,
-        include_docs: true
-      }, function (err, resp) {
-        if (!err) {
-          // get unnecessary objects out of the response
-          var mapped = function (data) {
-            return data.rows.map(function (row) {
-              return row.doc;
-            });
-          };
-          let docs = mapped(resp);
-          res.send(docs)
-        }
-      }
-      );
-    } else {
-      res.send();
+    let params = {
+      include_docs: true,
+      limit: 200,
+      sort: ["last<string>","first<string>"], // https://developer.ibm.com/answers/questions/178330/sorting-cloudant-data-in-node-red/
+      counts: [
+        "status"
+        // ,"type"
+        // ,"last"
+      ]
     }
+
+    Object.assign(obj,params);
+
+    if (req.query) {
+      db.search('foo', 'memberSearch',
+        obj
+        , function (err, resp) {
+          if (!err) {
+            let households = {};
+            let households_array = []
+            let unique_households = [];
+
+            let getDocs = function (data) {
+              return data.rows.map(function (row) {
+                return row.doc; // this is the entire payload
+              });
+            };
+            let docs = getDocs(resp);
+
+            // get the household info for these people
+            // 1. find the household_id of each person and add it to an array
+            // note this will create dupes b/c there's often more than one person in a hosuehold
+            for(let i=0; i < docs.length; i++){
+              households_array.push(docs[i].household_id);
+            }
+            // 2. dedupe the households array
+            unique_households = Array.from(new Set(households_array));
+            // 3. get the full household data using the unique_households array
+            db.fetch({keys: unique_households}).then((data) => {
+              data.rows.forEach((doc) => {
+                households[doc.doc._id] = doc.doc;
+              });  
+            }).then(()=>{
+              // 4. add household data to the results before sending to the client
+              resp.rows.forEach((doc) => {
+                let person = doc.doc;
+                let household = households[person.household_id];
+                person.household = {};
+                person.household = household;
+              });  
+              // 5. send everything to the client
+              // console.log(resp);
+              res.send(resp)
+            });
+          } else {
+            console.log(err);
+            res.send(err)
+          }
+        }
+      );
+    } 
   }
 );
 
@@ -895,6 +806,27 @@ app.get('/api/members/updated',
 app.get('/api/members/statuses',
   function (req, res) {
     db.view('foo', 'by_status',
+      {
+        reduce: true,
+        group_level: 1
+      },
+      function (err, docs) {
+        if (err) {
+          console.log(err);
+        }
+        else {
+          //console.log(docs);
+          res.send(docs);
+        }
+      }
+    );
+  }
+);
+
+// get counts per status, for the membership landing page
+app.get('/api/members/statusesWithEmails',
+  function (req, res) {
+    db.view('foo', 'by_status_with_email',
       {
         reduce: true,
         group_level: 1
@@ -948,6 +880,202 @@ app.get('/api/member/emails',
   }
 );
 
+app.get('/api/member/csv/',  
+  // authentication.users.isAuthenticated,
+  function (req, res) {
+    // if the request params is just a string, turn it into an array
+    var params = (typeof req.query.status == "string") ? [req.query.status] : req.query.status;
+    var preview = (req.query.preview == "true") ? true : false;
+    
+    var promises = {};
+
+    const fetchPeopleByStatus = async (data) => {
+      var d = [];
+      if(data.key == 'households') {
+        d = await db.view('foo','households', {
+          include_docs: true
+        });  
+      } else {
+        d = await db.view('foo', 'csv', {
+          startkey: [ data.key ]
+          , endkey: [ data.key, {} ]
+          , include_docs: true
+          // , limit: 1
+        });
+      }
+      // console.log(d);
+      promises[data.key] = d;
+    }
+
+    // next get all the people who are requested
+    const q = qrate(fetchPeopleByStatus, 3, 4);
+
+    // get the households
+    q.push({key:'households'});
+
+    // get the people
+    // loop through the parameters in the query
+    for(let i = 0; i < params.length; i++) {
+      q.push({key: params[i]});
+    }
+
+    // on q.drain (part of qrate)
+    // https://github.com/glynnbird/cloudant-timeseries/blob/c8d3fcf18ec96a5fb4a78b7e26919ef559cd727c/lib/utils.js#L35
+    q.drain = function() {
+      q.kill();
+      // console.log(promises);
+      var tempArray = Object.entries(promises);
+      var data = [];
+
+      for(let i = 0; i < tempArray.length; i++){
+        if(tempArray[i][0] != 'households'){
+          // console.log(tempArray[i][0])
+          data.push(tempArray[i][1]);
+        } 
+      }      
+      data.unshift(promises['households']);
+      // console.log(data);
+
+      // package the results
+      // TODO: how do we handle errors? ie, if the await 
+      // the array that is returned includes a nested array 
+      // for every status that was requested, and metadata
+      // 1. extract just the rows, which removes the metadata
+      let flattenedArrayOfPeople = [];
+      let nestedArraysOfPeopleByStatus = [];
+      let people = [];
+      let households = {};
+
+      var filename = '',
+        datetime = new Date().toISOString(),
+        fields = [
+          "status"
+          , "last"
+          , "first"
+          , "email"
+          , "phone"
+          , "street1"
+          , "street2"
+          , "household_phone"
+          , "zip"
+        ];
+
+      for(let i = 0; i < data.length; i++){
+        if(i == 0){
+          // separate out the households from the people
+          data[0].rows.forEach((doc) => {
+            households[doc.doc._id] = doc.doc;
+          });  
+        } else {
+          // move people to a new array
+          nestedArraysOfPeopleByStatus.push(data[i].rows);
+        }
+      }      
+      // 2. flatten the nested arrays 
+      // https://stackoverflow.com/questions/45381787/concat-arrays-with-for-loop
+      function flatten(arr) {
+        return [].concat(...arr);
+      }
+      flattenedArrayOfPeople = flatten(nestedArraysOfPeopleByStatus);
+
+      // add household info to each person
+      for(let i = 0; i < flattenedArrayOfPeople.length; i++){
+        // make this iteration a person to make this easier to read
+        let person = flattenedArrayOfPeople[i].doc;
+        // use the households dictionary to add the household info to the person
+        // b/c households and people have a phone property, we have to rename the household phone property
+        households[person.household_id].household_phone = households[person.household_id].phone;
+        // remove it so that it doesn't overwrite the person's phone
+        delete households[person.household_id].phone;
+        // then merge the objects
+        person = Object.assign(person, households[person.household_id]);
+        
+        // remove unnecessary fields from the download
+        let keys = Object.keys(person);
+        for(let i = 0; i < keys.length; i++){
+          if(fields.indexOf(keys[i]) == -1){
+            delete person[keys[i]];
+          }
+        }
+        
+        // add the person to the people array
+        people.push(person);
+      }
+
+      filename = 'MSC-' + params.join('-') + '-' + datetime.split('T')[0];
+
+      // leading zeros get trimmed by Numbers/Excel when importing CSVs
+      // the zeros are there in the CSV, though
+      // here's how to fix it, from inside Numbers/Excel:
+      // https://discussions.apple.com/thread/5303970?answerId=5303970021#5303970021
+      const json2csvParser = new Json2csvParser({ fields });
+      const csv = json2csvParser.parse(people);
+
+      if(preview){
+        // console.log(people);
+        res.send(people);
+      } else {
+  
+        res.writeHead(200, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'X-Requested-With',
+          'Content-Disposition': 'attachment;filename=' + filename + '.csv',
+          'Content-Type': 'text/csv'
+        });
+  
+        res.write(csv);
+        res.end();  
+      }
+
+    } // drain
+  }
+);
+
+// TODO: deprecate
+// this is used by main.js, to get a household in the /members section
+// get household by ID
+app.get('/api/households/:id',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    // both admins and members can see these results
+    if (authentication.users.isInRole(req, 'admin,member')) {
+      db.get(req.params.id, function (err, doc) {
+        if (!err) {
+          // get the people of this householdsAndPeople
+          db.view(
+            'foo',
+            'join_people_to_household',
+            {
+              'include_docs': true,
+              'key': req.params.id
+            },
+            function (err, people) {
+              if (!err) {
+                var mapped = function (data) {
+                  return data.rows.map(function (row) {
+                    return row.doc; // this is the entire payload
+                  });
+                };
+                // add people to the household
+                doc.people = mapped(people);
+                res.send(doc);
+              }
+            }
+          );
+          //console.log(doc);
+          //res.send(doc);
+        } else {
+          return res.status(404).json({ "error": "Sorry, we don't have a household with that id." });
+        }
+      });
+    } else {
+      return res.status(401).json({ "error": "Sorry, you don't have permission to access households." });
+    }
+  });
+
+// TODO: deprecate
+// but capture somewhere how Cloudant Query works
+// for category searches, but note that it only returns 200 results max
 // get members based upon status
 app.get('/api/members/status/:statusId',
   authentication.users.isAuthenticated,
@@ -1004,310 +1132,8 @@ app.get('/api/members/status/:statusId',
   }
 );
 
-app.get('/api/member/csv/',  
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    // if the request params is just a string, turn it into an array
-    let params = (typeof req.query.status == "string") ? [req.query.status] : req.query.status;
-
-    // Cloudant Query and Cloudant Search will return a maximum of 200 results
-    // which won't do for our CSV report. We could "page" through results with bookmarking...
-    // but would prefer to avoid the complexity of bookmarking and paging to build this report 
-    // instead, issue concurrent requests for each status in the request params
-    // in order to bundle the response of these parallel requests, 
-    // we need to wait for all of them to return. enter, await
-    // await requests must be wrapped inside an async function
-    async function getData(){
-      // make a function that returns a promise
-      // expects start & end that define the ~
-      // range of the query
-      const fetchPeopleByStatus = function(key) {
-        return db.view('foo', 'csv', {
-          startkey: [ key ]
-          , endkey: [ key, {} ]
-          , include_docs: true
-          // , limit: 1
-        });
-      }
-      const fetchHouseholds = function(){
-        return db.view('foo','households', {
-          include_docs: true
-        });
-      }
-      const promises = [];
-      promises[0] = fetchHouseholds();
-      // loop through the parameters in the query
-      for(let i = 0; i < params.length; i++) {
-        // get a Promise
-        const p = fetchPeopleByStatus(params[i]);
-        // add it to our array
-        promises.push(p);
-      }
-      // wait until all promises are done
-      // https://www.taniarascia.com/promise-all-with-async-await/
-      const data = await Promise.all(promises)
-
-      // package the results
-      // TODO: how do we handle errors? ie, if the await 
-      // the array that is returned includes a nested array 
-      // for every status that was requested, and metadata
-      // 1. extract just the rows, which removes the metadata
-      let flattenedArrayOfPeople = [];
-      let nestedArraysOfPeopleByStatus = [];
-      let people = [];
-      let households = {};
-
-      var filename = '',
-        datetime = new Date().toISOString(),
-        fields = [
-          "status"
-          , "last"
-          , "first"
-          , "email"
-          , "phone"
-          , "street1"
-          , "street2"
-          , "household_phone"
-          , "zip"
-        ];
-
-      for(let i = 0; i < data.length; i++){
-        if(i == 0){
-          // separate out the households from the people
-          data[0].rows.forEach((doc) => {
-            households[doc.doc._id] = doc.doc;
-          });  
-        } else {
-          // move people to a new array
-          nestedArraysOfPeopleByStatus.push(data[i].rows);
-        }
-      }      
-      // 2. flatten the nested arrays 
-      // https://stackoverflow.com/questions/45381787/concat-arrays-with-for-loop
-      function flatten(arr) {
-        return [].concat(...arr);
-      }
-      flattenedArrayOfPeople = flatten(nestedArraysOfPeopleByStatus);
-
-      // add household info to each person
-      for(let i = 0; i < flattenedArrayOfPeople.length; i++){
-        // make this iteration a person to make this easier to read
-        let person = flattenedArrayOfPeople[i].doc;
-        // use the households dictionary to add the household info to the person
-        // b/c households and people have a phone property, we have to rename the household phone property
-        households[person.household_id].household_phone = households[person.household_id].phone;
-        // then remove it so that it doesn't overwrite the person's phone
-        delete households[person.household_id].phone;
-        // then merge the objects
-        person = Object.assign(person, households[person.household_id]);
-        
-        // remove unnecessary fields from the download
-        let keys = Object.keys(person);
-        for(let i = 0; i < keys.length; i++){
-          if(fields.indexOf(keys[i]) == -1){
-            delete person[keys[i]];
-          }
-        }
-        
-        // add the person to the people array
-        people.push(person);
-      }
-
-      // return array of docs
-      // console.log(people);
-
-      filename = 'MSC-' + params.join('-') + '-' + datetime.split('T')[0];
-
-      // leading zeros get trimmed by Numbers/Excel when importing CSVs
-      // the zeros are there in the CSV, though
-      // here's how to fix it, from inside Numbers/Excel:
-      // https://discussions.apple.com/thread/5303970?answerId=5303970021#5303970021
-      const json2csvParser = new Json2csvParser({ fields });
-      const csv = json2csvParser.parse(people);
-
-      res.writeHead(200, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'X-Requested-With',
-        'Content-Disposition': 'attachment;filename=' + filename + '.csv',
-        'Content-Type': 'text/csv'
-      });
-
-      res.write(csv);
-      res.end();
-    }
-    // find and return the data in CSV format
-    getData();
-  }
-);
-
-
-// TODO: DEPRECATE
-// get member data for use in a .csv file based upon  member status
-app.get('/api/member/csvs/:status',
-  //authentication.users.isAuthenticated,
-  function (req, res) {
-    if (true) { //authentication.users.isInRole(req, 'admin')) {
-
-      var households = {},
-        people = [],
-        filename = '',
-        datetime = new Date().toISOString(),
-        fields = [
-          "_id",
-          "household_id",
-          "first",
-          "last",
-          "status",
-          "type",
-          "email",
-          "phone",
-          "street1",
-          "street2",
-          "city",
-          "state",
-          "zip"
-        ],
-        blacklist = [
-          "_id",
-          "household_id",
-          "type"
-        ],
-        status = req.params.status,
-        selector_array = [
-          { "status": { "$ne": "deceased" } },
-          { "status": { "$ne": "non-member" } },
-          { "status": { "$ne": "guest" } }
-        ];
-
-      if (status && status != 'all') {
-        selector_array.push({ "status": { "$eq": status } });
-      }
-
-      db.find(
-        {
-          "selector": {
-            "$or": [
-              {
-                "$and": [
-                  {
-                    "type": {
-                      "$eq": "person"
-                    }
-                  },
-                  {
-                    "$and": selector_array
-                  }
-                ]
-              },
-              {
-                "type": {
-                  "$eq": "household"
-                }
-              }
-            ]
-          },
-          "limit": 200,
-          "fields": fields
-        }, function (err, data) {
-          if (err) {
-            throw err;
-          }
-
-          console.log(data);
-
-          // build an array of people, and a dictionary of households
-          for (var i = 0; i < data.docs.length; i++) {
-            if (data.docs[i].type == 'household') {
-              data.docs[i].household_phone = data.docs[i].phone;
-              households[data.docs[i]._id] = data.docs[i];
-            } else if (data.docs[i].type == 'person' 
-                && data.docs[i].household_id
-                && data.docs[i].first
-                && data.docs[i].last
-                ){
-              people.push(data.docs[i]);
-            }
-          }
-          
-          console.log(people.length);
-
-          // associate households from the dictionary to each person in the people array
-          for (var i = 0; i < people.length; i++) {
-            let household = households[people[i].household_id];
-            if (household) {
-              Object.assign(people[i], household);
-            }
-          }
-
-          // remove unnecessary fields to make the spreadsheet pretty
-          for (var i = 0; i < blacklist.length; i++) {
-            var index = fields.indexOf(blacklist[i]);
-            if (index !== -1) {
-              fields.splice(index, 1);
-            }
-          }
-
-          // filename = 'MSC-Membership-List-' + status + '-' + datetime;
-          filename = 'MSC-Membership-List-' + status + '-' + datetime;
-
-          // leading zeros get trimmed by Numbers/Excel when importing CSVs
-          // the zeros are there in the CSV, though
-          // here's how to fix it, from inside Numbers/Excel:
-          // https://discussions.apple.com/thread/5303970?answerId=5303970021#5303970021
-          const json2csvParser = new Json2csvParser({ fields });
-          const csv = json2csvParser.parse(people);
-
-          res.writeHead(200, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'X-Requested-With',
-            'Content-Disposition': 'attachment;filename=' + filename + '.csv',
-            'Content-Type': 'text/csv'
-          });
-
-          res.write(csv);
-          res.end();
-          
-          // res.set('Content-disposition', 'attachment; filename=' + filename + '.csv');
-          // res.set('Content-Type', 'text/csv');
-          // res.status(200).send(csv);
-
-        }
-      );
-    } else {
-      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
-    }
-  }
-);
-
 // #endregion
 
-// #region Person Endpoints
-
-// TODO: deprecate
-app.get('/api/person/:id',
-  authentication.users.isAuthenticated,
-  function (req, res) {
-    if (authentication.users.isInRole(req, 'admin')) {
-      // the factory passes the id of the document as a query parameter
-      var id = req.params.id;
-      db.get(id, function (err, doc) {
-        if (!err) {
-          res.send(doc);
-        } else {
-          return res.status(404).json(
-            {
-              "error": "Sorry, we don't have a record of this person."
-            }
-          );
-        }
-      });
-    } else {
-      return res.status(401).json({ "error": "Sorry, you don't have permission for this." });
-    }
-  }
-);
-
-// #endregion
 
 // #region Resources Endpoints
 
