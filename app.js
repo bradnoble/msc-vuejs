@@ -703,17 +703,24 @@ app.get('/api/members/search',
     
     let obj = req.query;
 
-    let querystring = req.query.q.trim();
-    // convert default Lucene query from OR to AND
-    // and add wildcards so that users don't have to get searches exactly right
-    // 1. split the querystring into an array
-    let queryarray = querystring.split(' ');
-    // 2. add the wildcard operator to every element in the array
-    queryarray = queryarray.map(function(e) {return e + '*'});
-    // turn the array into one long string, with AND between the wildcard strings
-    queryarray = queryarray.join(' AND ');
+    console.log(req.query);
 
-    obj.q = queryarray;
+    if(req.query.q){
+      let querystring = req.query.q.trim();
+      // convert default Lucene query from OR to AND
+      // and add wildcards so that users don't have to get searches exactly right
+      // 1. split the querystring into an array
+      let queryarray = querystring.split(' ');
+      // 2. add the wildcard operator to every element in the array
+      queryarray = queryarray.map(function(e) {return e + '*'});
+      // turn the array into one long string, with AND between the wildcard strings
+      queryarray = queryarray.join(' AND ');
+  
+      obj.q = queryarray;  
+    } else {
+      obj.q = '*:*';
+    }
+
 
     let params = {
       include_docs: true,
@@ -729,7 +736,7 @@ app.get('/api/members/search',
     Object.assign(obj,params);
 
     if (req.query) {
-      db.search('foo', 'memberSearch',
+      db.search('foo', 'member',
         obj
         , function (err, resp) {
           if (!err) {

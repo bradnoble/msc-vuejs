@@ -438,7 +438,7 @@ const memberSearch = {
       let _this = this;
       let query = _this.$route.query;
       if (query) {
-        _this.$http.get('/api/admin/search',
+        _this.$http.get('/api/members/search',
           {
             params: query
           }
