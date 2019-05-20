@@ -344,12 +344,14 @@ const ddoc = {
       analyzer: 'standard',
       index: function (doc) {
         if (typeof doc.type === "string") {
-          index('status', doc.status, { "store": true, "facet": true });
-          index('type', doc.type, { "store": true, "facet": true });
-          index('last', doc.last, { "store": true, "facet": true });
-          index('first', doc.first, { "store": true });
-          index('default', doc.last, { "store": true });
-          index('default', doc.first, { "store": true });
+          if(doc.status != "deceased"){
+            index('status', doc.status, { "store": true, "facet": true });
+            index('type', doc.type, { "store": true, "facet": true });
+            index('last', doc.last, { "store": true, "facet": true });
+            index('first', doc.first, { "store": true });
+            index('default', doc.last, { "store": true });
+            index('default', doc.first, { "store": true });
+          }
         }
       }
     }

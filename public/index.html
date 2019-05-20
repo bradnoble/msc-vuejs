@@ -847,9 +847,13 @@
                   <div class="collection-header">
                     {{ key | capitalize }}
                   </div>
-                  <a href="#" @click.prevent="addFacet(key, key2)" v-for="(value2, key2) in value" class="collection-item">{{ key2 }}
+                  <a href="#" @click.prevent="addFacet(key, key2)" v-for="(value2, key2) in value" class="collection-item" v-if="Object.keys(value).length > 1">
+                    {{ key2 | capitalize }}
                     <span class="count">({{ value2 }})</span>
                   </a>
+                  <div v-else class="collection-item" :class="{ 'active': Object.keys(value).length == 1 }">
+                    {{ Object.keys(value)[0] | capitalize }}
+                  </div>
                 </div>
         
             </div><!--col-->

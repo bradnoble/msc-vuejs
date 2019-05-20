@@ -114,7 +114,7 @@ function initializeVueRouter(store) {
           name: 'member-search',
           component: memberSearch,
           meta: {
-            breadcrumb: "Search by name"
+            breadcrumb: "Search"
           },
           props: true
         },
