@@ -717,16 +717,17 @@
     </div>
     <div class="row" v-if="items.length > 0">
       <div class="col s12 m12">
-        <h6 class="hide">
-          Report preview ({{ items.length }} records)
+        <h6>
+          Report preview
         </h6>
 
         <p>
           {{ items.length }} records ready for download.
         </p>
 
-        <div class="preview-container hide">
-          <table class="responsive-table striped">
+        <div class="preview-container">
+          <pre>{{ items }}</pre>
+          <table class="responsive-table striped hide">
             <thead>
               <tr v-for="(person, index) in items.slice(0,1)">
                 <th v-for="(value, key) in person">

@@ -830,7 +830,7 @@ app.get('/api/admin/csv/',
 
       if(preview){
         // console.log(people);
-        res.send(people);
+        res.send(csv);
       } else {
   
         res.writeHead(200, {
