@@ -693,8 +693,7 @@ app.post('/api/admin/save/person',
     }
   });
 
-// TODO: deprecate
-// this endpoint moved to the admin section on 5/22/19
+// get a CSV report of the membership
 app.get('/api/admin/csv/',  
   // authentication.users.isAuthenticated,
   function (req, res) {
@@ -771,8 +770,11 @@ app.get('/api/admin/csv/',
           , "phone"
           , "street1"
           , "street2"
-          , "household_phone"
+          , "city"
+          , "state"
           , "zip"
+          , "country"
+          , "household_phone"
         ];
 
       for(let i = 0; i < data.length; i++){

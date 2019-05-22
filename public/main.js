@@ -1328,9 +1328,6 @@ const adminReports = {
           $('.status-param').removeClass('disabled');
 
           _this.$emit('loading', false);
-/*
-            _this.$emit('error');
-*/
           }, function(error){
             _this.$emit('error', error);
             console.log('error')

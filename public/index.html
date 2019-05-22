@@ -288,9 +288,12 @@
     
         <p>
           <router-link :to="{name: 'add-household'}" class="btn">
-            Add household
+            <i class="material-icons">add_location</i> Add household
           </router-link>      
-        </p>
+          <router-link :to="{name: 'admin-reports'}" class="btn">
+            <i class="material-icons">file_download</i> Build a report (CSV)
+          </router-link>      
+          </p>
 
         <div class="section col s12 hide">
           <div class="divider"></div>
@@ -714,11 +717,15 @@
     </div>
     <div class="row" v-if="items.length > 0">
       <div class="col s12 m12">
-        <h6>
+        <h6 class="hide">
           Report preview ({{ items.length }} records)
         </h6>
 
-        <div class="preview-container">
+        <p>
+          {{ items.length }} records ready for download.
+        </p>
+
+        <div class="preview-container hide">
           <table class="responsive-table striped">
             <thead>
               <tr v-for="(person, index) in items.slice(0,1)">
@@ -860,7 +867,7 @@
               Build a list of email addresses
             </router-link>
           </li>
-          <li class="collection-item">
+          <li class="collection-item hide">
             <router-link :to="{name: 'member-reports'}">
               <i class="material-icons tiny">file_download</i> 
               Generate a report to download (CSV) 
