@@ -693,6 +693,159 @@ app.post('/api/admin/save/person',
     }
   });
 
+// TODO: deprecate
+// this endpoint moved to the admin section on 5/22/19
+app.get('/api/admin/csv/',  
+  // authentication.users.isAuthenticated,
+  function (req, res) {
+    // if the request params is just a string, turn it into an array
+    var params = (typeof req.query.status == "string") ? [req.query.status] : req.query.status;
+    var preview = (req.query.preview == "true") ? true : false;
+    
+    var promises = {};
+
+    const fetchPeopleByStatus = async (data) => {
+      var d = [];
+      if(data.key == 'households') {
+        d = await db.view('foo','households', {
+          include_docs: true
+        });  
+      } else {
+        d = await db.view('foo', 'csv', {
+          startkey: [ data.key ]
+          , endkey: [ data.key, {} ]
+          , include_docs: true
+          // , limit: 1
+        });
+      }
+      // console.log(d);
+      promises[data.key] = d;
+    }
+
+    // next get all the people who are requested
+    const q = qrate(fetchPeopleByStatus, 3, 4);
+
+    // get the households
+    q.push({key:'households'});
+
+    // get the people
+    // loop through the parameters in the query
+    for(let i = 0; i < params.length; i++) {
+      q.push({key: params[i]});
+    }
+
+    // on q.drain (part of qrate)
+    // https://github.com/glynnbird/cloudant-timeseries/blob/c8d3fcf18ec96a5fb4a78b7e26919ef559cd727c/lib/utils.js#L35
+    q.drain = function() {
+      q.kill();
+      // console.log(promises);
+      var tempArray = Object.entries(promises);
+      var data = [];
+
+      for(let i = 0; i < tempArray.length; i++){
+        if(tempArray[i][0] != 'households'){
+          // console.log(tempArray[i][0])
+          data.push(tempArray[i][1]);
+        } 
+      }      
+      data.unshift(promises['households']);
+      // console.log(data);
+
+      // package the results
+      // TODO: how do we handle errors? ie, if the await 
+      // the array that is returned includes a nested array 
+      // for every status that was requested, and metadata
+      // 1. extract just the rows, which removes the metadata
+      let flattenedArrayOfPeople = [];
+      let nestedArraysOfPeopleByStatus = [];
+      let people = [];
+      let households = {};
+
+      var filename = '',
+        datetime = new Date().toISOString(),
+        fields = [
+          "status"
+          , "last"
+          , "first"
+          , "email"
+          , "phone"
+          , "street1"
+          , "street2"
+          , "household_phone"
+          , "zip"
+        ];
+
+      for(let i = 0; i < data.length; i++){
+        if(i == 0){
+          // separate out the households from the people
+          data[0].rows.forEach((doc) => {
+            households[doc.doc._id] = doc.doc;
+          });  
+        } else {
+          // move people to a new array
+          nestedArraysOfPeopleByStatus.push(data[i].rows);
+        }
+      }      
+      // 2. flatten the nested arrays 
+      // https://stackoverflow.com/questions/45381787/concat-arrays-with-for-loop
+      function flatten(arr) {
+        return [].concat(...arr);
+      }
+      flattenedArrayOfPeople = flatten(nestedArraysOfPeopleByStatus);
+
+      // add household info to each person
+      for(let i = 0; i < flattenedArrayOfPeople.length; i++){
+        // make this iteration a person to make this easier to read
+        let person = flattenedArrayOfPeople[i].doc;
+        // use the households dictionary to add the household info to the person
+        // b/c households and people have a phone property, we have to rename the household phone property
+        households[person.household_id].household_phone = households[person.household_id].phone;
+        // remove it so that it doesn't overwrite the person's phone
+        delete households[person.household_id].phone;
+        // then merge the objects
+        person = Object.assign(person, households[person.household_id]);
+        
+        // remove unnecessary fields from the download
+        let keys = Object.keys(person);
+        for(let i = 0; i < keys.length; i++){
+          if(fields.indexOf(keys[i]) == -1){
+            delete person[keys[i]];
+          }
+        }
+        
+        // add the person to the people array
+        people.push(person);
+      }
+
+      filename = 'MSC-' + params.join('-') + '-' + datetime.split('T')[0];
+
+      // leading zeros get trimmed by Numbers/Excel when importing CSVs
+      // the zeros are there in the CSV, though
+      // here's how to fix it, from inside Numbers/Excel:
+      // https://discussions.apple.com/thread/5303970?answerId=5303970021#5303970021
+      const json2csvParser = new Json2csvParser({ fields });
+      const csv = json2csvParser.parse(people);
+
+      if(preview){
+        // console.log(people);
+        res.send(people);
+      } else {
+  
+        res.writeHead(200, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'X-Requested-With',
+          'Content-Disposition': 'attachment;filename=' + filename + '.csv',
+          'Content-Type': 'text/csv'
+        });
+  
+        res.write(csv);
+        res.end();  
+      }
+
+    } // drain
+  }
+);
+
 // #endregion
 
 
@@ -832,27 +985,6 @@ app.get('/api/members/statuses',
   }
 );
 
-// get counts per status, for the membership landing page
-app.get('/api/members/statusesWithEmails',
-  function (req, res) {
-    db.view('foo', 'by_status_with_email',
-      {
-        reduce: true,
-        group_level: 1
-      },
-      function (err, docs) {
-        if (err) {
-          console.log(err);
-        }
-        else {
-          //console.log(docs);
-          res.send(docs);
-        }
-      }
-    );
-  }
-);
-
 // get member emails
 app.get('/api/member/emails',
   authentication.users.isAuthenticated,
@@ -889,6 +1021,29 @@ app.get('/api/member/emails',
   }
 );
 
+// generates facets on the email list builder
+app.get('/api/members/statusesWithEmails',
+  function (req, res) {
+    db.view('foo', 'by_status_with_email',
+      {
+        reduce: true,
+        group_level: 1
+      },
+      function (err, docs) {
+        if (err) {
+          console.log(err);
+        }
+        else {
+          //console.log(docs);
+          res.send(docs);
+        }
+      }
+    );
+  }
+);
+
+// TODO: deprecate
+// this endpoint moved to the admin section on 5/22/19
 app.get('/api/member/csv/',  
   // authentication.users.isAuthenticated,
   function (req, res) {
@@ -1041,6 +1196,7 @@ app.get('/api/member/csv/',
 );
 
 // TODO: deprecate
+// does not conform to the current endpoint semantics
 // this is used by main.js, to get a household in the /members section
 // get household by ID
 app.get('/api/households/:id',

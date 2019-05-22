@@ -1221,10 +1221,136 @@ const adminViewHousehold = {
   }
 }
 
+const adminReports = {
+  template: '#admin-reports',
+  data: function(){
+    return {
+      statuses: getStatuses('deceased'),
+      items: [],
+      queryStatuses: []
+    }
+  },
+  props: [
+  ],
+  mounted: function(){
+    // hide the member search form
+    this.$emit('searchForm', false);
+    this.$emit('loading', false);
+    // get preview data
+    // todo: make sure to only call this when there's a querystring
+    this.previewDataForCSV();
+  },
+  watch: {
+    '$route'(to, from) {
+      this.previewDataForCSV();
+    }
+  },
+  methods: {
+    checkQuerystring: function(){
+      // console.log(this.$route.query);
+      if(this.$route.query && this.$route.query.status){
+        if(typeof this.$route.query.status == "string"){
+          this.queryStatuses = [this.$route.query.status];
+        } else {
+          this.queryStatuses = this.$route.query.status;
+        }
+      }
+    },
+    addStatusParam: function(clickedStatus){
+      // disable facet links while the server is working
+      $('.status-param').addClass('disabled');
+      
+      // convert querystring values to an array, if there are any
+      let query = (this.$route.query.status) ? this.$route.query.status : [];
+      if(typeof query == "string"){
+        query = [query]
+      }
+
+      // iterate through the array and see if clickedStatus is already in the array
+      let newQueryArray = [];
+      let counter = 0;
+      for(let i = 0; i < query.length; i++){
+        if(query[i] != clickedStatus){
+          newQueryArray.push(query[i]);
+        } else {
+          counter++;
+        }
+      }
+      // if it's not in the array, add it
+      if(counter == 0){
+        newQueryArray.push(clickedStatus);
+      }
+      // if the query array is empty, destroy it
+      // otherwise, it breaks the conditional rendering of the 'clear' button
+      if(newQueryArray.length == 0){
+        newQueryArray = ''
+      }
+      // push the new array to the location bar
+      this.pushToRouter(newQueryArray);
+    },
+    pushToRouter: function(array){
+      let _this = this;
+      _this.$router.push({ 
+        name: 'admin-reports', 
+        params: {}, 
+        query: {
+          status: array
+        }
+      });
+    },
+    previewDataForCSV: function(){
+      let _this = this;
+      let query = _this.$route.query;
+      let obj = {};
+      let params = {};
+      obj.preview = true;
+
+      // make sure querystring is an array
+      _this.checkQuerystring();
+
+      // merge obj with query and send that to the query below
+      params = Object.assign(obj, query);
+
+      // console.log(query);
+      // console.log(params);
+      // console.log(this.$route.fullPath.split('?')[1])
+
+      if (query && query.status && query.status.length > 0) {
+        _this.$emit('loading', true);
+        _this.$http.get('/api/admin/csv',
+          {
+            params: params
+          }
+        ).then(function(res){
+          // console.log(res.data);
+          _this.items = res.data;
+          // activate the facets now that the server has responded
+          $('.status-param').removeClass('disabled');
+
+          _this.$emit('loading', false);
+/*
+            _this.$emit('error');
+*/
+          }, function(error){
+            _this.$emit('error', error);
+            console.log('error')
+          }
+        )
+        .catch(function(error){
+          console.log('catch: ', error);
+        })
+        .finally(function(){
+        });
+      }
+      else {
+        _this.items = [];
+        $('.status-param').removeClass('disabled');
+      }      
+    }
+  }
+}
+
 // #endregion
-
-
-
 
 
 

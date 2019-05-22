@@ -687,6 +687,67 @@
   </div>
 </script> 
 
+<!-- report builder, child of admin -->
+<script type="text/x-template" id="admin-reports">
+  <div>
+    <div class="row">
+      <div class="col s12 m12">
+        <p>
+          Select statuses to prepare your report for download.
+        </p>
+        <a v-for="status in statuses" href="#" v-on:click.prevent="addStatusParam(status)" class="chip status-param nowrap blue-text" :class="{'blue darken-2, white-text': $route.query && $route.query.status && $route.query.status.indexOf(status) > -1}">
+          <i class="material-icons tiny" v-if="$route.query && $route.query.status && $route.query.status.indexOf(status) > -1">
+            check
+          </i>
+          <i class="material-icons tiny" v-else>
+            add_circle
+          </i>
+          {{ status | capitalize }}
+        </a>
+        <router-link :to="{name: 'admin-reports'}" class="chip white red-text" v-if="$route.query && $route.query.status">
+          <i class="material-icons tiny">
+            clear
+          </i>
+          Clear
+        </router-link>
+      </div>
+    </div>
+    <div class="row" v-if="items.length > 0">
+      <div class="col s12 m12">
+        <h6>
+          Report preview ({{ items.length }} records)
+        </h6>
+
+        <div class="preview-container">
+          <table class="responsive-table striped">
+            <thead>
+              <tr v-for="(person, index) in items.slice(0,1)">
+                <th v-for="(value, key) in person">
+                    {{ key }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(person, index) in items">
+                <td v-for="(value, key) in person">
+                    {{ value }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <pre class="hide">{{ items }}</pre>
+        </div>
+        <p>
+          <a :href="'/api/admin/csv?' + $route.fullPath.split('?')[1] " class="btn btn-small" v-if="items.length > 0">
+            <i class="material-icons tiny">file_download</i> Download Report (CSV)
+          </a>
+        </p>    
+      </div>
+    </div><!--row-->
+  </div>
+</script>
+
+
 
 
 <!-- MEMBERS VIEWS -->
