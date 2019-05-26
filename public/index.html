@@ -190,6 +190,25 @@
     </div>
   </script>
 
+  <!-- used in /members (soon) and /admin (now) -->
+  <script type="text/x-template" id="search-form-template">
+    <div>
+      <form action="#" @submit.prevent="search">
+        <div class="row">
+          <div class="input-field col m11 s9">
+            <input id="search" type="text" :value="$route.query.q" />
+            <label for="search">Search by name</label>
+          </div>
+          <div class="input-field col m1 s3">
+            <button class="btn waves-effect waves-light" type="submit" name="action">
+              <i class="material-icons" title="search">search</i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </script>
+  
 
 
 <!-- ADMIN VIEWS -->
@@ -213,37 +232,35 @@
           </div><!--col-->
         </div><!--row-->
   
-
-        <form action="#" @submit="search" v-if="searchForm">
-          <div class="row">
-            <div class="input-field col m11 s9">
-              <input id="search" v-model="searchstring" type="text" />
-              <label for="search">Search by name</label>
-            </div>
-            <div class="input-field col m1 s3">
-              <button class="btn waves-effect waves-light" type="submit" name="action">
-                <i class="material-icons" title="search">search</i>
-              </button>
-            </div>
-          </div>
-        </form>
-
     <error :error="error"></error>
     <loading :status="loading"></loading>
 
-    <router-view 
-      @setSearchString="setSearchString" 
+    <router-view       
       @clicked="clickedFromChild"
       @loading="loadingCheck"
       @error="errorMsg"
-      @searchForm="toggleSearchForm"
       >
     </router-view>
   </div>
 </script>
 
 <script type="text/x-template" id="admin-intro">
-  <div class="row">
+  <div>
+    <div class="row">
+      <div class="col s12 m12">
+        <h2>
+          Update member info
+        </h2>
+        <p>
+          To update someone's contact info, or to add and remove people from a household, start here.
+        </p>
+      </div><!--col-->
+    </div><!--row-->
+
+    <search-form-template>
+    </search-form-template>
+
+    <div class="row">
 
       <div class="section col s12" v-if="people.length > 0 || households.length > 0">
         <h2 class="red-text">
@@ -362,13 +379,16 @@
 
         </div><!--section-->
 
-
+      </div><!--row-->
 
   </div>
 </script>
 
 <script type="text/x-template" id="admin-search">
   <div>
+      <search-form-template>
+        </search-form-template>
+    
     <p v-if="items && items.length == 0">
       No results for {{ $route.query.q }}.
       <router-link :to="{name: 'add-household'}">

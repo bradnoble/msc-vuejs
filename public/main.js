@@ -817,11 +817,9 @@ const admin = {
   template: '#admin',
   data: function(){
     return {
-      searchstring: '',
       searchFacets: '',
       error: '',
       loading: true,
-      searchForm: true
     }
   },
   computed: {
@@ -832,12 +830,6 @@ const admin = {
     M.updateTextFields();
   },
   methods: {
-    search: function (e) {
-      e.preventDefault();
-      // if this is a new keyword search, clear the facets
-      this.searchFacets = '';
-      this.pushToRouter();
-    },
     clickedFromChild: function(value){
       if(this.searchFacets == value){
         this.searchFacets = '';
@@ -846,21 +838,19 @@ const admin = {
       }
       this.pushToRouter();
     },
-    setSearchString: function(){
-      this.searchstring = this.$route.query.q;
-    },
     pushToRouter: function(){
       let _this = this;
       let obj = {};
+      let searchString = this.$route.query.q;
 
-      if(_this.searchstring.length > 0){
-        obj.q = _this.searchstring.trim()
+      if(searchString.length > 0){
+        obj.q = searchString.trim()
       }
       if(_this.searchFacets){
         obj.drilldown = _this.searchFacets
       }
 
-      if (_this.searchstring.length > 0) {
+      if (searchString.length > 0) {
         _this.$router.push({ 
           name: 'admin-search', 
           params: {}, 
@@ -873,9 +863,6 @@ const admin = {
     },
     loadingCheck: function(val){
       this.loading = val;
-    },
-    toggleSearchForm: function(val){
-      this.searchForm = val
     }
   }
 }
@@ -891,12 +878,8 @@ const adminIntro = {
   props: [
   ],
   mounted: function(){
-    // show the search form
-    this.$emit('searchForm', true);
     // see if there are any data errors
     this.getReport();
-    // clear the searchstring
-    this.$emit('setSearchString');
     // show the user that we're loading dynamic data
     this.$emit('loading', true);
   },
@@ -936,9 +919,7 @@ const adminSearch = {
   props: [
   ],
   mounted: function(){
-    this.$emit('searchForm', true);
     let _this = this;
-    _this.$emit('setSearchString');
     _this.$emit('loading', true);
     _this.searchAPI();
   },
@@ -1006,7 +987,6 @@ const adminEditHousehold = {
   props: [
   ],
   mounted: function(){
-    this.$emit('searchForm', false);
     if(this.$route.name == "add-household"){
       this.item = getNewHousehold();
     } else {
@@ -1101,7 +1081,6 @@ const adminEditPerson = {
   props: [
   ],
   mounted: function(){
-    this.$emit('searchForm', false);
     if(this.$route.name == "add-person"){
       this.item = getPersonObject();
       this.item.household_id = this.$route.params.id;
@@ -1191,7 +1170,6 @@ const adminViewHousehold = {
   },
   props: [],
   mounted: function(){
-    this.$emit('searchForm', true);
     this.getHouseholdWithPeople();
     this.$emit('loading', true);
   },
@@ -1233,8 +1211,6 @@ const adminReports = {
   props: [
   ],
   mounted: function(){
-    // hide the member search form
-    this.$emit('searchForm', false);
     this.$emit('loading', false);
     // get preview data
     // todo: make sure to only call this when there's a querystring
@@ -1537,6 +1513,34 @@ function formatBytes(bytes, decimals) {
 // #endregion
 
 // #region Shared components
+
+Vue.component('search-form-template', {
+  template: '#search-form-template',
+  data: function(){
+    return {
+    }
+  },
+  props: [
+  ],
+  computed: {
+  },
+  methods: {
+    search: function(){
+      this.pushToRouter();
+    },
+    pushToRouter: function(){
+      let val = $('#search').val();
+
+      this.$router.push({ 
+        name: 'admin-search', 
+        params: {}, 
+        query: {
+          q: val
+        }
+      });
+    }
+  }
+});
 
 Vue.component('dropdown', {
   template: '#dropdown',
