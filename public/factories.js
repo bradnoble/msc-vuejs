@@ -16,6 +16,17 @@ const getDocs = function (data) {
   });
 };
 
+// build a breadcrumb for the page title tag <title>
+const buildBreadcrumbForTitleTag = (matched) => {
+  let breadcrumbs = ['MSC'];
+  for(let i = 0; i < matched.length; i++){
+    breadcrumbs.push(matched[i].meta.breadcrumb);
+  }
+  let title = breadcrumbs.join(' / ');
+  console.log(title);    
+  document.title = title;
+}
+
 // each person can be one of these
 var getStatuses = function(blacklist){
   var statuses = ['active','inactive','life','junior','child','non-member','applicant','honorary','deceased'];  

@@ -108,19 +108,19 @@ function initializeVueRouter(store) {
     },
     {
       path: '/members',
-      name: 'member-intro',
+      name: 'members',
       component: members,
       props: true,
       children: [
         {
           path: '',
-          name: 'member-intro',
+          name: 'members',
           component: memberIntro,
           props: true
         },
         {
           path: 'search',
-          name: 'member-search',
+          name: 'members-search',
           component: memberSearch,
           meta: {
             breadcrumb: "Search"
@@ -129,7 +129,7 @@ function initializeVueRouter(store) {
         },
         {
           path: 'emails',
-          name: 'member-emails',
+          name: 'members-emails',
           component: memberEmails,
           meta: {
             breadcrumb: "Emails"
@@ -138,7 +138,7 @@ function initializeVueRouter(store) {
         },
         {
           path: 'reports',
-          name: 'member-reports',
+          name: 'members-reports',
           component: memberReports,
           meta: {
             breadcrumb: "Reports"
@@ -147,7 +147,7 @@ function initializeVueRouter(store) {
         },
         {
           path: 'household/:id',
-          name: 'member-household',
+          name: 'members-household',
           components: {
             default: memberHousehold
           },
@@ -224,7 +224,7 @@ function initializeVueRouter(store) {
     } else {
       next();
     }
-  })
+  })  
 
   return router;
 

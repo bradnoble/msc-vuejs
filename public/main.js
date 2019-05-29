@@ -249,17 +249,21 @@ const members = {
   template: '#members',
   data: function () {
     return {
-      searchstring: '',
       searchFacets: '',
       error: '',
-      loading: true,
-      searchForm: true
+      loading: true
     }
   },
   computed: {
     isAdmin: function () {
       return (this.$store.getters.roles.includes('admin'));
     }
+  },
+  updated: function(){
+    // send the route path values to the factory
+    // note: because this is a parent, and is called from updated()
+    // this will update the title tags for all children when they load
+    buildBreadcrumbForTitleTag(this.$route.matched);
   },
   methods: {
     search: function (e) {
@@ -292,7 +296,7 @@ const members = {
 
       if (_this.searchstring.length > 0) {
         _this.$router.push({ 
-          name: 'member-search', 
+          name: 'members-search', 
           params: {}, 
           query: obj
         });
@@ -312,7 +316,7 @@ const members = {
 
 // Member intro controller (first child of list)
 const memberIntro = {
-  template: '#member-intro',
+  template: '#members-intro',
   data: function () {
     return {
       updates: [],
@@ -389,7 +393,7 @@ const memberIntro = {
 
 // Member search controller (second child of list)
 const memberSearch = {
-  template: '#member-search',
+  template: '#members-search',
   props: [
     'isAdmin'
   ],
@@ -461,7 +465,7 @@ const memberSearch = {
 
 // Member emails controller (third child of list)
 const memberEmails = {
-  template: '#member-emails',
+  template: '#members-emails',
   props: [
     'isAdmin'
   ],
@@ -475,8 +479,6 @@ const memberEmails = {
     }
   },
   mounted: function () {
-    // hide the member search form
-    this.$emit('searchForm', false);
     // if the view loads with a querystring, get results
     if(this.$route.query.status){
       this.getEmails();
@@ -486,7 +488,6 @@ const memberEmails = {
   },
   updated: function () {
     M.textareaAutoResize($('#textarea-emails'));
-    document.title = "Emails";
   },
   watch: {
     '$route.query.status'(to, from) {
@@ -506,7 +507,7 @@ const memberEmails = {
 
       // no param means no search
       if (!status) {
-        this.$router.push({ name: 'member-emails' });
+        this.$router.push({ name: 'members-emails' });
         this.query_array = [];
       } else {
         // if there's no querystring, start the array
@@ -616,7 +617,7 @@ const memberEmails = {
 }
 
 const memberReports = {
-  template: '#member-reports',
+  template: '#members-reports',
   data: function(){
     return {
       statuses: getStatuses('deceased'),
@@ -686,7 +687,7 @@ const memberReports = {
     pushToRouter: function(array){
       let _this = this;
       _this.$router.push({ 
-        name: 'member-reports', 
+        name: 'members-reports', 
         params: {}, 
         query: {
           status: array
@@ -746,7 +747,7 @@ const memberReports = {
 }
 
 const memberHousehold = {
-  template: '#member-household',
+  template: '#members-household',
   data: function () {
     return {
       item: {},
@@ -763,7 +764,7 @@ const memberHousehold = {
     next(vm => {
       if (from.fullPath == '/') {
         vm.back = {
-          name: 'member-intro'
+          name: 'members-intro'
         };
       } else {
         vm.back = {
@@ -822,11 +823,12 @@ const admin = {
       loading: true,
     }
   },
-  computed: {
-  },
-  mounted: function(){
-  },
   updated: function(){
+    // send the route path values to the factory
+    // note: because this is a parent, and is called from updated()
+    // this will update the title tags for all children when they load
+    buildBreadcrumbForTitleTag(this.$route.matched);
+    // cascade field updates to children
     M.updateTextFields();
   },
   methods: {
@@ -1080,6 +1082,8 @@ const adminEditPerson = {
   },
   props: [
   ],
+  computed: {
+  },
   mounted: function(){
     if(this.$route.name == "add-person"){
       this.item = getPersonObject();
@@ -1117,12 +1121,14 @@ const adminEditPerson = {
     },
     checkform: function () {
       this.errors = [];
-      if (this.item.last.length > 0 && this.item.first.length > 0) {
+      if (this.item.last || this.item.first ) {
         return true;
-      }
-      if (this.item.last == '' || this.item.first == '') {
+      } else {
         this.errors.push('Please provide a first and last name.')
       }
+
+//        if (this.item.last.length > 0 && this.item.first.length > 0) {
+//      }
     },
     save: function(){
       let _this = this;
@@ -1518,11 +1524,17 @@ Vue.component('search-form-template', {
   template: '#search-form-template',
   data: function(){
     return {
+      section: ''
     }
   },
   props: [
   ],
   computed: {
+  },
+  mounted: function(){
+    // what section am I in? 
+    // need to know so I can direct the results to the right page
+    this.section = this.$route.matched[0].name;
   },
   methods: {
     search: function(){
@@ -1532,7 +1544,7 @@ Vue.component('search-form-template', {
       let val = $('#search').val();
 
       this.$router.push({ 
-        name: 'admin-search', 
+        name: this.section + '-search', 
         params: {}, 
         query: {
           q: val
