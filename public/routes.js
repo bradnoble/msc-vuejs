@@ -167,6 +167,14 @@ function initializeVueRouter(store) {
       path: '/resources/:id?',
       component: resources,
       meta: { requiresAuth: true }
+    },
+    {
+      name: '404',
+      path: '/404',
+      component: errorPage,
+      meta: {
+        breadcrumb: "404"
+      }
     }
   ]
 
@@ -177,7 +185,11 @@ function initializeVueRouter(store) {
   const router = new VueRouter({
     routes: routes,
     linkActiveClass: 'active',
-    linkExactActiveClass: 'active'
+    linkExactActiveClass: 'active',
+    // https://stackoverflow.com/questions/53687424/vue-router-go-to-top-on-new-page
+    scrollBehavior (to, from, savedPosition) {
+      return { x: 0, y: 0 };
+    }
   });
 
   /*

@@ -240,6 +240,14 @@ Vue.component('app-footer', {
   template: '#footer-template'
 });
 
+// for 404s
+const errorPage = {
+  template: '#error-page',
+  data: function(){
+    return {}
+  }
+}
+
 // #endregion
 
 // #region Members
@@ -355,7 +363,7 @@ const memberIntro = {
       _this.$http.get('/api/members/updated')
         .then(
           function (res) {
-            _this.updates = res.body.rows;
+            _this.updates = getDocs(res.body);
           }
         )
     },
@@ -861,7 +869,21 @@ const admin = {
       }
     },
     errorMsg: function(val){
-      this.error = val;
+      // if there is no val or if val=false, no error will appear
+      // console.log(typeof val)
+      if(val){
+        if(val.type == "warning"){
+          this.error = val
+        } else {
+          this.error = val
+        }
+      } else {
+        this.error = val
+      }
+      // if an error already exists when this is called, add another error to it
+      // if the error is a blocker, it should be red
+      // if the error is just a warning, it should be orange
+      // this.error = val;
     },
     loadingCheck: function(val){
       this.loading = val;
@@ -874,7 +896,8 @@ const adminIntro = {
   data: function(){
     return {
       people: [],
-      households: []
+      households: [],
+      updates: []
     }
   },
   props: [
@@ -882,8 +905,12 @@ const adminIntro = {
   mounted: function(){
     // see if there are any data errors
     this.getReport();
+    // get recent updates
+    this.getUpdates();
     // show the user that we're loading dynamic data
     this.$emit('loading', true);
+    // kill off errors from other views
+    this.$emit('error', false)
   },
   methods: {
     getReport: function(){
@@ -906,6 +933,25 @@ const adminIntro = {
           _this.$emit('error', error);
         });
   
+    },
+    getUpdates: function(){
+      this.$http.get('/api/admin/updated',
+        ).then(function(res){
+          console.log(res.body.rows);
+/*
+          let people = {};
+          let households = {};
+          let rows = res.body.rows;
+          for(let i = 0; i < rows.length; i++){
+            if(rows[i].doc.type == "person"){ 
+              people[rows[i].doc._id] = rows[i].doc;
+            } else {
+              households[rows[i].doc._id] = rows[i].doc;
+            }
+          }
+*/
+          this.updates = getDocs(res.body);
+        });
     }
   }
 }
@@ -983,12 +1029,15 @@ const adminEditHousehold = {
     return {
       id: '',
       item: {},
+      people: [],
+      disable: true, // form save button is disabled until required fields have values
       errors: [] // these are for required field errors, not server errors
     }
   },
   props: [
   ],
   mounted: function(){
+    this.$emit('error',false);
     if(this.$route.name == "add-household"){
       this.item = getNewHousehold();
     } else {
@@ -998,6 +1047,19 @@ const adminEditHousehold = {
   },
   updated: function(){
     M.updateTextFields()
+    // disable the save button until required fields have values
+    let requiredFields = $('.required');
+    let counter = 0;
+    for(var i = 0; i < requiredFields.length; i++){
+      if (!requiredFields[i].value){
+        counter++
+      }
+    }
+    // if the counter is 0 after looping through the values of required fields, 
+    // the save button will stay disabled
+    // if the counter is > 0, the save button will be enabled
+    // note, this.disable is used when the form is submitted, too, via the checkform() method
+    this.disable = Boolean(counter);
   },
   watch: {
     '$route'(to, from) {
@@ -1009,18 +1071,36 @@ const adminEditHousehold = {
       let _this = this;
       _this.id = this.$route.params.id;
 
-      _this.$http.get('/api/admin/household/' + _this.id,).then(
-        function(res){
-          // console.log(res);
-          _this.item = res.body;
-          _this.$emit('error');
-          _this.$emit('loading', false);
-        }, function(error){
-          // console.log(error);
-          _this.$emit('error', error);
-          _this.item = {};
-        }
-      );
+      _this.$http.get('/api/admin/household/' + _this.id)
+        .then(
+          function(res){
+            // console.log(res);
+            _this.item = res.body;
+            _this.$emit('error');
+            _this.$emit('loading', false);
+          }, function(error){
+            // console.log(error);
+            _this.$emit('error', error);
+            _this.item = {};
+          }
+        ).then(
+          function(){
+            console.log('hi');
+
+            _this.$http.get('/api/admin/householdAndPeople/' + _this.id)
+            .then(function (resp) {
+              _this.people = resp.data.people;
+              console.log(_this.people)
+              _this.$emit('error');
+              _this.$emit('loading');
+            }, function (error) {
+              _this.item = {};
+              _this.$emit('error', error);
+            });
+    
+            
+          }
+        )
     },
     checkform: function () {
       this.errors = [];
@@ -1062,9 +1142,25 @@ const adminEditHousehold = {
           );
       }
     },
-    removeHousehold: function(){
+    deleteHousehold: function(){
       let _this = this;
-      Vue.set(_this.item, '_deleted', true);  
+      Vue.set(_this.item, '_deleted', true);
+      // console.log('delete')
+      let proceed = confirm("Are you sure you want to remove this household? It can not be undone.")
+
+      if(proceed){
+        this.$http.post('/api/admin/save/household', _this.item)
+        .then(
+          function (resp) {
+            // redirect to the household summary
+            _this.$router.replace({ name: '404', params: { id: _this.item._id } });
+            // this toast appears on the 404 page, after the redirect
+            M.toast({html: 'Household deleted', classes: 'red lighten-4 red-text'})
+          }, function (error) {
+            console.log('error', error);
+          }
+        );  
+      }
     }
   }
 }
@@ -1075,15 +1171,15 @@ const adminEditPerson = {
     return {
       id: '',
       item: {},
+      household: {},
       statuses: getStatuses(),
       genders: getGenders(),
+      disable: true, // form save button is disabled until required fields have values
       errors: [] // for required field errors, not server errors
     }
   },
-  props: [
-  ],
-  computed: {
-  },
+  props: [],
+  computed: {},
   mounted: function(){
     if(this.$route.name == "add-person"){
       this.item = getPersonObject();
@@ -1095,7 +1191,21 @@ const adminEditPerson = {
     }
   },
   updated: function(){
-    M.updateTextFields()
+    M.updateTextFields();
+
+    // disable the save button until required fields have values
+    let requiredFields = $('.required');
+    let counter = 0;
+    for(var i = 0; i < requiredFields.length; i++){
+      if (!requiredFields[i].value){
+        counter++
+      }
+    }
+    // if the counter is 0 after looping through the values of required fields, 
+    // the save button will stay disabled
+    // if the counter is > 0, the save button will be enabled
+    // note, this.disable is used when the form is submitted, too, via the checkform() method
+    this.disable = Boolean(counter);
   },
   watch: {
     '$route'(to, from) {
@@ -1112,32 +1222,51 @@ const adminEditPerson = {
         function(res){
           _this.item = res.body;
           _this.$emit('loading', false);
-          _this.$emit('error');
+          _this.$emit('error', false);
         }, function(error){
           _this.item = {};
           _this.$emit('error', error);
+        }
+      ).then(
+        function(){
+          if(_this.item.household_id){
+            //console.log('household_id: ', _this.item.household_id);
+            _this.$http.get('/api/admin/household/' + _this.item.household_id,
+              ).then(
+                function(res){
+                  _this.household = res.body;
+                  //console.log(_this.household);
+                  _this.$emit('loading', false);
+                  _this.$emit('error', false);
+                }, function(error){
+                  _this.household = {};
+                  // _this.$emit('error', error);
+                  _this.$emit('error', {
+                    'type':'warning',
+                    'ctx': "This page should show the household to which this person belongs, but no household exists. It's ok, the form will still work. Probably best to delete this record, or contact Brad Noble.",
+                    'msg': error.body.error
+                  })
+                }
+              )
+            }
+
         }
       );
     },
     checkform: function () {
       this.errors = [];
-      if (this.item.last || this.item.first ) {
-        return true;
-      } else {
+      if(this.disable){
         this.errors.push('Please provide a first and last name.')
+      } else {
+        return true
       }
-
-//        if (this.item.last.length > 0 && this.item.first.length > 0) {
-//      }
     },
     save: function(){
       let _this = this;
 
-      console.log('saving...')
-
       if (this.checkform()) {
 
-        // starting label for the save button
+        // save the starting label for the save button
         const txt = $('#save').text();
         // temporary message that shows
         $('#save').text('Saving...');
@@ -1148,19 +1277,35 @@ const adminEditPerson = {
             setTimeout(function () {
               // revert the label of the save button
               $('#save').text(txt);
-              //console.log(resp)
               // redirect to the summary tab
               _this.$router.replace({ name: 'admin-view-household', params: { id: _this.item.household_id } });
+              M.toast({html: 'Person saved'})
             }, 200);
           }, function (error) {
             console.log('error', error);
           }
-          );
+        );
       }
     },
-    removePerson: function () {
+    deletePerson: function(){
       let _this = this;
       Vue.set(_this.item, '_deleted', true);
+      // console.log('delete')
+      let proceed = confirm("Are you sure you want to remove this person? It can not be undone.")
+
+      if(proceed){
+        this.$http.post('/api/admin/save/person', _this.item)
+        .then(
+          function (resp) {
+            // redirect to the household summary
+            _this.$router.replace({ name: 'admin-view-household', params: { id: _this.item.household_id } });
+            // this toast appears on the household summary after the redirect
+            M.toast({html: 'Person deleted', classes: 'red lighten-4 red-text'})
+          }, function (error) {
+            console.log('error', error);
+          }
+        );  
+      }
     }
   }
 }
@@ -1189,8 +1334,6 @@ const adminViewHousehold = {
     getHouseholdWithPeople: function(){
       let _this = this;
       _this.id = this.$route.params.id;
-      // console.log('getHouseholdWithPeople: ', _this.id);
-
       _this.$http.get('/api/admin/householdAndPeople/' + _this.id)
         .then(function (resp) {
           _this.item = resp.data;
@@ -1524,7 +1667,7 @@ Vue.component('search-form-template', {
   template: '#search-form-template',
   data: function(){
     return {
-      section: ''
+      redirect: ''
     }
   },
   props: [
@@ -1534,17 +1677,26 @@ Vue.component('search-form-template', {
   mounted: function(){
     // what section am I in? 
     // need to know so I can direct the results to the right page
-    this.section = this.$route.matched[0].name;
+    let parentPageName = this.$route.matched[0].name;
+
+    // if the parent is admin, go to admin
+    // if the parent is members, go to members
+    // if the parent is anything other than admin, go to members
+    if(parentPageName != 'admin'){
+      this.redirect = 'members';
+    } else {
+      this.redirect = 'admin';
+    }
   },
   methods: {
     search: function(){
       this.pushToRouter();
     },
     pushToRouter: function(){
-      let val = $('#search').val();
+      let val = $('#search').val().trim();
 
       this.$router.push({ 
-        name: this.section + '-search', 
+        name: this.redirect + '-search', 
         params: {}, 
         query: {
           q: val
@@ -1570,11 +1722,6 @@ Vue.component('location', {
 
 Vue.component('person', {
   template: '#view-person',
-  props: ['item']
-});
-
-Vue.component('household-person', {
-  template: '#household-person',
   props: ['item']
 });
 

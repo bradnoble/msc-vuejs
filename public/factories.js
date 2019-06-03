@@ -23,7 +23,7 @@ const buildBreadcrumbForTitleTag = (matched) => {
     breadcrumbs.push(matched[i].meta.breadcrumb);
   }
   let title = breadcrumbs.join(' / ');
-  console.log(title);    
+  // console.log(title);    
   document.title = title;
 }
 

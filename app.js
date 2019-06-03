@@ -244,6 +244,19 @@ const ddoc = {
         }
       }
     },
+    members_last_updated: {
+      map: function (doc) {
+        if(doc.updated) {
+          if(doc.type == "person"){
+            if(doc.status != "deceased"){
+              emit(doc.updated, 1);
+            }            
+          } else if (doc.type == "household"){
+            emit(doc.updated, 1);
+          }
+        }
+      }
+    },
     householdsAndPeople: {
       map: function(doc){    
         if(doc.type == "household"){      
@@ -279,17 +292,14 @@ const ddoc = {
       map: function(doc){
         if(doc.type == "person"){
           if(
-            doc.first == '' || !doc.first 
-            || doc.last == '' || !doc.last
+            !doc.first || !doc.last || !doc.household_id
           ){
             emit(doc._id, 1);
           }
         }
         if(doc.type == "household"){
           if(
-            doc.name == '' || !doc.name 
-            || doc.street1 == '' || !doc.street1
-            || doc.zip == '' || !doc.zip
+            !doc.name || !doc.city || !doc.state || !doc.zip
           ){
             emit(doc._id, 1);
           }
@@ -433,6 +443,28 @@ app.get('/api/admin/report',
     } else {
       res.send();
     }
+  }
+);
+
+app.get('/api/admin/updated',
+  authentication.users.isAuthenticated,
+  function (req, res) {
+    db.view('foo', 'last_updated',
+      {
+        descending: true,
+        include_docs: true,
+        limit: 5
+      },
+      function (err, docs) {
+        if (err) {
+          console.log(err);
+        }
+        else {
+          //console.log(docs);
+          res.send(docs);
+        }
+      }
+    );
   }
 );
 
@@ -947,19 +979,18 @@ app.get('/api/members/search',
 app.get('/api/members/updated',
   authentication.users.isAuthenticated,
   function (req, res) {
-    db.view('foo', 'last_updated',
+    db.view('foo', 'members_last_updated',
       {
         descending: true,
         include_docs: true,
         limit: 5
       },
-      function (err, docs) {
+      function (err, resp) {
         if (err) {
           console.log(err);
         }
         else {
-          //console.log(docs);
-          res.send(docs);
+          res.send(resp);
         }
       }
     );
