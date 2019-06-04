@@ -956,34 +956,38 @@
 <!-- email list builder, child of members -->
 <script type="text/x-template" id="members-emails">
   <div>
-        <div class="row">
-          <div class="col s12 m12">
-                <p>
-                  Select statuses to build your email list.
-                </p>
-                <div>
-                <a v-for="status in statuses" @click.prevent="intercept(status.key)" href="#" class="chip status-param nowrap blue-text" :class="{'blue darken-2, white-text': $route.query && $route.query.status && $route.query.status.indexOf(status.key) > -1}">
-                  <i class="material-icons tiny" v-if="$route.query && $route.query.status && $route.query.status.indexOf(status.key) > -1">
-                    check
-                  </i>
-                  <i class="material-icons tiny" v-else>
-                    add_circle
-                  </i>
-                  {{ status.key | capitalize }} ({{ status.value }})
-                </a>
-                <router-link :to="{name: 'members-emails'}" class="chip white red-text" v-if="$route.query && $route.query.status">
-                  <i class="material-icons tiny">
-                    clear
-                  </i>
-                  Clear
-                </router-link>
-              </div>
-            </div><!--col-->
-          </div><!--row-->
+    <div class="row">
+      <div class="col s12 m4">
+        <h6>
+          Statuses 
+        </h6>
+        <p>
+          Select statuses to build an email list.
+        </p>
+        <div class="section">
+          <a v-for="status in statuses" @click.prevent="intercept(status.key)" href="#" class="chip status-param nowrap blue-text" :class="{'blue darken-2, white-text': $route.query && $route.query.status && $route.query.status.indexOf(status.key) > -1}">
+            <i class="material-icons tiny" v-if="$route.query && $route.query.status && $route.query.status.indexOf(status.key) > -1">
+              check
+            </i>
+            <i class="material-icons tiny" v-else>
+              add_circle
+            </i>
+            {{ status.key | capitalize }} ({{ status.value }})
+          </a>
+        </div><!--section-->
+        <div v-if="$route.query && $route.query.status" class="section">
+            <p>
+              <router-link :to="{name: 'members-emails'}" class="btn btn-flat btn-small red lighten-5 red-text">
+                <i class="material-icons tiny">
+                  clear
+                </i>
+                Clear
+              </router-link>    
+            </p>
+          </div><!--section-->
+      </div><!--col-->
 
-          <div class="row">
-
-              <div class="col s12 m12" v-if="items.length > 0">
+              <div class="col s12 m8" v-if="items.length > 0">
                   <h6>
                     Email addresses
                   </h6>
@@ -993,7 +997,7 @@
                   <div class="preview-container">
                     <form>
                       <div class="input-field">
-                        <textarea id="textarea-emails" v-model="items" class="materialize-textarea">{{ items }}</textarea>
+                        <textarea id="textarea-emails" v-model="items" class="materialize-textarea grey lighten-4">{{ items }}</textarea>
                       </div>
                     </form>
                   </div>

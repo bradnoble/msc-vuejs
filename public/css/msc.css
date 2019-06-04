@@ -65,6 +65,7 @@ div.preview-container {
   width: 100%;
   max-height: 300px;
   overflow: auto;
-  border-top: 1px solid #e4e4e4;
-  border-bottom: 1px solid #e4e4e4;
+}
+div.preview-container textarea {
+  padding:  1rem;
 }
