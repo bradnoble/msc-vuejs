@@ -800,6 +800,7 @@ app.get('/api/admin/csv/',
           , "first"
           , "email"
           , "phone"
+          , "work_phone"
           , "street1"
           , "street2"
           , "city"
