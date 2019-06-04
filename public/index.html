@@ -483,7 +483,7 @@
                           <input type="hidden" v-model="item.household_id"  />
                           <button id="save" class="btn btn-large waves-effect waves-light" type="submit" name="action" :class="{'disabled': disable}">
                             <i class="material-icons tiny">save</i> 
-                            Submit
+                            Save
                           </button>
                           <router-link v-if="$route.name == 'edit-household'" :to="{name: 'admin-view-household', params: {id: item._id}}" class="waves-effect waves-light btn-flat" title="cancel changes, and return to the household">Cancel</router-link>
                           <router-link v-if="$route.name == 'add-household'" :to="{name: 'admin'}" class="waves-effect waves-light btn-flat" title="cancel changes, and return to the list">Cancel</router-link>        
@@ -524,6 +524,9 @@
             <!--<person-contact-info :item="item"></person-contact-info>-->
           </li>
         </ul>
+        <p v-else>
+          Nobody has yet been added to this household.
+        </p>
       </div>
   
     </div><!--row-->
