@@ -226,9 +226,9 @@
 <script type="text/x-template" id="admin-intro">
   <div>
 
-      <div class="section">
+      <div class="section red lighten-5 red-text" v-if="people.length > 0 || households.length > 0">
         <div class="row">
-          <div class="col s12 m12" v-if="people.length > 0 || households.length > 0">
+          <div class="col s12 m12" >
             <h2 class="red-text">
               <!--<i class="material-icons medium red-text">error</i>-->
               Hang on!
@@ -868,7 +868,7 @@
         <!-- <canvas id="myChart"></canvas> -->
       </div>
       <div class="col m6 s12">
-        <h5>Recent updates</h5>
+        <h5>Recently updated</h5>
         <ul class="collection">
           <li v-for="item in updates" class="collection-item avatar">
             <i class="material-icons circle grey lighten-4 tiny grey-text" v-if="item.type == 'person'">person</i>
