@@ -325,6 +325,7 @@
               <person-contact-info :item="item"></person-contact-info>
             </router-link>
             <router-link :to="{name: 'edit-household', params: {id: item._id}}" v-if="item.type == 'household'">
+              {{ item.name }}<br />
               <location :item="item"></location>
             </router-link>
           </li>
