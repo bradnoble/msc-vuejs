@@ -446,6 +446,8 @@ app.get('/api/admin/report',
   }
 );
 
+// recently updated records, for the admin section
+// note that this may also show records relating to people with a deceased status
 app.get('/api/admin/updated',
   authentication.users.isAuthenticated,
   function (req, res) {
@@ -468,7 +470,7 @@ app.get('/api/admin/updated',
   }
 );
 
-// get a list of members based upon member name(s)
+// faceted search for the admin section
 app.get('/api/admin/search',
   authentication.users.isAuthenticated,
   function (req, res) {
