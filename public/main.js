@@ -582,7 +582,7 @@ const memberEmails = {
       if (_this.querystring) {
         _this.$emit('loading', true);
 
-        this.$http.get('/api/member/emails', obj)
+        this.$http.get('/api/members/emails', obj)
           .then(function (resp) {
             let docs = [];
             let array = [];
@@ -721,7 +721,7 @@ const memberReports = {
 
       if (query && query.status && query.status.length > 0) {
         _this.$emit('loading', true);
-        _this.$http.get('/api/member/csv',
+        _this.$http.get('/api/members/csv',
           {
             params: params
           }
@@ -794,7 +794,7 @@ const memberHousehold = {
       _this = this;
       _this.$emit('loading', true);
 
-      this.$http.get('/api/households/' + this.$route.params.id)
+      this.$http.get('/api/members/households/' + this.$route.params.id)
         .then(function (resp) {
           // console.log('start', resp)        
           _this.item = resp.data;
