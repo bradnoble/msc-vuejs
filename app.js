@@ -553,7 +553,7 @@ app.get('/api/admin/search',
   }
 );
 
-// get a household in the admin section
+// get a household in the admin section, for editing
 app.get('/api/admin/household/:id',
   authentication.users.isAuthenticated,
   function (req, res) {
@@ -572,7 +572,7 @@ app.get('/api/admin/household/:id',
   }
 );
 
-// get a person in the admin section
+// get a person in the admin section, for editing
 app.get('/api/admin/person/:id',
   authentication.users.isAuthenticated,
   function (req, res) {
