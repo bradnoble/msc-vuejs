@@ -137,15 +137,6 @@ function initializeVueRouter(store) {
           props: true
         },
         {
-          path: 'reports',
-          name: 'members-reports',
-          component: memberReports,
-          meta: {
-            breadcrumb: "Reports"
-          },
-          props: true
-        },
-        {
           path: 'household/:id',
           name: 'members-household',
           components: {
