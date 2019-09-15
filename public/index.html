@@ -92,8 +92,8 @@
         </div>
         <div class="footer-copyright">
           <div class="container">
-          <span>&copy; 2018 Montclair Ski Club</span>
-          <span class="right">Version 2.00.200</span>
+          <span>&copy; 2019 Montclair Ski Club</span>
+          <span class="right">Version 2.00.300</span>
           </div>
         </div>
       </footer>
@@ -174,7 +174,7 @@
                   <h6>Membership</h6>
                   <ul>
                   <li>
-                  <router-link to="/members/status/active"><h6><a>Active Members</a></h6></router-link> 
+                  <router-link :to="{name: 'members-search', query: {drilldown: JSON.stringify(['status','active'])}}"><h6><a>Active Members</a></h6></router-link> 
                   </li>
                 </ul>
                 </div>
